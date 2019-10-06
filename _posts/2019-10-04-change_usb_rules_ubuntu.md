@@ -57,7 +57,7 @@ udevadm info --attribute-walk --name=/dev/ttyUSB0
 
 ![查看设备的关键信息](https://img-blog.csdn.net/20180109121201876?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvYmlnZG9nXzEwMjc=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
 
-## 添加usb rules规则文件
+## 添加`udev rules`规则文件
 
 _参考链接：_ [如何在 Linux 中永久修改 USB 设备权限](https://linux.cn/article-6449-1.html?utm_source=weixin);[ubuntu 16.04 中永久修改 USB 设备权限](https://blog.csdn.net/jiangchao3392/article/details/76227180)
 
@@ -104,7 +104,8 @@ KERNEL=="ttyUSB*", SUBSYSTEMS=="usb", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=
 KERNEL=="ttyUSB*", SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", GROUP="users", MODE="0666", ENV{ID_MM_DEVICE_IGNORE}="1", SYMLINK+="imu"
 ```
 
-注意这里的`ATTRS{idVendor}`和`ATTRS{idProduct}`是查询到的对应的设备地芯片的硬件值。`SYMLINK+=`对应的是对设备`ttyUSB*`生成的软连接名称。**一定要添加`KERNEL=="ttyUSB*"`**生成软连接。否则直接生成对名称的设备号。一般的linux驱动无法识别。
+注意：
+这里的`ATTRS{idVendor}`和`ATTRS{idProduct}`是查询到的对应的设备地芯片的硬件值。`SYMLINK+=`对应的是对设备`ttyUSB*`生成的软连接名称。`MODE`是对设备权限的更改。**一定要添加`KERNEL=="ttyUSB*"`**生成软连接。否则直接生成对名称的设备号。一般的linux驱动无法识别。
 
 ### 重启服务查看 对应设备
 

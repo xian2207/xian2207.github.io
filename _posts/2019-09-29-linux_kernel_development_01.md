@@ -333,4 +333,126 @@ struct task_struct *kthread_run(int(*threadfn)(void *data),void data,const char 
 
 #### 3.5.1 删除进程描述符
 
+当父进程收到消息，并且确认进程无用时，就可以进程进程描述符的删除。删除工作主要由`release_task()`函数完成主要工作内容如下：
+
+1. 调用`__exit_signal()`函数，它调用`__unhash_process()`,后者继续调用`detach_pid()`。从`pidhash()`上删除该进程，即将该进程从任务列表中删除。
+2. `__exit_signal()`函数释放当前僵死进程所用的所有剩余资源，并进行最终统计和记录。
+3. 如果这个进程是线程最后一个进程，并且领头进程已经死掉，那么`release_task()`将通知僵死的领头进程的父进程。
+4. `release_task()`调用`put_task_ struct()`释放进程内核栈和`thread_info`结构所占的页,并释放`task_struct`所占的slab高速缓存。
+
+#### 3.5.2 孤儿进程造成的进退维谷
+
+
+父进程在子进程之前退出，会给子进程在当前线程组内找一个线程作为父亲，如果不行，就让init做他们的父进程。函数调用顺序如下:do_exit()->exit_notify()->forget_original_parent()->find_new_reaper();`find_new_reaper()`函数执行过程如下：
+
+```c
+static struct task_struct *find_new_reaper(struct task_struct *father)
+{
+    struct pid_namespace *pid_ns=task_active_pid_ns(father);
+    struct task_struct *thread;
+    thread=father;
+    //遍历每一个线程，寻找最佳的线程
+
+    while_each_thread(father,thread){
+        //检查任务是否存在，否则跳过下面的执行
+
+        if(thread->flags&PF_EXITING)
+            continue;
+        //将它的孩子指针指向father;
+
+        if(unlikely(pid_ns->child_reaper==father))
+            pid_ns->child_reaper=thread;
+        return thread;
+    }
+    //pid_ns没有指向father
+    if(unlikely(pid_ns->child_reaper==father)){
+        //进行任务列表加锁
+        
+        write_unlock_irq(&tasklist_lock);
+        //检查是否是初始化进程
+
+        if(unlikely(pid_ns==&init_pid_ns)){
+            panic("Attempted to kill init");
+        }
+        zap_pid_ns_processes(pid_ns);
+        write_lock_irq(&tasklist_lock);
+
+        pid_ns->child_reaper=init_pid_ns.child_reaper;
+    }
+    return pid_ns->child_reaper;
+}
+```
+
+在找到养父进程之后，就可以遍历所有子进程并为他们设置新的父进程：
+
+```c
+reaper=find_new_reaper(father);
+
+list_for_each_entry_safe(p,n,&father->children,siblings){
+    p->real_parent=reaper;
+    if(p->parent==father){
+        BUG_ON(p->ptrace);
+        p->parent=p->real_parent;
+    }
+    reparent_thread(p,father);
+}
+
+```
+
+接下来使用ptrace_exit_finish()同样进行新的寻父过程，不过这次是给ptraced的子进程寻找父亲
+
+```c
+void exit_ptrace(struct task_struct *tracer){
+    struct task_struct *p,*n;
+    LIST_HEAD(ptrace_dead);
+    //添加任务线程锁
+
+    write_lock_irq(&tasklist_lock);
+    list_for_each_entry_safe(p,n,&tracer->ptraced,ptrace_entry){
+        if(__ptrace_detach(tracer,p)){
+            list_add(&p->ptrace_entry,&ptrace_dead);
+        }
+    }
+    write_unlock_irq(&tasklist_lock);
+    BUG_ON(!list_empty(&tracer->ptraced));
+    list_for_each_entry_safe(p,n,&tracer->ptraced,ptrace_entry){
+        list_del_init(&p->ptrace_entry);
+        release_task(p);
+    }
+}
+```
+
+## 第四章 进程调度
+
+内核决定那个进程进行运行的方式。基本原则：最大限度的利用处理器时间。
+
+### 4.1 多任务
+
+多任务分类：抢占式和非抢占式。Linux中提供了抢占(强行挂起的动作)式的多任务模式。
+
+### 4.2 Linux 的进程调度
+
+_参考链接：_ 
+
+- [谈谈调度 - Linux O(1)](https://zhuanlan.zhihu.com/p/33461281?from_voters_page=true);
+- [Linux进程调度-------O(1)调度和CFS调度器](https://blog.csdn.net/a2796749/article/details/47101533)
+- [Linux的CFS(完全公平调度)算法](https://blog.csdn.net/liuxiaowu19911121/article/details/47070111)
+- [linux内核分析之调度算法——CFS调度分析](https://blog.csdn.net/bullbat/article/details/7164953)
+
+Linux中从2.5开始使用了O(1)内核调度算法。但是该算法对响应时间敏感的程序有一些先天不足，对于服务器友好，但是对于桌面操作系统不行。因此引用了“翻转楼梯最后期限调度算法”(RSDL)。被称为“完全公平调度算法”或者简称(CFS)。
+
+### 4.3 策略
+
+#### 4.3.1 I/O消耗型和处理器消耗型的选择
+
+GUI是属于I/O密集型，矩阵运算是处理器消耗密集型。处理策略一般都是在两者之间寻找平衡点。
+
+#### 4.3.2 进程优先级
+
+Linux 中采用了两种不同的优先级范围：
+
+- nice值，范围是-20-+19,默认值为0；越大优先级越高。(mac中)nice值表示分配给进程的时间片的绝对值。Linux中，nice值表示时间片的比例；可以使用`ps -el`查看其中`NI`一列为其nice值
+- 实时优先级:是可配置的默认情况下的变化范围是0-99，越高进程等级越优先。可以通过如下命令查看实时优先级：`ps -ao state,uid,pid,ppid,rtprio,time,comm `;其中(RTPRIO)表示实时优先级。
+
+#### 4.3.3 时间片
 
