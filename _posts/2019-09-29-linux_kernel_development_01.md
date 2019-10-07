@@ -438,6 +438,7 @@ _参考链接：_
 - [Linux进程调度-------O(1)调度和CFS调度器](https://blog.csdn.net/a2796749/article/details/47101533)
 - [Linux的CFS(完全公平调度)算法](https://blog.csdn.net/liuxiaowu19911121/article/details/47070111)
 - [linux内核分析之调度算法——CFS调度分析](https://blog.csdn.net/bullbat/article/details/7164953)
+- [Linux进程管理与调度](https://blog.csdn.net/gatieme/article/category/6225543)
 
 Linux中从2.5开始使用了O(1)内核调度算法。但是该算法对响应时间敏感的程序有一些先天不足，对于服务器友好，但是对于桌面操作系统不行。因此引用了“翻转楼梯最后期限调度算法”(RSDL)。被称为“完全公平调度算法”或者简称(CFS)。
 
@@ -454,5 +455,53 @@ Linux 中采用了两种不同的优先级范围：
 - nice值，范围是-20-+19,默认值为0；越大优先级越高。(mac中)nice值表示分配给进程的时间片的绝对值。Linux中，nice值表示时间片的比例；可以使用`ps -el`查看其中`NI`一列为其nice值
 - 实时优先级:是可配置的默认情况下的变化范围是0-99，越高进程等级越优先。可以通过如下命令查看实时优先级：`ps -ao state,uid,pid,ppid,rtprio,time,comm `;其中(RTPRIO)表示实时优先级。
 
-#### 4.3.3 时间片
+### 4.4 Linux调度算法
 
+#### 4.4.1 调度器类
+
+Linux调度器是以模块方式提供的，这样做的目的是允许不同类型的进程可以有针对性地选择调度算法。这种模块化结构被称为**调度器类(scheduler classes)**。它允许多种不同的可添加的调度算法并存，调度器代码定义在`kernel/sched.c`文件中。完全公平调度(CFS)是针对一个普通进程的调度，在Linux中称为SCHED_NORMAL(在POSIX中称为SCHED_OTHER),CFS定义在文件`kernel/sched_fair.c`中。
+
+#### 4.4.3 公平调度
+
+理想状况是进程完全占有CPU时间，但实际情况，总会存在上下文切换或者进程切换的性能损失，CFS算法就充分考虑到了这一点。CFS允许每个进程运行一段时间、循环轮转、选择运行最少的进程作为下一个运行进程。CFS在所有可运行进程总数基础上计算出一个进程应该运行多久；nice值作为进程获得的处理器运行比的权重--越高的nice值获取更低的处理器使用权重。
+
+为了防止，在总进程数过多时的时间片过小，造成频繁切换；CFS为每个进程设置时间片的**最小粒度**默认是1ms。
+
+任何进程获得的处理器时间是由他自己和其它所有可运行进程的nice值的相对差值决定的。nice值对时间片的作用不再是算术加权而是几何加权。任何nice值对应的绝对时间不再是一个绝对值，而是处理器的使用比。
+
+### 4.5 Linux调度的实现
+
+CFS的主要组成部分 如下：
+
+- 时间记账
+- 进程选择
+- 调度器入口
+- 睡眠和唤醒
+
+#### 4.5.1 时间记账
+
+Linux中每次系统时钟拍发生时，时间片都会被减少一个街拍周期。当时间片被减少到0时，就会被抢占。
+
+##### 1. 调度器实体结构
+
+CFS使用调度器实体结构(struct_sched_entity)来进行运行记账：
+
+```c
+//linux/sched.h
+
+struct sched_entity{
+    struct load_weight      load;
+    struct rb_node          run_node;
+    struct list_node        group_node;
+    unsigned int            on_rq;
+    u64                     exec_start;
+    u64                     sum_exec_start;
+    u64                     vruntime;
+    u64                     prev_sum_exec_runtime;
+    u64                     last_wakeup;
+    u64                     avg_overlap;
+    u64                     nr_migrations;
+    u64                     start_runtime;
+    u64                     avg_wakeup;
+}
+```
