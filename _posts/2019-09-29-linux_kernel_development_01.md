@@ -505,3 +505,204 @@ struct sched_entity{
     u64                     avg_wakeup;
 }
 ```
+
+##### 2. 虚拟实时
+
+vruntime变量存放进程的虚拟运行时间，该运行时间的计算是经过了所有可运行进程总数的标准化。虚拟时间是以ns为单位的，所以vruntime和定时器节拍不再相关。CFS使用vruntime变量来记录一个程序到底运行了多长时间以及它还应该再运行多久。定义在kernel/sched_fair.c文件中的update_curr()函数实现了该记账功能
+
+```c
+static void update_curr(strcut cfs_rq *cfs_rq)
+{
+    struct sched_entity *curr=cfs_rq->curr;
+    u64 now=rq_of(cfs_rq)->clock;
+    unsigned long delta_exec;
+    //没有找到当前的任务列表直接返回
+
+    if(unlikely(!curr)){
+        return;
+    }
+    //获得从最后一次修改负载后当前任务占用的运行总时间(在32位系统上这个不会溢出)
+
+    delta_exec=(unsigned long)(now-curr->exec_start);
+    //如果为0，直接返回
+
+    if(!delta_exec)
+        return ;
+    __update_curr(cfs_rq,curr,delta_exec);
+    curr->exec_start=now;
+    if(entity_is_task(curr)){
+        struct task_struct *curtask=task_of(curr);
+        trace_sched_stat_runtime(curtask,delta_exec,curr->vruntime);
+        cpuacct_charge(curtask,delta_exec);
+        account_group_exec_runtime(curtask,delta_exec);
+    }
+}
+//更新当前任务的运行时统计数据。跳过不再调度类中的当前任务
+
+static inline void __update_curr(struct cfs_rq *cfs_rq,struct sched_entity *curr, unsigned long delta_exec)
+{
+    unsigned long delta_exec_weighted;
+    //设置为当前时间和预计时间的最大时间片
+
+    sched_set(curr->exec_max,max((u64)delta_exec,curr->exec_max));
+
+    curr->sum_exec_runtime+=delta_exec;
+    sched_add(cfs_rq,exec_clock,delta_exec);
+    delta_exec_weighted=calc_delta_fair(delta_exec,curr);
+
+    curr->vruntime+=delta_exec_weighted;
+    update_min_vruntime(cfs_rq);
+}
+```
+
+####  4.5.2 进程选择
+
+CFS会挑选一个具有最小vruntime的进程。进程中的关键数据存储在一个红黑树中，通过查找红黑树进行最小vruntime的进程匹配。具体就不再做过多叙述了。
+
+注意：最佳节点一般已经缓存在rb_leftmost字段中。将左子节点缓存起来，相关函数的返回值便是CFS调度选择的下一个运行进程。如果没有找到就表示没有最左叶子节点。
+
+#### 4.5.3 调度器入口
+
+进程调度的主要入口点是函数schedule()。它一般会找到一个最高优先级的调度类(拥有自己的可运行队列，并且回复谁才是下一个该运行的进程)。它会调用一个pick_next_task()函数，以优先级为序，依次检查每一个调度类，并从最高优先级的调度类中，选择最高优先级的进程：
+
+```c
+static inline struct task_struct *
+
+pick_next_task(struct rq *rq){
+    const struct sched_class *class;
+    struct task_struct *p;
+    //优化：我们直到所有任务都在公平类中，那么我们就可以直接调用那个函数
+
+    if(like(rq->nr_running==rq->cfs.nr_running)){
+        p=fair_sched_class.pick_next_task(rq);
+        if(likely(p))
+            return p;
+    }
+    class=sched_class_highest;
+    //这里循环查找建议的列表
+
+    for(;;){
+        p=class->pick_next_task(rq);
+        if(p)
+            return p;
+        class=class->next;
+    }
+}
+```
+
+#### 4.5.4 睡眠和唤醒
+
+内核将进程标记为休眠状态，从可执行红黑树中移除，放入等待队列，然后调用schedule()选择和执行一个其它进程。唤醒的过程和其刚好相反。通过一下步奏将自己加入到一个等待队列中
+
+1. 调用宏DEFINE_WAIT()创建一个等待队列的项
+2. 调用add_wait_queue()把自己加入到该队里中，在指定的事件发生时，等待队列执行wake_up()操作。
+3. 调用`prepare_to_wait()`方法将进程的状态变更为`TASK_INTERRUPTIBLE`或者`TASK_UNINTERRUPTIBLE`.必要的时候将进程回加到等待队列。
+4. 状态被设置为`TASK_INTERRUPTIBLE`,则信号唤醒进程。
+5. 进程被唤醒时，它会再次检查条件是否为真。是，则退出循环，不是再次调用schedule()并一直重复这个操作。
+6. 当条件满足之后，进程将自己设置为`TASK_RUNNING`并调用`finis_wait()`方法将自己移除队列。
+
+使用`fs/notify/inotify/inotify_user.c`中的`inotify_read()`函数，从文件描述符中读取信息，实现等待队列：
+
+```c
+static ssize_t inotify_read(struct file *file,char __user *buf , size_t count ,loff_t *pos)
+{
+    //休眠队列
+
+    struct fsnotify_group *group;
+    //唤醒事件
+
+    struct fsnotify_event *kevent;
+
+    char __user *start;
+    int ret;
+    DEFINE_WAIT(wait);
+    start=buf;
+    group=file->private_data;
+    //循环处理队列相关函数
+
+    while(1){
+        prepare_to_wait(&group->notification_waitq,&wait,TASK_INTERRUPTIBLE);
+        //将队列进行加锁
+
+        mutex_lock(&group->notification_mutex);
+        //获取队列中的响应事件
+
+        kevent=get_one_event(group,count);
+        //队列解锁
+
+        mutex_unlock(&group->notification_mutex);
+        //如果设置有响应事件
+
+        if(kevent){
+            ret=PTR_ERR(kevent);
+            if(IS_ERR(kevent)){
+                break;
+            }
+            //将事件资料拷贝到用户
+
+            ret=copy_event_to_user(group,kevent,buf);
+            fsnotify_put_event(kevent);
+            if(ret<0){
+                break;
+            }
+            buf+=ret;
+            count-=ret;
+            continue;
+        }
+        ret=-EAGAIBN;
+        if(file->f_flags&O_NONBLOCK)
+            break;
+        ret=-EAGAIBN;
+        if(signal_pending(current))
+            break;
+        if(start!=buf)
+            break;
+        schedule();
+    }
+    finis_wait(&group->notification_waitq,&wait);
+    if(start!=buf&&ret!=-EFAULT)
+        ret=buf-start;
+    return ret;
+}
+
+```
+
+##### 2 唤醒
+
+该操作，通过函数`wake_up()`进行，他会唤醒指定等待队列上的所有进程，调用`try_to_wake_up()`将进程设置为`TASK_RUNNING`状态，并调用enqueue_task()函数将进程放入红黑树中。如果被唤醒的进程比当前正在执行的进程的优先级高，设置need_resched标志。
+
+### 4.6 抢占和上下文切换
+
+在`sched.c`中的`context_switch()`函数负上下文的切换。新进程被选入时，schedule()就会调动该函数，完成将虚拟内存从上一个进程映射切换到新进程中(`switch_mm()`)。将上一个进程的处理器状态切换到新的处理器状态(`switch_to()`)包括保存、恢复栈信息和寄存器信息。以及其它任何体系结构信息。
+
+![任务进程切换状态](../img/2019-10-08-21-21-50.png)
+
+内核提供了`need_resched`标志来表明是否需要重新执行一次调度。进程被抢占时`scheduler_tick()`会设置这个标志。
+
+再从用户空间以及中断返回的时候，内核也会检查need_resched标志。如果已被设置，内核会在继续执行之前调用调度程序。
+
+#### 4.6.1 用户抢占
+
+用户抢占在以下情况时发生：
+
+- 从系统调用返回用户空间时。
+- 从中断处理程序返回用户空间时。
+
+#### 4.6.2 内核抢占
+
+Linux 支持完整的内核抢占。只要没有持锁，内核就可以进行抢占。如果没有持有锁，正在执行的代码可以重新导入的，也就是可以抢占的。
+
+每个进程中thread_info中存在preempt_count计数器。使用锁++，释放锁--。当其为0时，内核可以抢占。调度程序开始被调用。
+
+内核抢占会发生在：
+
+- 中断处理程序正在执行，且返回内核空间之前
+- 内核代码再一次具有可抢占性的时候
+- 如果内核中的任务显示地调用schedule()
+- 如果内核中的任务阻塞(这样同样也会导致调用`schedule()`)
+
+
+### 4.7 实时调度策略
+
+Linux提供了两种实时调度策略:SCHED_FIFO和SCHED_RR。而普通的、非实时的调度策略是`SCHED_NORMAL`。
+
