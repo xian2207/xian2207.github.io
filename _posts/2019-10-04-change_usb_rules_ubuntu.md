@@ -109,7 +109,7 @@ KERNEL=="ttyUSB*", SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=
 
 ### 重启服务查看 对应设备
 
-当添加或者删除udev的rules文件后，都需要使用如下命令，进程设备读取rules的更新
+当添加或者删除udev的rules文件后，都需要使用如下命令，进行设备读取rules的更新
 
 ```bash
 sudo service udev reload
@@ -126,6 +126,6 @@ sudo service udev restart
 
 表示能够正常使用。
 
-**注意：这里是根据设备芯片类进行的配置具有唯一性，一个规则只能配置中设备，两个设备是同种设备时不能由设备芯片进行识别区分**
+**注意：这里是根据设备芯片类进行的配置具有唯一性，一个规则只能配置一种设备，两个设备是同种设备时不能由设备芯片进行识别区分**
 
 ![](https://wangpengcheng.github.io/img/2019-10-04-14-10-26.png)

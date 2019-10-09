@@ -706,3 +706,113 @@ Linux 支持完整的内核抢占。只要没有持锁，内核就可以进行�
 
 Linux提供了两种实时调度策略:SCHED_FIFO和SCHED_RR。而普通的、非实时的调度策略是`SCHED_NORMAL`。
 
+这些实时策略并不被完全公平调度器来管理，而是被一个特殊的实时调度器来管理。其定义在`kernel/sched_rt.c`中。
+
+- `SCHED_FIFO`实现了一种简单的、先入先出的调度算法：不使用时间片。总是按照FIST IN FIST OUT的规则进行寻找和运算。执行的进程会一直执行下去，直到它自己受到阻塞或显式地释放处理器为止，并不基于时间片。只有更高优先级的`SCHED_FIFO`或者`SCHED_RR`任务才能抢占其任务。其它进程都不行。
+- `SCHED_RR`:与`SCHED_FIFO`大体相同。不过`SCHED_RR`的进程在耗尽事先分配给它的时间后就不会继续执行了--带时间片的`SCHED_FIFO`任务(实时轮流调度算法)。
+
+两种算法实现的都是静态优先级，内核不为实时进程计算动态优先级。
+
+Linux中的实时调度算法提供了一种软实时工作方式。内核调度进程，尽力使得进程在它的限定时间前运行。实时优先级范围从0到MAX_RT_PRIO减一。
+
+### 4.8 与调度相关的系统调用
+
+![与调度相关的系统调用](../img/2019-10-09-15-26-35.png)
+
+#### 4.8.1 与调度策略和优先级相关的系统调用
+
+nice函数可以将给定进程的静态优先级增加一个给定的量。只有超级用户才能在调用它时使用负值，从而提高进程的优先级。
+
+#### 4.8.1 与处理器绑定有关的系统调用
+_参考链接：_
+
+- [细说Cache-L1/L2/L3/TLB](https://zhuanlan.zhihu.com/p/31875174)
+- [线程绑定CPU核](https://blog.csdn.net/honey_yyang/article/details/7848608)
+- [C++11线程，亲合与超线程](https://blog.csdn.net/wuhui_gdnt/article/details/51280906)
+- [汇编优化例程的目录](https://blog.csdn.net/wuhui_gdnt/article/details/89539848)
+
+
+Linux调度程序提供强制的处理器绑定机制。它允许用户强制指定"进程必须在处理器上运行"。相关强制性操作存在于task_struct中的`cpus_allowed`这个掩码标志中。掩码标志的每一位对应操作系统的一个可用处理器。默认情况下所有位都被设置为可用。可以通过`sched_setaffinity()`函数进行设置。**注意这里仅仅是一个建议，并不是完全按照这个设置来进行**。内核处理线程时，当其为第一次创建时，继承父进程的相关代码，需要更改时，内核会采用`移植线程`把任务推送到合理的处理器上。对处理器的指定是由该进程描述符的`cpus_allowed`域设置的。下面是一个简单的使用示例如下：
+
+```c
+#include<stdlib.h>
+#include<stdio.h>
+#include<sys/types.h>
+#include<sys/sysinfo.h>
+#include<unistd.h>
+#define __USE_GNU
+#include<sched.h>
+#include<ctype.h>
+#include<string.h>
+#include<pthread.h>
+#define THREAD_MAX_NUM 100  //1个CPU内的最多进程数
+int num=0;  //cpu中核数
+
+void* threadFun(void* arg)  //arg  传递线程标号（自己定义）
+{
+         cpu_set_t mask;  //CPU核的集合
+         cpu_set_t get;   //获取在集合中的CPU
+         //将其转换为整数
+         int *a = (int *)arg; 
+         printf("the a is:%d\n",*a);  //显示是第几个线程
+         CPU_ZERO(&mask);    //置空
+         CPU_SET(*a,&mask);   //设置亲和力值
+         if (sched_setaffinity(0, sizeof(mask), &mask) == -1)//设置线程CPU亲和力
+         {
+            printf("warning: could not set CPU affinity, continuing...\n");
+         }
+         int j=100;
+         while (j)
+         {
+
+            CPU_ZERO(&get);
+            if (sched_getaffinity(0, sizeof(get), &get) == -1)//获取线程CPU亲和力
+            {
+                printf("warning: cound not get thread affinity, continuing...\n");
+            }
+            int i=1;
+            for (i = 0; i < num; i++)
+            {
+                if (CPU_ISSET(i, &get))//判断线程与哪个CPU有亲和力
+                {
+                    printf("this thread %d is running processor : %d\n", i,i);
+
+                }
+
+            }
+            --j;
+        }
+        return NULL;
+
+}
+
+int main(int argc, char* argv[])
+{
+        num = sysconf(_SC_NPROCESSORS_CONF);  //获取核数
+        pthread_t thread[THREAD_MAX_NUM];
+        printf("system has %i processor(s). \n", num);
+        int tid[THREAD_MAX_NUM];
+        int i;
+        //根据核数创建线程
+        for(i=0;i<num;i++)
+        {
+            tid[i] = i;  //每个线程必须有个tid[i],用来指定计算的cpu核
+            pthread_create(&thread[0],NULL,threadFun,(void*)&tid[i]);
+        }
+        for(i=0; i< num; i++)
+        {
+            pthread_join(thread[i],NULL);//等待所有的线程结束，线程为死循环所以CTRL+C结束
+        }
+        return 0;
+
+}
+
+```
+
+#### 4.8.3 放弃处理器时间
+
+Linux通过`sched_yield()`系统调用。让进程显式地将处理器时间让给其他等待执行进程的机制。它通过将进程从活动队列中(进程正在执行)移动到过期队列中实现的。不仅抢占了该进程并将其放入优先级队列的最后面，还会将其放入过期队列中--确保在这一段时间内它都不会再执行了。
+
+对于实时进程。他们只被移动到其优先级队列的最后面(不会放到过期队列之中)。
+
+内核代码为了方便，可以直接调用`yield()`，先要确定给定进程确实处于可执行状态，然后调用`sched_yield()`。用户空间可以直接调用`sched_yield()`系统调用。
