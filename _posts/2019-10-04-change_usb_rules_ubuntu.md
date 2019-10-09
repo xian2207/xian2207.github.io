@@ -118,7 +118,7 @@ sudo service udev restart
 
 **然后重新插拔USB设备，就可以按照新的规则执行了**。查看生成的设备文件符如下：
 
-![设备符](../2019-10-04-13-58-59.png)
+![设备符](https://wangpengcheng.github.io/img/2019-10-04-13-58-59.png)
 
 使用`cutecom`查看串口通信结果如下：
 
