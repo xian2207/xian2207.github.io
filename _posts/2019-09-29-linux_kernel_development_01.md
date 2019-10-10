@@ -23,7 +23,7 @@ _参考连接：_
 
 linux内核版本号如下：
 
-![linux主要版本号](../img/2019-09-29-21-38-08.png)
+![linux主要版本号](https://wangpengcheng.github.io/img/2019-09-29-21-38-08.png)
 
 ## 第 2 章 从内核出发
 
@@ -161,7 +161,7 @@ _参考链接：_ [Linux进程描述符task_struct结构体详解](https://blog.
 
 内核通过任务队列的(双向循环链表)来存放和管理进程列表。其中存放的数据类型是`task_struct`，即进程描述符，定义在<linux/sched.h>文件中，包含有：打开的文件、进程的地址空间、挂起的信号、进程的状态等信息
 
-![进程描述符和任务队列](../img/2019-10-02-14-48-29.png)
+![进程描述符和任务队列](https://wangpengcheng.github.io/img/2019-10-02-14-48-29.png)
 
 #### 3.2.1 分配进程描述符
 
@@ -183,7 +183,7 @@ struct thread_info{
 
 ```
 
-![进程描述符和内核](../img/2019-10-01-16-35-19.png)
+![进程描述符和内核](https://wangpengcheng.github.io/img/2019-10-01-16-35-19.png)
 
 每个任务的thread_info结构在它的内核栈的尾端分配，结构中task域中存放的是指该任务实际task_struct的指针
 
@@ -201,7 +201,7 @@ struct thread_info{
 - __TASK_TRACED:被其它进程跟踪的进行，例如通过ptrace对调试程序进行跟踪
 - __TASK_STOPPED(停止)：进程停止执行；进程没有投入运行也不能投入运行。
 
-![进程转化状态图](../img/2019-10-02-14-53-27.png)
+![进程转化状态图](https://wangpengcheng.github.io/img/2019-10-02-14-53-27.png)
 
 #### 3.2.4 设置当前进程状态
 
@@ -287,8 +287,8 @@ clone(CLONE_VFORK|CLONE_VM|SIGCHLD,0);
 ```
 clone的标志位可选内容如下：
 
-![clone参数1](../img/2019-10-02-21-57-04.png)
-![clone参数2](../img/2019-10-02-21-58-01.png)
+![clone参数1](https://wangpengcheng.github.io/img/2019-10-02-21-57-04.png)
+![clone参数2](https://wangpengcheng.github.io/img/2019-10-02-21-58-01.png)
 
 ### 3.4.2 内核线程
 
@@ -675,7 +675,7 @@ static ssize_t inotify_read(struct file *file,char __user *buf , size_t count ,l
 
 在`sched.c`中的`context_switch()`函数负上下文的切换。新进程被选入时，schedule()就会调动该函数，完成将虚拟内存从上一个进程映射切换到新进程中(`switch_mm()`)。将上一个进程的处理器状态切换到新的处理器状态(`switch_to()`)包括保存、恢复栈信息和寄存器信息。以及其它任何体系结构信息。
 
-![任务进程切换状态](../img/2019-10-08-21-21-50.png)
+![任务进程切换状态](https://wangpengcheng.github.io/img/2019-10-08-21-21-50.png)
 
 内核提供了`need_resched`标志来表明是否需要重新执行一次调度。进程被抢占时`scheduler_tick()`会设置这个标志。
 
@@ -717,7 +717,7 @@ Linux中的实时调度算法提供了一种软实时工作方式。内核调度
 
 ### 4.8 与调度相关的系统调用
 
-![与调度相关的系统调用](../img/2019-10-09-15-26-35.png)
+![与调度相关的系统调用](https://wangpengcheng.github.io/img/2019-10-09-15-26-35.png)
 
 #### 4.8.1 与调度策略和优先级相关的系统调用
 

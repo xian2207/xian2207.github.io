@@ -116,3 +116,97 @@ SYSCALL_DEFINE3(
 注意：`copy_to_user()`和`copy_from_usr()`都有可能引起阻塞。当包含用户数据的页被置换到硬盘上时上述问题就会发生。
 
 调用者可以使用`capable()`函数来检查是否有权限对指定的资源进行操作。
+
+### 5.6 系统调用上下文
+
+当系统调用阻塞或者显式调用`schedule()`的时候，内核可以休眠，进程可以抢占。
+
+#### 5.6.1 绑定一个系统调用的最后步奏
+
+编写完成一个系统调用之后，把它正式注册为一个系统调用，流程如下:
+
+- 在系统调用表的最后添加一个表项
+- 对于支持的各种体系结构，系统调用号都必须定义于<asm/unistd.h>中
+- 系统调用必须被放入`/kernel`下的相关文件中，被编译进内核映像
+
+#### 5.6.2 从用户空间访问系统调用
+
+Linux设置了`_syscalln()`宏(n的范围是0-6，代表需要传递给系统调用的参数个数);直接对系统调用进行访问。
+
+可以直接不依靠支持库，直接调用此系统调用的宏的形式为:
+
+```c
+
+#define NR_open 5 _syscall3(long ,open,const char *,filename,int ,flags,int ,mode)
+```
+
+每个宏有2+2*n个参数，第一个参数㐊系统调用的返回类型，第二个参数是系统调用的名称。`NR_open`在`asm/unistd.h`中定义，是系统调用号；会被扩展成为内嵌汇编的C函数。
+
+#### 5.6.3 为什么不通过系统调用的方式实现
+
+建立一个新的系统调用非常容易，但是不建议这么做。
+
+![](../img/2019-10-10-21-47-53.png)
+
+## 第 6 章 内核数据结构
+
+Linux内核中实现了通用的数据结构，内核开发者应该尽可能地使用这些数据结构，而不是自己重复实现。
+
+### 6.1 链表
+
+![简单链表](../img/2019-10-10-21-52-14.png)
+
+![双向链表](../img/2019-10-10-21-53-01.png)
+
+![环形双向链表](../img/2019-10-10-21-53-42.png)
+
+#### 6.1.4 Linux中内核的实现
+
+Linux内核中**不是将数据结构加入链表，而是将链表节点加入数据结构**。链表代码在头文件`linux/list.h`中声明。其结构如下：
+
+```c
+struct list_head{
+    struct list_head *next;
+    struct list_head *prev;
+};
+```
+
+下面是一个简单的使用结构
+```c
+//自定义数据结构
+
+struct fox{
+    unsigned long tail_length;
+    unsigned long weight;
+    bool          is_fantastic;
+    //注意在这里添加list结构，将数据转变为链表
+
+    struct list_head list;
+}
+```
+链表提供的方法也仅仅针对list_head进行操作：。这样可以方便的进行从链表指针查找父结构体包含的任何变量。结构体的地址偏移半两在编译时地址就被ABI固定下来了。下面是一个典型的宏
+
+```c
+#define container_of(ptr,type,member) ({        \
+    const typeof(((type*)0)->member) *_mptr=(ptr); \  //这里是一个强制的地址偏移的类型转换
+    (type*)((char *)__mptr-offsetof(type,member)); \ 查找对应结构的父类型结构体
+})
+```
+
+下面是一个简单的使用示例：
+
+```c
+struct fox *red_fox;
+red_fox=kmalloc(sizeof(*red_fox),GFP_KERNEL);
+red_fox->tail_length=40;
+red_fox->weight=6;
+red_for->is_fantastic=false;
+//初始化头结点
+
+INIT_LIST_HEAD(&red_fox->list);
+
+
+```
+
+#### 6.1.5 操作链表
+
