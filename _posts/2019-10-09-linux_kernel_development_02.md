@@ -210,3 +210,49 @@ INIT_LIST_HEAD(&red_fox->list);
 
 #### 6.1.5 操作链表
 
+- `list_add(struct list_head *new,struct list_head *head)`:添加节点
+- `list_add_tail(struct list_head *new,struct list_head *head)`:添加节点到链尾
+- `list_del(struct list_head *entry)`:删除一个节点
+- `list_del_init()/list_del_init(struct list_head *entry)`:删除一个节点并重新初始化。
+- `list_move(struct list_head *list,struct list_head *head)`:将list链表添加到head后面。
+- `list_move_tail(struct list_head *list,struct list_head *head)`:将list项插入到head项前
+- `list_empty(struct list_head *head)`:检查链表是否为空。
+- `list_splice(struct list_head *list,struct list_head *head)`:将list指向的链表插入到head的后面。
+- `list_splice_init(struct list_head *list,struct list_head *head)`:功能基本相同，不过重新初始化了原来的链表。
+- `list_for_each(p,list){}`:遍历表中的全部元素。
+- `list_for_each_entry(pos,head,member)`:遍历节点，一般使用方法：
+
+```c
+//inotify 内核文件系统的更新通知机制
+
+static struct inotify_watch *inode_find_handle(struct inode *inode,struct inotify_handle *ih){
+    struct inotify_watch *watch;
+    //注意这里的i_list 是inode->inotify_watch中list链表指针的名字
+
+    list_for_each_entry(watch,&inode->inotify_watch,i_list){
+        if(watch->ih==ih)
+            return watch;
+    }
+    return NULL;
+}
+```
+- `list_for_each_entry_reverse(pos,head,member)`:反向遍历链表。
+- `list_for_each_entry_safe(pos,next,head,member)`:遍历的同时删除，标准操作中是只允许修改，不能删除否则会掉链。这里启动next指针将下一项存入表中。使得当前表项能够安全删除。
+- `list_for_each_entry_safe_reverse(pos,next,head,member)`:反向遍历并安全删除。
+
+### 6.2 队列
+
+内核队列文件声明在文件`linux/kfifo.h`中维护了两个偏移量：入口偏移和出口偏移。相当于队头指针和队尾指针；主要提供了两个操作：
+
+- enqueue(入队列):
+- dequeue(出队操作):
+
+#### 6.2.1 相关函数
+
+- `int kfifo_alloc(struct kfifo *kfifo,unsigned int size, gfp_t gfp_mask)`:初始化一个大小为size的kfifo队列。也可以使用静态的声明`DECLARE_KFIFO(name,size)`
+- `void kfifo_init(strcut kfifo *fifo,void *buffer,unsigned int size)`:自己分配缓冲区，也可以使用`INIT_KFIFO(name)`。
+- `unsigned int kfifo_in(struct kfifo *fifo,const void *from,unsigned int len)`:数据入队列。把from指向的len字节的数据拷贝到fifo所指的队列中。
+- `unsigned int kfifo_out(struct kfifo *fifo,const void *to,unsigned int len)`:将fifo所指向的队列中拷贝出长度为len字节的数据到to所指的缓冲区中
+- `unsigned int kfifo_out_peek(struct kfifo *fifo,const void *to,unsigned int len,unsigned offset)`:获取队列中的元素，相当与pop()
+
+
