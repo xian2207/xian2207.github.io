@@ -242,17 +242,121 @@ static struct inotify_watch *inode_find_handle(struct inode *inode,struct inotif
 
 ### 6.2 队列
 
+_参考链接：_ [读Linux内核kfifo](https://blog.csdn.net/linux_Allen/article/details/79907700)
+
 内核队列文件声明在文件`linux/kfifo.h`中维护了两个偏移量：入口偏移和出口偏移。相当于队头指针和队尾指针；主要提供了两个操作：
 
 - enqueue(入队列):
 - dequeue(出队操作):
+- 
+内核kfifo简约高效，匠心独运，有一下特点：
+- 保证缓冲区大小为2的次幂，不是的向上取整为2的次幂。
+- 使用无符号整数保存输入(in)和输出(out)的位置，在输入输出时不对in和out的值进行模运算，而让其自然溢出，并能够保证in-out的结果为缓冲区中已存放的数据长度。
+- 将需要取模的运算用 & 操作代替（a%size=(a&(size−1))), 这需要size保证为2的次幂。
+- 使用内存屏障(Memory Barrier)技术，实现单消费者和单生产者对kfifo的无锁并发访问，多个消费者、生产者的并发访问还是需要加锁的（本文不涉及）。
+
 
 #### 6.2.1 相关函数
 
 - `int kfifo_alloc(struct kfifo *kfifo,unsigned int size, gfp_t gfp_mask)`:初始化一个大小为size的kfifo队列。也可以使用静态的声明`DECLARE_KFIFO(name,size)`
 - `void kfifo_init(strcut kfifo *fifo,void *buffer,unsigned int size)`:自己分配缓冲区，也可以使用`INIT_KFIFO(name)`。
 - `unsigned int kfifo_in(struct kfifo *fifo,const void *from,unsigned int len)`:数据入队列。把from指向的len字节的数据拷贝到fifo所指的队列中。
-- `unsigned int kfifo_out(struct kfifo *fifo,const void *to,unsigned int len)`:将fifo所指向的队列中拷贝出长度为len字节的数据到to所指的缓冲区中
+- `unsigned int kfifo_out(struct kfifo *fifo,const void *to,unsigned int len)`:将fifo所指向的队列中拷贝出长度为len字节的数据到to所指的缓冲区中。相当于pop_back();
 - `unsigned int kfifo_out_peek(struct kfifo *fifo,const void *to,unsigned int len,unsigned offset)`:获取队列中的元素，相当与pop()
+- `static inline unsigned int kfifo_size(struct kfifo *fifo)`:返回用于存储kfifo队列的空间的总体大小
+- `static inline unsigned int kfifo_len(struct kfifo *fifo)`:返回用于存储kfifo队列的已经推入的数据大小
+- `static inline unsigned int kfifo_avail(struct kfifo *fifo)`:返回用于存储kfifo队列的剩余空间的大小
+- `static inline int kfifo_is_empty(struct kfifo *fifo)`:给定的kfifo是否为空
+- `static inline int kfifo_is_full(struct kfifo *fifo)`:是否已满
+- `static inline void kfifo_reset(struct kfifo *fifo)`:抛弃数据重置内容。
+- `static inline void kfifo_free(struct kfifo *fifo)`:重新释放内存
 
+下面是一个简单的使用示例：
 
+```c
+//创建一个队列
+
+struct kfifo fifo;
+int ret;
+//为队列分配内存，内存大小为操作系统页的大小
+
+ret=kfifo_alloc(&kfifo,PAGE_SIZE,GFP_KERNEL);
+if(ret) return ret;
+
+unsigned int i;
+//将0-32 压入到名为fifo的队列中
+
+for(i=0;i<32; i++){
+    kfifo_in(fifo,&i,sizeof(i));
+}
+
+unsigned int val;
+int ret2;
+//取出一个元素
+
+ret=kfifo_out_peek(fifo,&val,sizeof(val),0);
+if(ret!=sizeof(val))
+    return -EINVAL;
+
+//输出0
+
+printk(KERN_INFO "%u\n",val);
+//当队列中还存在数据时，将剩下的数据输出
+
+while(kfifo_avail(fifo)){
+    unsigned int val;
+    int ret;
+    //读取队列中剩余的数据
+
+    ret=kfifo_out(fifo,&val,sizeof(val));
+    if(ret!=sizeof(val)){
+        return -EINVAL;
+    }
+    printk(FERN_INFO "%u\n",val);
+}
+```
+
+### 6.3 映射Map
+
+就是C++中的Map和set等映射操作的集合。Linux 内核提供了简单、有效的映射数据结构。但是它并非一个通用的映射：**映射一个唯一的标识数(UID)到一个指针**。映射的add操作中实现了allocate操作，不但向map中加入了键值对，而且还可以产生UID。Linux内核中使用idr数据结构映射用户空间的UID，比如将inodify  watch的描述符或者POSIX的定时器ID映射到内核中相关联的数据结构上。如`inotify_watch`或者`k_itimer`结构。这里的UID相当于关键子key
+
+#### 6.3.1 相关函数
+
+- `void idr_init(struct idr *idp)`:初始化一个idr结构体
+- `int idr_pre_get(struct idr *idp,gfp_t gfp_mask)`:调整idp指向的idr的大小(如果需要)。使用内存分配标识符gfp_mask。返回0(失败)，1(成功)
+- `int idr_get_new(struct idr *idp,void *ptr,int *id)`:使用idp所指向的idr去分配一个新的UID，并且将其关联到指针ptr上。新的UID存于id。相当与存入一个值
+- `int idr_get_new_above(struct idr *idp,void *ptr,int starting_id,int *id)`:返回UID大于starting_id的最小值。相当于查找一个值。
+- `void *idr_find(struct idr *idp,int id)`:查找一个指定的值。
+- `void *idr_remove(struct idr *idp,int id)`:删除id以及与id关联的指针。
+- `void *idr_destroy(struct idr *idp)`:释放idr中未使用的内存。它并不释放当前已经分配的内存。
+- `void idr_remove_all(struct idr *idp)`:彻底释放对应的内存。
+
+### 6.4 二叉树
+
+#### 红黑树
+_参考链接：_ [红黑树的定义](https://www.cnblogs.com/chengxuyuancc/archive/2013/04/06/3002044.html);[Linux kernel rbtree](https://www.cnblogs.com/jimbo17/p/8298163.html);[源码](https://www.cnblogs.com/zhanglong71/p/5178796.html)
+
+linux kernel中实现的红黑树名为rbtree。定义在文件`lib/rbtree.c`中，声明在文件`<linux/rbtree.h>`中。Linux中只是定义了rb_root作为描述节点，搜索和插入，希望由rbtree的用户自己定义。
+
+### 6.5 数据结构选择
+
+对于主要操作是遍历应该使用链表。数据较少时也应该首先考虑链表。
+符合生产者/消费者模式时使用队列
+使用UID作为映射对象，应该使用映射。
+作为检索，应该尽量使用红黑树。
+
+![时间复杂度](../img/2019-10-13-20-59-08.png)
+
+## 第 七 章 中断和中断处理
+
+### 7.1 中断
+
+_参考链接：_ [linux中断与异常](https://www.cnblogs.com/chengxuyuancc/p/3380922.html)
+
+本质上是一种特殊的信号。由硬件设备发送给处理器，处理器接受到之后，向操作系统反映中断的到来。再由操作系统负责处理。中断并不考虑处理器的时钟同步--中断随时可以产生。
+
+设备发送一个中断电信号，输入中断控制器的输入引脚。中断控制器将多路中断管线采用复用计数通过一个管线直接与处理器通信；并发送一个电信号。处理器再通知操作系统。
+
+不同设备中断不同，每一个设备都有唯一的第一个设备中断号(数字标志)。通常成为中断请求(IRQ)线。一般IRQ 0是时钟中断，IRQ 1 是键盘中断。
+
+**异常(同步中断)**是特殊的中断，必须考虑时钟同步；一般是处理过程中遇到的错误或者特殊情况(如缺页)。
