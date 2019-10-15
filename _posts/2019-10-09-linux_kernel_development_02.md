@@ -360,3 +360,119 @@ _参考链接：_ [linux中断与异常](https://www.cnblogs.com/chengxuyuancc/p
 不同设备中断不同，每一个设备都有唯一的第一个设备中断号(数字标志)。通常成为中断请求(IRQ)线。一般IRQ 0是时钟中断，IRQ 1 是键盘中断。
 
 **异常(同步中断)**是特殊的中断，必须考虑时钟同步；一般是处理过程中遇到的错误或者特殊情况(如缺页)。
+
+### 7.2 中断处理程序
+
+在响应特别中断时，内核会执行一个函数，这个函数就是中断处理程序。
+
+### 7.3 上半部分与下半部分符对比
+
+为了尽可能减少上下文切换，和避免中断时处理程序的CPU抢占，浪费资源(很多时候，中断处理程序，需要其它的资源)。因此将中断的应对措施分为上下两个部分。上部分主要负责CPU上下文的切换(抢占task时，相关进程PID，寄存器的保存)，因此需要迅速执行，并且拥有严格的时间限制。下半部分主要是会针对中断的进一步处理。
+
+### 7.4 注册中断处理程序
+
+一般Linux可以通过`linux/interrupt.h`中的`request_irq()`函数来注册一个中断处理程序，函数代码如下所示:
+```c
+int request_irq(unsigned int irq, //分配的中断号
+                irq_handler_t handler,//实际中断处理程序的一个指针
+                unsigned long flags,//中断处理标志
+                chonst char *name,//中断相关设备的文本表示
+                void *dev   //中断线共享信息
+                )
+```
+
+中断处理标志参数flags可以为0，可以使下列一个或者多个标志的位掩码。其定义在文件<linux/interrupt.h>中。这些标志中最重要的是
+
+- `IRQF_DISABLED`--内核在处理中断处理程序本身期间，禁止其它所有中断。一般在希望快速执行的轻量级中断中设置。
+- `IRQF_SAMPLE_RANDOM`--设备产生的中断对内核熵池(entropy pool);有贡献。内核熵池会记录计算机中的各种事件，以提供正真的随机数。如果设备中断速率有影响或者可能受到外来攻击者(如联网设备的影响)，那么就不要设置这个标志，以免造成熵池的非随机
+- `IRQF_TIMER`--为系统定时器的中断处理而准备的
+- `IRQF_SHARED`--可以在多个中断处理程序之间共享中断线。
+
+dev参数可以用于共享中断线。当一个中断处理程序需要释放时，dev将提供唯一的标志信息(cookie)，以便指定共享中断线中需要删除的程序。无序共享时就直接设置为NULL;内核每次调用中断处理程序时，都会把这个指针传递给它(主要包括程序的设备结构)。
+
+**注意：request_irq()函数可能会睡眠等待处理，因此不能在中断上下文或者其他不允许阻塞的代码中调用该函数；可能会引起阻塞**
+
+主要原因是，注册中断处理程序时会调用`proc_mkdir()`在`/proc/irq`文件中创建一个与中断对应的项。它会调用`proc_create()`其中存在`kmalloc()`的调用。这个函数可能会睡眠。
+下面是一个简单的示例：
+
+```c
+if(request_irq(irqn,my_interrupt,IPQF_SHARED,"my_device",my_dev)){
+    printk(KERN_ERR,"my_device:cannot register IRQ %d\n",irdn);
+    return -EIO;
+}
+```
+
+注册之后可以使用`free_irq(unsigned int irq,void *dev)`进行处理函数的注销。
+
+![中断注册方法](../img/2019-10-15-21-52-35.png)
+
+### 7.5 编写中断处理程序
+
+`static irqreturn_t intr_handler(int irq,void *dev)`;其中irq基本没有什么作用。dev主要包含传递给中断处理程序注册时的相关参数，主要是设备信息，可能直接是一个设备信息结构体。
+
+函数返回类型`irqreturn_t`类型为`IRQ_NONE`和`IRQ_HANDLED`。当检测到中断，但是不是注册函数设置的中断源时返回`NONE`。被正确调用时返回`HANDLED`
+
+linux 中断处理程序无序重入。当给定的中断处理程序正在执行时，中断线会被屏蔽掉，防止同一中断线上接收另外一个新的中断。
+
+#### 共享的中断处理程序
+
+原来对于计算机设备比较少的时候，可能一个中断线好可以对应一个中断处理程序(非共享中断线)，这时候参数4为NULL，没有任何用，**但随着计算机设备的增加，一个中断线号对应一个中断处理程序已经不太现实，**这个时候就使用了共享的中断线号，多个设备使用同一个中断线号，**同一个中断设备线号的所有处理程序链接成一个链表，这样当在共享中断线号的方式下一个中断产生的时候，就要遍历其对应的处理程序链表，但这个中断是由使用同一个中断线号的多个设备中间的一个产生的，不可能链表里面的所有处理程序都调用一遍吧，呵呵，这个时候就该第四个参数派上用场了。**
+
+因此使用共享中断时，设备的关键结构体信息`dev`参数尤为重要。内核接受一个中断后，将依次调用该中断线上注册的每一个处理程序。
+下面是`drivers/char/rtc.c`中的时钟中断处理程序
+
+```c
+//对相关中断处理函数的执行
+
+if(request_irq(rtc_irq,rtc_interrupt,IRQF_SHARED,"rtc",(void *)&rtc_port)){
+    printk(KERN_ERR "rtc:cannot register IRQ %d\n",rtc_irq);
+    return -EIO;
+}
+
+
+//主要中断函数
+
+irqreturn_t rtc_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+{
+        /*
+         *      Can be an alarm interrupt, update complete interrupt,
+         *      or a periodic interrupt. We store the status in the
+         *      low byte and the number of interrupts received since
+         *      the last read in the remainder of rtc_irq_data.
+         */
+
+        spin_lock (&rtc_lock);
+        rtc_irq_data += 0x100;
+        rtc_irq_data &= ~0xff;
+        if (is_hpet_enabled()) {
+                /*
+                 * In this case it is HPET RTC interrupt handler
+                 * calling us, with the interrupt information
+                 * passed as arg1, instead of irq.
+                 */
+                rtc_irq_data |= (unsigned long)irq & 0xF0;
+        } else {
+                rtc_irq_data |= (CMOS_READ(RTC_INTR_FLAGS) & 0xF0);
+        }
+
+        if (rtc_status & RTC_TIMER_ON)
+                mod_timer(&rtc_irq_timer, jiffies + HZ/rtc_freq + 2*HZ/100);
+
+        spin_unlock (&rtc_lock);
+
+        /* Now do the rest of the actions */
+        spin_lock(&rtc_task_lock);
+        if (rtc_callback)
+                rtc_callback->func(rtc_callback->private_data);
+        spin_unlock(&rtc_task_lock);
+        wake_up_interruptible(&rtc_wait);       
+
+        kill_fasync (&rtc_async_queue, SIGIO, POLL_IN);
+
+        return IRQ_HANDLED;
+}
+
+```
+
+### 7.6 中断上下文
+
