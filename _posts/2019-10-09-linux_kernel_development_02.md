@@ -476,3 +476,136 @@ irqreturn_t rtc_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 
 ### 7.6 中断上下文
 
+上下文中断函数中不能使用睡眠函数。中断上下文中的代码应该迅速、简洁、尽量不要去使用循环。中断处理程序并不具有自己的栈，他们共享所中断进程的内核栈。内核栈的大小是两页。
+
+### 7.7 中断处理机制的实现
+
+中断处理系统非常依赖体系结构，中断代码很多是由汇编所构成。
+
+![中断路由](../img/2019-10-17-20-25-29.png)
+
+对于每条中断线，处理器都会跳到对应的一个唯一的位置。这样内核就可以知道所接受中断的IRQ号了。在栈中保存这个号，并存放当前寄存器的值；然后使用内核调用`do_IRQ()`。提取函数对应的参数。然后禁止这条线上的中断传递。然后调用`handle_IRQ_event()`方法来运行为这条中断线所安装的中断处理程序。
+
+```c
+irqreturn_t handle_IRQ_event(unsigned int irq,struct irqaction *action)
+{
+    irqreturn_t ret,retval=IRQ_NONE;
+    unsigned int status=0;
+    if(!(action->flags&IRQF_DISABLED))
+        local_irq_enable_in_hardirq();
+    do{
+        trace_irq_handler_entry(irq,action);
+        ret=action->handler(irq,action->dev_id);
+        trace_irq_handler_exit(irq,action,ret);
+        switch(ret){
+            case IRQ_WAKE_THREAD:
+                /**
+                * 把返回值设置为已处理，以便可疑的检查不再触发
+                */
+                ret=IRQ_HANDLED;
+                /**
+                * 捕获返回值为WAKE_THREAD的驱动程序，但是并不创建一个线程函数
+                */
+                if(unlikely(!action->thread_fn)){
+                    warn_no_thread(irq,action);
+                    break;
+                }
+                /*
+                * 为这次中断唤醒处理线程。万一线程崩溃且被杀死，我们仅仅假装已经处理了中断。上述的硬件中断(harding)处理程序已经禁止设备中断，因此杜绝irq产生。
+                */
+                if(likely(!test_bit(IRQTF_DIED,&action->thread_flags))){
+                    set_bit(IRQTF_RUNTHREAD,&action->thread_flags);
+                    wake_up_process(action->thread);
+                }
+            case IRQ_HANDLED:
+                status |=action->flags;
+                break;
+            default: 
+                break;
+        }
+        retval|=ret;
+        action=action->next;
+    }while(action)
+
+    if(status&IRQF_SAMPLE_RANDOM)
+        add_interrupt_randomness(irq);
+    local_irq_disable();
+    return retval;
+}
+```
+
+### 7.8 /proc/interrupts
+
+procfs是一个虚拟文件系统，它只存在于内核内存，一般安装于/proc目录。在procfs中对文件的读写都需要调用内核函数。
+
+### 7.9 中断控制
+
+控制中断系统的原因，归根到结低是需要提供同步。通过禁止中断确定某个中断处理程序不会抢占当前的代码。
+
+#### 7.9.1 禁止和激活中断
+
+可以使用如下语句禁止当前处理器，随后激活他们：
+
+```c
+
+local_irq_disable();
+/* 禁止中断 */
+local_irq_enable();
+
+```
+
+上述函数一般以汇编指令来实现。如果在禁止中断之前就已经进行了中断禁止。存在潜在的危险。为了保证中断的安全，禁止中断之前需要保存中断系统的状态。在激活中断时只需要将中断恢复到他们原来的状态。这些功能借助宏和堆栈的定义来进行实现。因此**不能使用全局的cli()**所有的中断同步必须结合使用本地中断控制和自旋锁。
+
+#### 7.9.2 禁止指定中断线 
+
+可以使用如下的函数禁止整个系统中一条特定的中断线：
+
+```c
+/*等待当前中断处理程序执行完毕，禁止给定中断向系统中所有处理器的传递，只有当所有程序处理完成之后函数才能返回*/
+void disable_irq(unsigned int irq);
+/*不等待其它函数执行完毕，直接进行中断禁止*/
+void disable_irq_nosync(unsigned int irq);
+/*启用中断*/
+void enable_irq(unsigned int irq);
+/*等待一个特定的中断处理程序的退出。必须退出后函数才能返回*/
+void synchronize_irq(unsigned int irq);
+```
+
+#### 7.9.3 中断系统的状态
+
+使用`<asm/system.h>`中的`irqs_disable()`宏可以用来检查中断系统的状态，如果被禁止则返回非0；否则返回0；
+
+`<linux/hardirq.h>`中定义的两个宏提供来进行内核的当前上下文的检查接口，它们是:
+
+```c
+//内核处于任何类型的中断处理中，它返回0；表示正在执行中断处理程序（上边部分/下半部分）
+
+in_interrupt();
+//内核确实时在进行上半部分中断处理程序时，才返回0
+
+in_irq();
+```
+
+![中断控制方法]](../img/2019-10-17-21-37-31.png)
+
+## 第 8 章 下半部分和推后执行的工作
+
+中断处理程序只完成的处理流程的上半部分。主要有一下局限：
+
+- 中断处理程序以异步方式执行，可能会打断其它重要代码。因此中断处理程序应该执行的越快越好
+- 当前中断处理程序正在执行时，与该中断同级的其它中断会被屏蔽 。禁止中断后硬件与操作系统无法通信。中断处理程序应该越快越好
+- 往往需要对硬件进行操作。有很高的时限要求
+- 中断处理程序不再进程的上下文中运行，所以它们不能阻塞。这限制了它们所做的事情
+
+### 8.1 下半部分(BH机制)
+
+与硬件相关不大的所有部分应该尽量，交给下半部分来进行。
+
+可以参照一下规则对上下程序进行划分:
+
+- 任务对时间非常敏感，将其放在中断处理程序中执行。
+- 硬件相关，房子啊中断处理程序中执行。
+- 任务要保证不被其它中断(特别是相同的中断)打断，将其放在中断处理程序中执行。
+- 其它所有任务需要放在下半部分进行执行。
+
+为了处理下班部分内核开发者引入了**软中断(softirqs)**和**tasklet**机制
