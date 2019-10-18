@@ -146,7 +146,7 @@ Linux设置了`_syscalln()`宏(n的范围是0-6，代表需要传递给系统调
 
 建立一个新的系统调用非常容易，但是不建议这么做。
 
-![](../img/2019-10-10-21-47-53.png)
+![](https://wangpengcheng.github.io/img/2019-10-10-21-47-53.png)
 
 ## 第 6 章 内核数据结构
 
@@ -154,11 +154,11 @@ Linux内核中实现了通用的数据结构，内核开发者应该尽可能地
 
 ### 6.1 链表
 
-![简单链表](../img/2019-10-10-21-52-14.png)
+![简单链表](https://wangpengcheng.github.io/img/2019-10-10-21-52-14.png)
 
-![双向链表](../img/2019-10-10-21-53-01.png)
+![双向链表](https://wangpengcheng.github.io/img/2019-10-10-21-53-01.png)
 
-![环形双向链表](../img/2019-10-10-21-53-42.png)
+![环形双向链表](https://wangpengcheng.github.io/img/2019-10-10-21-53-42.png)
 
 #### 6.1.4 Linux中内核的实现
 
@@ -345,7 +345,7 @@ linux kernel中实现的红黑树名为rbtree。定义在文件`lib/rbtree.c`中
 使用UID作为映射对象，应该使用映射。
 作为检索，应该尽量使用红黑树。
 
-![时间复杂度](../img/2019-10-13-20-59-08.png)
+![时间复杂度](https://wangpengcheng.github.io/img/2019-10-13-20-59-08.png)
 
 ## 第 七 章 中断和中断处理
 
@@ -404,7 +404,7 @@ if(request_irq(irqn,my_interrupt,IPQF_SHARED,"my_device",my_dev)){
 
 注册之后可以使用`free_irq(unsigned int irq,void *dev)`进行处理函数的注销。
 
-![中断注册方法](../img/2019-10-15-21-52-35.png)
+![中断注册方法](https://wangpengcheng.github.io/img/2019-10-15-21-52-35.png)
 
 ### 7.5 编写中断处理程序
 
@@ -482,7 +482,7 @@ irqreturn_t rtc_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 
 中断处理系统非常依赖体系结构，中断代码很多是由汇编所构成。
 
-![中断路由](../img/2019-10-17-20-25-29.png)
+![中断路由](https://wangpengcheng.github.io/img/2019-10-17-20-25-29.png)
 
 对于每条中断线，处理器都会跳到对应的一个唯一的位置。这样内核就可以知道所接受中断的IRQ号了。在栈中保存这个号，并存放当前寄存器的值；然后使用内核调用`do_IRQ()`。提取函数对应的参数。然后禁止这条线上的中断传递。然后调用`handle_IRQ_event()`方法来运行为这条中断线所安装的中断处理程序。
 
@@ -586,7 +586,7 @@ in_interrupt();
 in_irq();
 ```
 
-![中断控制方法]](../img/2019-10-17-21-37-31.png)
+![中断控制方法]](https://wangpengcheng.github.io/img/2019-10-17-21-37-31.png)
 
 ## 第 8 章 下半部分和推后执行的工作
 
@@ -669,7 +669,7 @@ asmlinkage __visible void do_softirq(void)
 
 在编译期间，使用的一种静态声明软中断。从0开始的索引表示一种优先级。索引号小的软中断优先执行。新的软中断必须在这个索引中添加自己的数据。下面是tasklet的类型
 
-![tasklet类型](../img/2019-10-18-21-27-38.png)
+![tasklet类型](https://wangpengcheng.github.io/img/2019-10-18-21-27-38.png)
 
 
 使用如下函数进行软中断处理程序的注册
