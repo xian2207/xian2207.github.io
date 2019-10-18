@@ -608,4 +608,97 @@ in_irq();
 - 任务要保证不被其它中断(特别是相同的中断)打断，将其放在中断处理程序中执行。
 - 其它所有任务需要放在下半部分进行执行。
 
-为了处理下班部分内核开发者引入了**软中断(softirqs)**和**tasklet**机制
+为了处理下班部分内核开发者引入了**软中断(softirqs)**和**tasklet**机制。软中断是一组静态定义的下半部分接口，有32个；可以在所有处理器上同时执行--即使两个类型完全相同也可以，tasklet，基本相同但是不能进行相同的执行。**为了避免错误，软中断必须在编译期间就进行静态注册。**tasklet可以通过代码进行动态注册。
+
+2.6 内核版本中内核实现了三种不同形式的下本部分实现机制:软中断、tasklets和工作队列。
+
+**内核定时器**
+
+将操作推迟到某个确定的时间段之后执行。
+
+### 8.2 软中断
+
+软中断相对使用较少。tasklet是一种更加常用的形式。tasklet也是由软中断来实现的。软中断代码在`kernel/softirqs.c`文件中。
+
+#### 8.2.1 软中断的实现
+
+软中断管结构体定义在`<linux/interrupt.h>`中
+```c
+struct softirq_action
+{
+        void    (*action)(struct softirq_action *);
+};
+```
+`kernel/softirq.c`中定义了一个包含有32个该结构体的数组
+
+`static struct softirq_action softirq_vec[NR_SOFTIRQS] __cacheline_aligned_in_smp;`
+
+软中断使用较少，大部分都是使用tasklet进行中断切换。
+
+使用`void softirq_handler(struct softirq_action *)`可以定义软中断的具体执行函数。软中断可以被中断处理程序中断。
+
+一个注册的软中断必须在标记之后才会执行。下面的情况中待处理的软中断会被检查和执行
+
+- 从一个硬件中断代码返回时
+- 在ksoftirqd内核线程中
+- 在那些显式检查和执行待处理的软中断的代码中，如网络子系统。
+
+最终软中断在`do_softirq()`中执行。函数遍历每一个调用他们的处理程序。
+```c
+asmlinkage __visible void do_softirq(void)
+{
+	__u32 pending;
+	unsigned long flags;
+
+	if (in_interrupt())
+		return;
+
+	local_irq_save(flags);
+    /*获取软中断位图，即其中的种类*/
+	pending = local_softirq_pending();
+    //这里主要是循环遍历处理位图
+
+	if (pending && !ksoftirqd_running(pending))
+		do_softirq_own_stack();
+
+	local_irq_restore(flags);
+}
+
+```
+#### 8.2.2 软中断的使用
+
+在编译期间，使用的一种静态声明软中断。从0开始的索引表示一种优先级。索引号小的软中断优先执行。新的软中断必须在这个索引中添加自己的数据。下面是tasklet的类型
+
+![tasklet类型](../img/2019-10-18-21-27-38.png)
+
+
+使用如下函数进行软中断处理程序的注册
+
+```c
+open_softirq(NET_TX_SOFTIRQ,net_tx_action);
+open_softirq(NET_RX_SOFTIRQ,net_tx_action);
+```
+注意：因为软中断可以允许同时执行，因此其共享数据需要严格的锁来进行保护。因此适合在单处理器中的数据中进行。它允许在不同的多个处理器中进行任务，但是需要严格的锁控制。tasklet本质上也是软中断。不过不允许在多个处理器上同时运行。
+
+使用raise_softirq()函数可以将一个软中断设置为挂起状态，等待`do_softirq()`函数的调用。
+
+### 8.3 tasklet
+
+它的接口更加简单，锁保护也更低。一般情况下推荐使用tasklet操作。
+
+#### 8.3.1 tasklet的实现
+
+tasklet_struct 定义在`<linux/interrupt.h>`中
+
+```c
+struct tasklet_struct
+{
+        struct tasklet_struct *next;    /* 链表中的下一个tasklet */
+        unsigned long state;            /* tasklet的状态 */
+        atomic_t count;                 /* 引用计数器 */
+        void (*func)(unsigned long);    /* tasklet处理函数 */
+        unsigned long data;             /* 给tasklet处理函数的参数 */
+};
+```
+
+state成员只能在0、TASK_STATE_SCHED(已经被调度，准备运行)和TASK_STATE_RUN(正在运行)之间取值。
