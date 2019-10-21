@@ -701,4 +701,72 @@ struct tasklet_struct
 };
 ```
 
-state成员只能在0、TASK_STATE_SCHED(已经被调度，准备运行)和TASK_STATE_RUN(正在运行)之间取值。
+state成员只能在0、TASK_STATE_SCHED(已经被调度，准备运行)和TASK_STATE_RUN(正在运行)之间取值。counte为0时tasklet才能被激活，并被设置为挂起状态，该tasklet才能够执行。
+
+已调度的tasklet被操作系统存放在两个链表队列中；tasklet_vec(普通tasklet)和tasklet_hi_vec(高优先级的tasklet)。然后由`tasklet_schedule()`和`tasklet_hi_schedule()`函数进行调度。前者使用`TASKLET_SOFTIRQ`后者使用`HI_SOFTIRQ`；下面是`tasklet_schedule()`函数的执行细节：
+
+1. 检查tasklet状态是否为`TASKLET_STATE_SCHED`。是表示已经被调度，函数立刻返回。
+2. 调用`_tasklet_schedule()`
+3. 保存中断状态，然后禁止本地中断。保证数据的稳定
+4. 将需要调度的tasklet添加到每个处理器的一个tasklet_vec链表或者task_hi_vec链表的表头上
+5. 唤起`TASKLET_SOFTIRQ`或者`HI_SOFTIRQ`软中断，这样在下一次调用`do_softirq()`时就会执行该tasklet。
+6. 恢复中断到原状态并返回。
+
+
+一般最近一个中断返回时就是执行`do_softirq()`的最佳时机。TASKLET_SOFTIRQ和HI_SOFTIRQ已经被触发，do_softirq()会执行相应的软中断处理程序。关键在于`tasklet_action()`和`tasklet_hi_action()`。它们的工作内容如下：
+
+1. 禁止中断，并为当前处理其检索tasklet_vec或tasklet_hi_vec链表。
+2. 将当前处理器上的链表设置为NULL，达到清空的效果
+3. 允许响应中断。没有必要再恢复它们回原状态，因为这段程序本身就是作为软中断处理程序被调用的，所以中断应该是被允许的。
+4. 循环遍历获得链表上的每一个待处理的tasklet
+5. 如果是多处理器气筒，通过检查`TASKLET_STATE_SCHED`来判断这个tasklet是否正在其它处理器上运行。如果正在运行就不要执行，跳到下一个。
+6. 如果当前tasklet没有执行；将其状态设置为`TASKLET_STATE_RUN`，这样别的处理器就不会再去执行它。
+7. 检查count值是否为0，确保tasklet没有被禁止。如果tasklet被禁止了，则跳到下一个挂起的tasklet去
+8. 当tasket引用计数为0，并且没有在其它地方执行；则对其进行处理。
+9. tasklet运行完毕，清除tasklet的state域的TASK_STATE_RUN 状态标志。
+10. 重复执行下一个tasklet,直到没有剩余的等待处理的tasklet
+
+#### 8.3.2 使用 tasklet
+
+使用下面的宏可以静态的春关键一个tasklet
+
+```c
+//将tasklet的引用计数器设置为0；tasklet处于激活状态
+
+DECLARE_TASKLET(name,func,data)
+//引用计数器设置为1.将tasklet设置为禁止状态
+
+DECLARE_TASKLET_DISABLE(name,func,data);
+```
+
+上面的`DECLARE_TASKLET(my_tasklet,my_tasklet_handler,dev)`等价于
+
+```c
+struct tasklet_struct my_tasklet={NULL,0,ATOMIC_INIT(0),my_tasklet_handler,dev};
+//也可以通过下面的方法来进行创建一个;但是是动态创建
+
+tasklet_init(t,my_tasklet_handler.dev);
+```
+
+使用`void tasklet_handler(unsigned long data)`来进行tasklet中断任务的设置。
+
+再使用`tasklet_schedule(&my_tasklet)`函数来传递tasklet并进行调度。
+
+为了防止tasklet被其它核上的处理器调度，可以使用`tasklet_disable(&my_tasklet)`禁止某个指定的tasklet被执行。然后使用`tasklet_enable(&my_tasklet)`来激活和进行下一步操作。
+
+**ksoftirqd**
+
+每个处理器都有一组辅助处理软中断(和tasklet)的内核线程。当任务量巨大时，通过内核进程对这个进行辅助处理。
+
+网络子系统中，软中断执行时可以重新触发自己以便再次得到执行。
+
+由于软中断可以重新触发自己，因此当大量软中断出现的时候；内核会唤醒一组内核线程(nice值是19，保证其在最低的优先级上运行)来处理任务。每个处理器中都有这样一个线程名为`ksoftirqd/n`(n)对应每个内核的编号。一旦线程被初始化，则会循环等待软中断的出现并进处理。
+
+### 8.4 工作队列
+
+工作队列可以将工作推后，让一个内核线程去执行；工作队列允许重新调度甚至睡眠。
+
+当工作队列中断后需要睡眠时，会优先选择它否则就优先选择软中断或者tasklet。后半部分的执行应该优先选择工作队列
+
+#### 8.4.1 工作队列的实现
+
