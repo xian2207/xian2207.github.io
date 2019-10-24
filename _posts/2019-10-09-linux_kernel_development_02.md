@@ -2,7 +2,7 @@
 layout:     post
 title:      Linux内核设计与实现 学习笔记 (二)
 subtitle:   Linux内核设计与实现 学习笔记 (二)
-date:       2019-09-18
+date:       2019-10-9
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
 catalog: true
@@ -777,4 +777,285 @@ _参考链接：_ [Linux内核中的软中断、tasklet和工作队列详解](ht
 ![执行绪分类](https://img-blog.csdn.net/20161030104807713)
 
 
+缺省的工作者线程叫做events/n，这里n表示处理器的编号。每个cpu核中有一个对应的工作队列线程，接受工作总队列的队列并，加入到自己的CPU队列中。单处理器系统中只有一个这样的线程。
 
+下面是线程队列的结构
+
+```c
+struct workqueue_struct {
+    struct cpu_workqueue_struct *cpu_wq; /* 指针数组，其每个元素为per-cpu的工作队列，用来指定其工作的处理器 */
+    struct list_head list;/* 链表头节点，用来形成链表结构 */
+    const char *name; /* 工作队列的名字 */
+    int singlethread; /* 标记是否只创建一个工作者线程 */
+    int freezeable;     /* Freeze threads during suspend */
+    int rt;
+#ifdef CONFIG_LOCKDEP
+    struct lockdep_map lockdep_map;
+#endif
+};
+//cpu工作队列的结构如下所示：
+
+struct cpu_workqueue_struct {
+    spinlock_t lock; /* 保护锁结构 */
+    struct list_head worklist; /* 队头节点 */
+    wait_queue_head_t more_work;
+    struct work_struct *current_work;
+    struct workqueue_struct *wq;  /* 关联工作队列结构 */
+    struct task_struct *thread;   /* 关联线程 */
+} ____cacheline_aligned;
+
+```
+所有的工作者线程是用普通的内核线程实现的，它们都要执行work_thread()函数，在初始化完成之后就会在一个死循环中开始休眠直到，有操作被插入到队列中，线程才会被唤醒。执行之后继续休眠。
+
+其中的关键部分如下所示：
+
+```c
+struct work_struct{
+    atomic_long_t data;
+    struct list_head entry;
+    work_func_t func;
+}
+```
+
+每个处理器上的工作队列链表都是由上述工作结构组成的。当一个工作者线程被唤醒时，它就会执行它链表上的所有工作。工作被执行完毕就将这个work_struct对象从链表中移除。不再有对象的时候就会继续休眠。关键流程如下
+
+```c
+for(;;){
+    //将自己设置为休眠状态(重设state状态)；将自己加入到等待队列中
+
+    prepare_to_wait(&cwq->more_work,&wait,TASK_INTERRUPTIBLE);
+    //如果队里为空，调用schedule()持续等待
+
+    if(list_empty(&cwq->worklist)){
+        schedule();
+    }
+    //等待调度相关信号接收
+
+    finish_wait(&cwq->more_work,&wait);
+    //执行被推后的工作
+
+    while(!list_empty(&cwq->worklist)){
+        //工作队列指针
+
+        struct work_struct *work;
+        //工作函数
+        
+        work_func_t f;
+        //空数据指针
+
+        void *data;
+        //获取队列中的工作指针
+
+        work=list_entry(cwq->worklist.next,struct work_struct,entry);
+        //获取当前工作需要执行的函数,并调用
+
+        f=work->func;
+        //初始化删除准备--将元素从队列中删除
+
+        list_del_init(cwq->worklist.next);
+        //重新设置工作的pending
+
+        work_clear_pending(work);
+        //重新执行
+
+        f(work);
+
+    }
+}
+```
+
+工作队列的实现机制总结
+
+![cpu工作队里总结]](../img/2019-10-23-16-45-35.png)
+
+大部分情况下使用的都是默认的工作者线程。可以使用驱动程序创建自己的工作者线程。
+
+#### 8.4.2 使用工作队列
+
+1. 创建推后的工作
+- `DECLARE_WORK(name,void (*func) (void*),void data)`:静态创建一个名为name，处理函数为func,参数为data的结构体
+- `INIT_WOK(struct work_struct *work,void (*func) (void *),void *data)`:动态的初始化一个由work指向的工作，处理函数为func，参数为data
+2. 工作队列处理函数
+
+- `void work_handler(void *data)`:工作队列处理函数。函数会运行在进程上下文中。允许相应中断，并不持有任何锁。函数可以睡眠**但是不能访问用户空间--内核线程在用户空间没有相关的内存映射**。由系统调用进入用户态时(即用户态返回)，它才能访问用户空间。
+
+3. 对工作进行调度
+
+- `void schedule_work(&work)`:work马上会被调度。
+- `void schedule_delayed_work(&work,delay)`:延迟delay之后再进行执行。
+
+4. 刷新操作
+
+- `void flush_scheduled_work(void)`:刷新指定工作队列函数，函数会一直等待，直到队列中所有对象都被执行之后在返回。等待过程中函数会进入休眠状态。因此只能在进程上下文中使用([进程上下文与中断上下文的理解](https://blog.csdn.net/qq_38500662/article/details/80598486))
+- `int cancel_delayed_work(struct work_struct *work)`:取消任何与work_struct相关的挂起工作
+- **进程上下文**
+  - **进程上文**: 其是指进程由用户态切换到内核态是需要保存用户态时cpu寄存器中的值，进程状态以及堆栈上的内容，即保存当前进程的进程上下文，以便再次执行该进程时，能够恢复切换时的状态，继续执行。
+  - **进程下文**: 其是指切换到内核态后执行的程序，即进程运行在内核空间的部分。
+- **中断上下文**
+  - **中断上文**: 硬件通过中断触发信号，导致内核调用中断处理程序，进入内核空间。这个过程中，硬件的一些变量和参数也要传递给内核，内核通过这些参数进行中断处理。中断上文可以看作就是硬件传递过来的这些参数和内核需要保存的一些其他环境（主要是当前被中断的进程环境)。
+  - **中断下文**: 执行在内核空间的中断服务程序。
+
+![用户态与内核态](https://img-blog.csdn.net/20151106170758921)
+
+1. 创建新的工作队列
+
+- `struct workqueue_struct *create_workqueue(const char *name)`: 创建自己的工作者线程。
+- `int queue_work(struct workqueue_struct *wq,struct work_struct *work)`:为自己的工作线程创建任务
+- `int queue_delayed_work(struct workqueue_struct *wq,struct work_struct *work,unsigned long delay)`:延迟调度
+- `void flush_workqueue(struct work_struct *wq)`:对指定任务队列进行刷新
+
+
+下面是一个使用示例([Linux内核实践之工作队列](https://www.cnblogs.com/wanghuaijun/p/7257393.html))：
+
+```c
+#include <linux/init.h>
+
+#include <linux/kernel.h>
+
+#include <linux/module.h>
+
+MODULE_AUTHOR("Mike Feng");
+
+/*测试数据结构*/
+
+struct my_data
+
+{
+
+         structwork_struct my_work;
+
+         intvalue; 
+
+};
+
+struct workqueue_struct *wq=NULL;
+
+struct work_struct work_queue;
+
+/*初始化我们的测试数据*/
+
+struct my_data* init_data(structmy_data *md)
+
+{
+
+         md=(structmy_data*)kmalloc(sizeof(struct my_data),GFP_KERNEL);
+
+         md->value=1;
+
+         md->my_work=work_queue;
+
+         returnmd;
+
+}
+
+/*工作队列函数*/
+
+static void work_func(struct work_struct *work)
+
+{
+
+         structmy_data *md=container_of(work,structmy_data,my_work);
+
+         printk("<2>""Thevalue of my data is:%d\n",md->value);
+
+}
+
+static __init intwork_init(void)
+
+{
+
+         structmy_data *md=NULL;
+
+         structmy_data *md2=NULL;
+
+         md2=init_data(md2);
+
+         md=init_data(md);     
+
+         md2->value=20;
+
+         md->value=10;
+
+         /*第一种方式：使用统默认的workqueue队列——keventd_wq，直接调度*/
+
+         INIT_WORK(&md->my_work,work_func);
+
+         schedule_work(&md->my_work);
+
+ 
+
+         /*第二种方式：创建自己的工作队列，加入工作到工作队列（加入内核就对其调度执行）*/
+
+         wq=create_workqueue("test");
+
+         INIT_WORK(&md2->my_work,work_func);
+
+         queue_work(wq,&md2->my_work);    
+
+         return0;
+
+}
+
+static void work_exit(void)
+{
+
+         /*工作队列销毁*/
+         destroy_workqueue(wq);
+
+}
+module_init(work_init);
+module_exit(work_exit);
+
+```
+注意上述代码要添加到内核中，从内核中开始编译([Ubuntu18向内核增加一个系统调用实验](https://blog.csdn.net/cool_bre/article/details/83616014);[Ubuntu编译内核](https://www.jianshu.com/p/eece4167999d);[Linux 内核编译步骤及配置详解](https://www.cnblogs.com/klb561/p/9192630.html);[Linux配置并编译内核](https://blog.csdn.net/wangyachao0803/article/details/81380889))
+
+![linux体系结构](https://images2015.cnblogs.com/blog/1102171/201703/1102171-20170309220251547-1537537668.jpg)
+
+![linux 体系结构](https://images2015.cnblogs.com/blog/1102171/201703/1102171-20170309220303828-1663454243.jpg)
+
+### 8.5 下半部分机制的选择
+
+- 软中断：多线索化工作良好。比如网络子系统。在多个处理器上并发的运行。适合专注于性能的提升。
+- tasklet:多线索化考虑得并不充分。如驱动程序。
+- 工作队列：将任务推后到进程上下文中完成。
+
+![下半部分的比较](../img/2019-10-24-20-13-15.png)
+
+### 8.6 在下半部分之间加锁
+
+tasklet自己负责执行的序列化保障；两个相同类型的tasklet不允许同时执行，即使在不同的处理器上也不行。两个tasklet之间的同步(两个不同的tasklet共享同一数据时，需要正确使用锁机制)。
+
+如果进程上下文和一个下半部分共享数据，在访问这些数据之前，你需要禁止下半部分的处理并得到锁的使用权；防止本地和SMP的保护并防止死锁的出现。
+
+如果进程上下文和一个下半部分共享数据，在数据之前，你需要禁止中断并得到锁的使用权；防止本地和SMP的保护并防止死锁的出现。
+
+### 8.7 禁止下半部分
+
+为了保护共享数据的安全，一般是先得到一个锁再禁止下半部分(所有软中断和所有的tasklet)的处理。使用如下的函数来实现
+
+![下半部分机制控制函数清单](../img/2019-10-24-20-25-50.png)
+
+函数通过为每个进程维护一个`preempt_count`为每个进程维护一个计数器。当计数器变为0时，下半部分才能够被处理。函数的核心处理流程如下：
+
+```c
+/* 通过增加preempt_count禁止本地下半部分 */
+void local_bh_disable(void){
+    //获取当前的线程信息
+
+    struct thread_info *t=current_thread_info();
+    //将线程中的计数器+1
+    t->preempt_count+=SOFTIRQ_OFFSET;
+}
+/* 减少preempt_count 如果该返回值为0，将导致自动激活下半部，执行挂起的下半部分 */
+
+void local_bh_enable(void)
+{
+    struct thread_info *t=current_thread_info();
+    /* 减少引用计数 */
+    t->preempt_count-=SOFTIRQ_OFFSET;
+    /* 检查preempt_count是否为0，另外是否有挂起的下半部分，如果都没有则执行待执行的下半部分 */
+    if(unlikely(!t->preempt_count&& softirq_pending(smp_processor_id()))){
+        do_softirq();
+    }
+}
+```
