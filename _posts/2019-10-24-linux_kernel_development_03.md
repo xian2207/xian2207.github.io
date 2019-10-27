@@ -109,6 +109,7 @@ _参考连连接：_
 - [linux 原子整数操作详解](https://blog.csdn.net/hunanchenxingyu/article/details/8994379)
 - [linux 原子变量](https://www.cnblogs.com/fanweisheng/p/11141758.html)
 
+
 原子操作是其它同步方法的基石--原子操作可以保证指令以原子的方式执行--执行过程不被打断。即使原子操作存在，但是由于执行顺序的不同；问题也有可能发生。
 
 ![原子操作过程](../img/2019-10-26-14-36-37.png)
@@ -180,6 +181,11 @@ int find_first_zero_bit(unsigned long *addr,unsigned int size);
 
 ### 10.2 自旋锁
 
+_参考链接：_ 
+- [Linux内核同步方法——自旋锁（spin lock）](https://blog.csdn.net/hhhanpan/article/details/80624244)
+- [linux自旋锁](https://blog.csdn.net/weixin_29379325/article/details/80326734)
+- [深入分析Linux自旋锁【转】](https://www.cnblogs.com/sky-heaven/p/9549498.html)
+  
 为了对复杂的数据结构进行访问和修改，需要锁来提供保护。
 
 Linux内核中的自旋锁(spin lock)--最多只能被一个可执行线程持有。一个执行简称试图获得一个自旋锁，就会一直进行忙循环旋转等待，直到锁可以被使用。一般是请求线程睡眠，直到锁重新可用时再唤醒它。持有自旋锁的时间最好小于完成两次上下文切换的时间。
@@ -197,4 +203,275 @@ spin_unlock(&mr_lock);
 
 **注意:内核实现的自旋锁不能在递归中使用;必须自己手动释放这个锁**
 
-中断处理程序不能使用信号量(会导致睡眠)；但可以使用自旋锁。但是一定要先禁止本地中断(同一个处理器)。否则会程序之间的竞争会引起自旋。不同处理器上无此考虑
+中断处理程序不能使用信号量(会导致睡眠)；但可以使用自旋锁。但是一定要先禁止本地中断(同一个处理器)。否则会程序之间的竞争会引起自旋。不同处理器上无此考虑。内核提供的禁止中断同时请求锁的接口使用方法如下：
+
+```c
+DEFINE_SPINLOCK(mr_lock);
+unsigned long flags;
+/* 保存中断的当前状态 */
+spin_lock_irqsave(&mr_lock,flags);
+/* 临界区域 */
+/* 解锁指定的锁 */
+spin_unlock_irqrestore(&mr_lock,flags);
+```
+单处理器中，在编译时抛弃掉了锁机制，但是任然需要关闭中断以禁止中断处理程序访问共享数据。加锁和解锁分别可以禁止和允许内核抢占。
+
+锁应该主要针对数据。
+
+编译内核时，可以开启`CONFIG_DEBUG_SPINLOCK`选项，为使用自旋锁的代码加入调试检测手段。可以进行锁的调试。需要进一步全程调试锁，应该打开`CONFIG_DEBUG_LOCK_ALLOC`选项。
+
+#### 10.2.2 其它针对自旋锁的操作
+
+![自旋锁的其它操作](../img/2019-10-27-16-22-10.png)
+
+pin lock接口API如下
+
+|接口API的类型|spinlock中的定义|raw_spinlock的定义|
+|:---|:---|:---|
+|定义spinlock并初始化|`DEFINE_SPINLOCK`|`DEFINE_RAW_SPINLOCK`|
+|动态初始化spin lock|`spin_lock_init`|`raw_spin_lock_init`|
+|获取指定的spin lock|`spin_lock`|`raw_spin_lock`|
+|获取指定的spin lock同时disable本CPU中断|`spin_lock_irq`|`raw_spin_lock_irq`|
+|保存本CPU当前的irq状态，disable本CPU中断并获取指定的spin lock|`spin_lock_irqsave`|`raw_spin_lock_irqsave`|
+|获取指定的spin lock同时disable本CPU的bottom half|`spin_lock_bh`|`raw_spin_lock_bh`|
+|释放指定的spin lock|` spin_unlock	`|`raw_spin_unlock`|
+|释放指定的spin lock同时enable本CPU中断|`spin_unlock_irq`|`raw_spin_unock_irq`|
+|释放指定的spin lock同时恢复本CPU的中断状态|`spin_unlock_irqstore`|`raw_spin_unlock_irqstore`|
+|获取指定的spin lock同时enable本CPU的bottom half|`spin_unlock_bh`|`raw_spin_unlock_bh`|
+|尝试去获取spin lock，如果失败，不会spin，而是返回非零值|`spin_trylock`|`raw_spin_trylock`|
+|判断spin lock是否是locked，如果其他的thread已经获取了该lock，那么返回非零值，否则返回0|`spin_is_locked`|`raw_spin_is_locked`|
+
+
+#### 10.2.3 自旋锁和下半部分
+
+函数`spin_lock_bh()`用于获取指定锁，同时禁止下半部分的执行。`spin_unlock_bh()`执行相反的操作。
+
+下半部分和进行上下文共享数据时，必须对进程上下文中的共享内存进行数据保护，所以需要同时进行加锁和禁止下半部分的执行，在恰当的时间还需要禁止中断。
+
+同类型的tasklet不可能同时运行。所以对于同来tasklet中的共享数据不需要保护。但是不同tasklet需要保护；但是不需要进行下半部分的禁止，因为同一个处理器上绝对不会有tasklet相互抢占的情况
+
+### 10.3 读-写自旋锁
+_参考链接：_ [Linux系统编程7：读写锁](https://www.jianshu.com/p/a62bd5ae5d8c)
+
+Linux中提供了针对生产者消费者的读写自旋锁。其写锁最多只能被一个写任务持有。读写锁也称共享/排斥锁；并发/排斥锁.使用流程大致如下：
+
+```c
+/* 初始化读写锁 */
+DEFINE_RWLOCK(mr_rwlock);
+/* 读者代码 */
+read_lock(&rm_rwlock);
+/* 只读临界区 */
+read_unlock(&mr_rwlock);
+
+/* 写者部分代码 */
+write_lock(&mr_rwlock);
+/* 代码临界区 */
+write_lock(&mr_rwlock);
+```
+
+注意：
+- 同时使用读写锁，否则会造成死锁。因为写锁会不断自旋；直到等待所有的读者释放锁--包括他自己。
+- 大量的读者会使得，写锁处于饥饿状态
+![读-写自旋锁方法列表](../img/2019-10-27-19-49-24.png)
+
+### 10.4 信号量
+_参考链接：_ 
+- [linux进程睡眠的介绍](https://www.cnblogs.com/fanweisheng/p/11141829.html)
+- [linux一个进程如何睡眠](https://www.cnblogs.com/fanweisheng/p/11141864.html)
+
+Linux中的信号量是一种睡眠锁(自旋锁不会引起睡眠;进程的睡眠相当于重新调度);信号量会将其推进一个等待队列；然后让其睡眠。处理器重新获得自由，从而去执行其它代码。信号量的开销比自旋锁大；利用率比较高。
+
+有用结论：
+
+- 信号量适合锁被长时间持有的进程。
+- 由于执行线程在锁被争用时会睡眠；所以只能在进程上下文中才能获得信号量锁，因为在中断上下文中是不能进行调度的。
+- 可以在持有信号量时去睡眠；因为当其他进程试图获得同一信号量时不会因此而死锁
+- 占用信号量的同时不能占用自旋锁，否则睡眠时，会造成自旋锁的等待方的死锁。
+
+#### 10.4.1 计数信号量和二值信号量
+
+信号量同时允许持有者数量可以在声明信号量是指定。每次持有一个则--i;释放一个++i。当i=1时，称为二值信号量(互斥信号量)。不为1时为计数信号量。其本质在于两个原子操作P()和V();现在系统将这两个操作称之为`down()`和`up()`。
+
+#### 10.4.2 创建和初始化信号量
+
+信号量相关代码在文件`asm/semaphore.h`中。`strcut semaphore`表示信号量。声明方法如下：
+
+```c
+/* 静态声明和初始化 */
+struct semaphore name;
+sema_init(&name,count);
+
+/* 静态预定义初始化 */
+static DECLARE_MUTEX(name);
+
+/* 动态创建一个信号量 */
+init_MUTEX(sem);
+```
+使用方法如下：
+
+```c
+/* 定义并声明一个信号量 */
+static DECLARE_MUTEX(mr_sem);
+/* 尝试获取信号量 */
+if(down_interruptible(&mr_sem)){
+  /* 信号被接受，信号量还未获取 */
+}
+/* 临界区 */
+/* 释放给定的信号量 */
+up(&mr_sem);
+```
+![信号量方法列表](../img/2019-10-27-20-25-22.png)
+
+### 10.5 读写信号量
+
+定义在`linux/rwsem.h`中；可以由`static DECLARE_RWSEM(name)`或者`init_rwsem(struct rw_semaphore *sem)`进行生成。
+
+所有的读写信号量都是互斥信号量--引用计数等于1;但是只针对写者。
+
+```c
+static DECLARE_RWSEM(mr_rwsem);
+/* 试图获取信号量用于读 */
+down_read(&mr_rwsem);
+/* 只读临界区 */
+
+
+/* 释放信号量 */
+up_read(&mr_rwsem);
+
+
+/* 试图获取写信号量 */
+down_write(&mr_rwsem);
+/* 写临界区 */
+
+/* 释放信号量 */
+up_write(&mr_sem);
+```
+
+### 10.6 互斥体
+
+互斥体--一个更加简单的睡眠锁。指的是任何可以强制睡眠的强制互斥锁。初始化方法如下：
+
+```c
+/* 静态定义 */
+DEFINE_MUTEX(name);
+/* 动态初始化 */
+mutex_init(&mutex);
+
+/* 互斥量加锁 */
+mutex_lock(&mutex);
+/* 临界区 */
+mutex_unlock(&mutex);
+```
+
+![Mutex操作列表](../img/2019-10-27-20-47-42.png)
+
+MUTEX的特性如下：
+
+- 计数永远是1；任何时刻只有一个任务可以持有
+- mutex上锁者必须负责给其解锁--必须在同一个上下文中。因此其不适合内核同用户空间的复杂同步场景；常用场景是：在同一上下文中上锁和解锁
+- 递归地上锁和解锁是不允许的。不能递归的持有同一个锁。
+- 当持有一个mutex时，进程不可以退出
+- mutex不能在中断或者下半部分中使用；即使使用`mutex_tryolck()`也不行
+- mutex只能通过官方API管理；不可被拷贝、手动初始化或者重复初始化。
+
+#### 10.6.1 信号量和互斥体
+
+建议首选mutex.
+
+#### 10.6.2 自旋锁和互斥体
+
+![自旋锁和信号量的比较](../img/2019-10-27-21-04-48.png)
+
+### 10.7 完成变量
+
+完成变量(completion variable):一个任务打出信号通知另外一个任务发生了某个特定事件；来完成两个任务的同步。例如vfork()系统调用完成时；使用完成变量唤醒父进程。其定义在`linux/completion.h`中。使用一下的方法进行初始化
+
+```c
+DECLARE_COMPLETION(mr_comp);
+init_completion(mr_comp);
+```
+![完成变量方法](../img/2019-10-27-21-30-50.png)
+
+### 10.8 BLK:大内核锁
+
+BLK是一个全局自旋锁，主要是实现Linux最初的SMP过渡到细粒度加锁机制。其特性如下
+
+- 持有它的任务仍然可以睡眠。当任务无法调度时(睡眠)；锁被自动丢弃；调度时，锁重新获得
+- 是一种递归锁，进程可以多次请求
+- 只能在进程上下文中使用。
+- 新用户不允许使用BLK
+
+旧的接口，并不推荐使用。在被持有时会禁止内核抢占。单一处理器内核中，BKL并不执行实际的加锁操作
+
+![BLK函数列表](../img/2019-10-27-21-41-41.png)
+
+**注意：自旋锁在单核处理器环境无效；编译器会自动优化取消它；防止锁因为上下文切换被获取，造成死锁.([为什么说“自旋锁在单处理器环境下无效”](https://www.zhihu.com/question/322348374/answer/671698403))**
+
+### 10.9 顺序锁
+
+顺序锁简称seq锁。提供了简单是机制，用于读写共享数据。主要依靠一个序列计数器来实现。当有数据被写入时，会得到一个锁，并且顺序值会增加，在读取数据之前和之后，序列号都被读取。如果相同则过程没有被写操作打断过。如果是偶数就表明写操作没有发生(写操作会编程奇数，释放编程偶数)
+
+使用方法如下：
+
+```c
+/* 定义一个锁 */
+seqlock_t mr_seq_lock=DEFINE_SEQLOCK(mr_seq_lock);
+/* 写锁 */
+write_seqlock(&mr_seq_lock);
+write_sequnlock(&mr_seq_lock);
+
+/* 读锁被操作 */
+unsigned long seq;
+do{
+    seq=read_seqbegin(&mr_seq_lock);
+    /* 读这里的数据 */
+
+}while(read_seqretry(&mr_seq_lock,seq));
+
+```
+顺序锁使用与数据读者较多的情况；因为这样的校验机制，可以允许写者在能够抢占到对应的信号量。写着不像读写锁那样容易饿死。例如Linux中的`jiffies`变量存储了Linux机器启动到当前的时间。它的获取实际上就使用了顺序锁
+
+```c
+u64 get_jiffies_64(void)
+{
+  unsigned long seq;
+  u64 ret;
+  do{
+    seq=read_seqbegin(&xtime_lock);
+    ret=jiffies_64;
+  }while(read_seqretry(&xtime_lock,seq));
+  reurn ret;
+}
+
+/* 更改时间值操作 */
+write_seqlock(&xtime_lock);
+jiffies_64+=1;
+write_sequnlock(&xtime_lock);
+```
+
+### 10.10 禁止抢占
+
+内核是抢占性的；可能随时被停下来。因此一个任务与被抢占的任务可能会在同一个临界区内运行(新调度的任务可能访问被切换的同一个变量)。内核抢占代码使用自旋锁作为非抢占区域的标记。一个自旋锁被持有，内核便不能进行抢占。
+
+可以通过`preempt_disable()`禁止内核抢占。直到`preempt_enable()`被启用之后才能重新启用。
+
+![内核抢占相关函数](../img/2019-10-27-22-06-51.png)
+
+也可以使用`get_cpu()`函数；这个函数在返回当前处理器号前首先会关闭内核抢占。
+
+```c
+int cpu;
+/* 禁止内核抢占，将cpu设置为当前处理器 */
+cpu=get_cpu();
+/* 对每个处理器的数据进行操作 */
+/* 给于内核抢占性 */
+put_cpu();
+```
+
+### 10.11 顺序和屏障
+
+为了防止编译器对指令的乱序，可以屏障(barriers)保证代码顺序的固定执行。例如：`rmb()`提供一个“读”内存屏障。确保跨越rmb()的载入动作不会发生重排序--其之前的凑走不会被重新排在该调用之后；之后的操作不会排在该调用之前。
+
+![内存和编译器屏障方法](../img/2019-10-27-22-14-10.png)
+
+**注意：对于不同体系结构，屏障的实际效果差别很大。Intel x86 不执行乱序存储，wrmb()就什么都不做**
