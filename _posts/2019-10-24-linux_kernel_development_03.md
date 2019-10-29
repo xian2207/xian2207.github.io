@@ -78,7 +78,7 @@ tags:
 
 锁强制确保一次有且只有一个线程对数据结构进行操作，或者禁止其它访问。
 
-![线程锁操作](../img/2019-10-24-21-50-10.png)
+![线程锁操作](https://wangpengcheng.github.io/img/2019-10-24-21-50-10.png)
 
 锁是使用原子操作实现的，而原子操作不存在竞争。
 
@@ -112,7 +112,7 @@ _参考连连接：_
 
 原子操作是其它同步方法的基石--原子操作可以保证指令以原子的方式执行--执行过程不被打断。即使原子操作存在，但是由于执行顺序的不同；问题也有可能发生。
 
-![原子操作过程](../img/2019-10-26-14-36-37.png)
+![原子操作过程](https://wangpengcheng.github.io/img/2019-10-26-14-36-37.png)
 
 内核中提供了两组原子操作接口--整数操作和位操作；
 
@@ -129,11 +129,11 @@ typedef struct{
 ```
 SPARC体系结构上，缺乏原子指令操作；32位int类型的低8位被嵌入了一个锁；避免并发访问。
 
-![相关操作](../img/2019-10-26-14-49-41.png)
+![相关操作](https://wangpengcheng.github.io/img/2019-10-26-14-49-41.png)
 
 原子操作整数最常见的用途就是实现计数器。使用下面的原子整数操作可以避免锁的使用。
 
-![原子整数操作列表](../img/2019-10-26-15-00-50.png)
+![原子整数操作列表](https://wangpengcheng.github.io/img/2019-10-26-15-00-50.png)
 
 **原子性与顺序性的比较**
 
@@ -149,7 +149,7 @@ typdef struct{
 }atomic64_t;
 ```
 
-![原子整型操作](../img/2019-10-26-15-20-47.png)
+![原子整型操作](https://wangpengcheng.github.io/img/2019-10-26-15-20-47.png)
 
 #### 10.1.3 原子位操作
 
@@ -170,7 +170,7 @@ if(test_and_set_bit(0,&word)){
 /* 将原子位指令与一般的c指令语句混合在一起 */
 word=7;
 ```
-![原子位操作的列表](../img/2019-10-26-15-37-04.png)
+![原子位操作的列表](https://wangpengcheng.github.io/img/2019-10-26-15-37-04.png)
 
 ```c
 /* 搜索第一个被设置的位 */
@@ -222,7 +222,7 @@ spin_unlock_irqrestore(&mr_lock,flags);
 
 #### 10.2.2 其它针对自旋锁的操作
 
-![自旋锁的其它操作](../img/2019-10-27-16-22-10.png)
+![自旋锁的其它操作](https://wangpengcheng.github.io/img/2019-10-27-16-22-10.png)
 
 pin lock接口API如下
 
@@ -272,7 +272,7 @@ write_lock(&mr_rwlock);
 注意：
 - 同时使用读写锁，否则会造成死锁。因为写锁会不断自旋；直到等待所有的读者释放锁--包括他自己。
 - 大量的读者会使得，写锁处于饥饿状态
-![读-写自旋锁方法列表](../img/2019-10-27-19-49-24.png)
+![读-写自旋锁方法列表](https://wangpengcheng.github.io/img/2019-10-27-19-49-24.png)
 
 ### 10.4 信号量
 _参考链接：_ 
@@ -320,7 +320,7 @@ if(down_interruptible(&mr_sem)){
 /* 释放给定的信号量 */
 up(&mr_sem);
 ```
-![信号量方法列表](../img/2019-10-27-20-25-22.png)
+![信号量方法列表](https://wangpengcheng.github.io/img/2019-10-27-20-25-22.png)
 
 ### 10.5 读写信号量
 
@@ -363,7 +363,7 @@ mutex_lock(&mutex);
 mutex_unlock(&mutex);
 ```
 
-![Mutex操作列表](../img/2019-10-27-20-47-42.png)
+![Mutex操作列表](https://wangpengcheng.github.io/img/2019-10-27-20-47-42.png)
 
 MUTEX的特性如下：
 
@@ -380,7 +380,7 @@ MUTEX的特性如下：
 
 #### 10.6.2 自旋锁和互斥体
 
-![自旋锁和信号量的比较](../img/2019-10-27-21-04-48.png)
+![自旋锁和信号量的比较](https://wangpengcheng.github.io/img/2019-10-27-21-04-48.png)
 
 ### 10.7 完成变量
 
@@ -390,7 +390,7 @@ MUTEX的特性如下：
 DECLARE_COMPLETION(mr_comp);
 init_completion(mr_comp);
 ```
-![完成变量方法](../img/2019-10-27-21-30-50.png)
+![完成变量方法](https://wangpengcheng.github.io/img/2019-10-27-21-30-50.png)
 
 ### 10.8 BLK:大内核锁
 
@@ -403,7 +403,7 @@ BLK是一个全局自旋锁，主要是实现Linux最初的SMP过渡到细粒度
 
 旧的接口，并不推荐使用。在被持有时会禁止内核抢占。单一处理器内核中，BKL并不执行实际的加锁操作
 
-![BLK函数列表](../img/2019-10-27-21-41-41.png)
+![BLK函数列表](https://wangpengcheng.github.io/img/2019-10-27-21-41-41.png)
 
 **注意：自旋锁在单核处理器环境无效；编译器会自动优化取消它；防止锁因为上下文切换被获取，造成死锁.([为什么说“自旋锁在单处理器环境下无效”](https://www.zhihu.com/question/322348374/answer/671698403))**
 
@@ -455,7 +455,7 @@ write_sequnlock(&xtime_lock);
 
 可以通过`preempt_disable()`禁止内核抢占。直到`preempt_enable()`被启用之后才能重新启用。
 
-![内核抢占相关函数](../img/2019-10-27-22-06-51.png)
+![内核抢占相关函数](https://wangpengcheng.github.io/img/2019-10-27-22-06-51.png)
 
 也可以使用`get_cpu()`函数；这个函数在返回当前处理器号前首先会关闭内核抢占。
 
@@ -472,6 +472,295 @@ put_cpu();
 
 为了防止编译器对指令的乱序，可以屏障(barriers)保证代码顺序的固定执行。例如：`rmb()`提供一个“读”内存屏障。确保跨越rmb()的载入动作不会发生重排序--其之前的凑走不会被重新排在该调用之后；之后的操作不会排在该调用之前。
 
-![内存和编译器屏障方法](../img/2019-10-27-22-14-10.png)
+![内存和编译器屏障方法](https://wangpengcheng.github.io/img/2019-10-27-22-14-10.png)
 
 **注意：对于不同体系结构，屏障的实际效果差别很大。Intel x86 不执行乱序存储，wrmb()就什么都不做**
+
+## 第 11 章 定时器和时间管理
+
+### 11.2 节拍率：HZ
+
+系统定时器频率(HZ)是通过静态预处理定义的。体系结构的不同，HZ的值也不同。具体的值定义在`<asm/param.h>`中定义了这个值。注意大多数体系结构的节拍率是可以调节的。
+
+![时钟中断频率](../img/2019-10-28-17-01-32.png)
+
+#### 11.2.1 理想的HZ值
+
+使用高频会让时钟中断产生的更加频繁；会给整个系统带来如下好处：
+- 更高的时钟中断解析度；可以提高时间驱动时间的解析度
+- 提高了时间驱动事件的准确度
+- 执行时间有更高的运行精度
+
+劣势：
+
+- 系统负担过重；处理器需要花费大量的时间来处理中断程序。
+- 打乱处理器高度缓存增加耗电。
+
+可以在编译内核时，选择不同的时钟频率来指定不同的HZ值。也可以设置`CONFIG_HZ`配置选项让cpu根据动态时钟的周期来进行选择。
+
+### 11.3 jiffies
+
+_参考链接：_ 
+- [Linux时间子系统之三：jiffies](https://www.cnblogs.com/arnoldlu/p/7234443.html);
+- [linux 使用 jiffies 计数器](https://www.cnblogs.com/fanweisheng/p/11141978.html);
+- [linux下常用的几个时间函数：gettimeofday和clock_gettime](https://blog.csdn.net/fchyang/article/details/81166470)
+
+这个变量用来记录自系统启动依赖产生的节拍的总数。启动时该变量初始化为0。没次时钟中断处理程序就会增加该变量的值。jiffies一秒内增加的值为HZ;系统运行时间为jiffies/HZ。其定义在文件`linux/jiffies.h`中：`extern unsigned long volatile jiffies;`
+
+#### 11.3.1 jiffies的内部表示
+
+为了避免jiffies的溢出；使用了64位的数来对其进行存储；使用jiffies_64变量的初值覆盖jiffies变量：
+```c
+jiffies=jiffies_64;
+```
+![jiffies和jiffies_64的划分](../img/2019-10-29-16-34-51.png)
+
+一般访问代码只会读取jiffies_64 的低32位。可以通过get_jiffies_64()函数读取整个64位数值。
+
+#### 11.3.2 jiffies 的回绕
+
+当其变量的存储值超过它的最大范围之后会发生溢出。继续增加会恢复到0。注意当使用jiffies为比较标准作为判断时，可能因为发生回绕；造成其值为0，发生错误的判断；内核提供了对应的宏来处理这种判断：`time_after`、`time_before`、`time_after_eq`、`time_before_eq`
+
+#### 11.3.3 用户空间和HZ
+
+为了避免内核中的HZ值更改，造成用户空间程序的异常结果;使用USER_HZ来代表用户空间看到的HZ值。通过一定的公式来进行计算；函数`jiffies_64_to_clock_t()`将64位的单位从HZ转换为USER_HZ。
+
+### 11.4 硬时钟和定时器
+
+操作系统提供了系统定时器和实时时钟。
+
+#### 11.4.1 实时时钟(RTC)
+
+存放系统时间的设备，即便系统关闭之后，它也可以依靠主板上的微型电池提供电力保持系统的计时。系统启动时会读取RTC来初始化墙上时间，时间存在xtime中。
+
+#### 11.4.2 系统定时器
+
+提供一种周期性触发中断机制(电子晶振分频或者衰减测量器)。x86体系结构中；主要采用可编程中断时钟(PIT)
+
+### 11.5 时钟中断处理程序
+
+时钟中断处理程序：
+
+- 体系结构相关部分(硬件中断)；主要内容如下：
+  - 获得xtime_lock锁，保护时间戳访问
+  - 应答或者重新设置系统时钟(需要时)
+  - 周期性地使用墙上时间更新实时时钟
+  - 调用体系结构无关的时钟例程：`tick_periodic()`
+- 体系结构无关部分(中断处理)，使用`tick_periodic()`执行下面的更多工作
+  - 给jiffies_64变量增加1
+  - 更新资源消耗的统计值，比如当前进程所消耗的系统时间和用户时间
+  - 执行已经到期的动态定时器
+  - 执行sheduler_tick()函数
+  - 更新墙上时间，该时间存放在xtime变量中
+  - 计算平均负载值
+
+### 11.6 实际时间
+
+当前实际时间(墙上时间)定义在文件`kernel/time/timekeeping.c`中
+`struct timespec xtime;`
+timespec定义在文件`<linux/time.h>`中，形式如下：
+
+```c
+struct timespec{
+  _kernel_time_t tv_sec  /* 秒 */
+  long tv_nsec;           /* ns */
+}
+```
+
+xtime.tv_sec以秒为氮气，存放着UTC以来经过的所有时间。其读写需要xtime_lock锁，它不是普通自旋锁而是一个seqlock锁。使用下面的代码进行时间的读取
+
+```c
+unsigned long seq;
+do{
+  unsigned long lost;
+  seq=read_seqbegin(&xtime_lock);
+  usec=timer->get_offset();
+  lost=jiffies-wall_jiffies;
+  if(lost)
+    usec+=lost*(1000000/HZ);
+  sec=xtime.tv_sec;
+  usec+=(xtime.tv_nsec/1000);
+}while(read_seqretry(&xtime_lock,seq));
+```
+
+用户获得墙上时间的主要接口是`gettimeofday()`；调用`sys_gettimeofday()`接口，定义于`kernel/time.c`
+
+```c
+asmlinkage long sys_gettimeofday(struct timeval *tv,struct timezone *tz)
+{
+  if(likely(tv)){
+    struct timeval ktv;
+    do_gettimeofday(&ktv);
+    if(copy_to_user(tv,&ktv,sizeof(ktv)))
+      return -EFAULT;
+  }
+  if(unlikely(tz)){
+    if(copy_to_user(tz,&sys_tz,sizeof(sys_tz)))
+      return -EFAULT;
+  }
+  return 0;
+}
+```
+当输入参数非空时，其参数会进行调用。函数使用示例如下：
+
+```c
+void sysUsecTime() 
+{ 
+    struct timeval    tv; 
+    struct timezone tz; 
+       
+    struct tm         *p; 
+       
+    gettimeofday(&tv, &tz); 
+    printf("tv_sec:%ld\n",tv.tv_sec); 
+    printf("tv_usec:%ld\n",tv.tv_usec); 
+    printf("tz_minuteswest:%d\n",tz.tz_minuteswest); 
+    printf("tz_dsttime:%d\n",tz.tz_dsttime); 
+       
+    p = localtime(&tv.tv_sec); 
+    printf("time_now:%d%d%d%d%d%d.%ld\n", 1900+p->tm_year, 1+p->tm_mon, p->tm_mday, p->tm_hour, p->tm_min, p->tm_sec, tv.tv_usec); 
+} 
+   
+int main(void) 
+{ 
+    sysLocalTime(); 
+    printf("============gettimeofday==============\n"); 
+       
+    sysUsecTime(); 
+       
+    return 0; 
+} 
+```
+
+### 11.7 定时器
+
+定时器由结构timer_list表示，定义在文件`<linux/timer.h>`中
+
+```c
+struct timer_list{
+  struct list_head entry;           /* 定时器链表的入口 */
+  unsigned long expires;            /* 以jiffies为单位的定时值 */
+  void (*function)(unsigned long)   /* 定时器处理函数 */
+  unsigned long data;               /* 传给处理函数的长整型参数 */
+  struct tvec_t_base_s *base;       /* 定时器内部值，用户不要使用 */
+}
+```
+
+定时器使用方法如下：
+
+```c
+/* 创建定时器 */
+struct timer_list my_timer;
+/* 初始化内部定时器结构,分配内存 */
+init_timer(&my_timer);
+/* 预定义超时函数 */
+void my_timer_function(unsigned long data);
+/* 填充结构中需要的值 */
+my_timer.expires=jiffies+delay /* 定时器超时时的节拍数 */
+my_timer.data=0;                /* 给定时器处理函数传入0值 */
+my_timer.function=my_function;   /* 定时器超时时函数的调用 */
+/* 启动激活定时器 */
+add_timer(&my_timer);
+/* 更改定时器超时时间;设置新的定时器 */
+mod_timer(&my_timer,jiffies+new_delay);
+/* 删除定时器 */
+del_timer(&my_timer);
+/* 异步等待并删除定时器 */
+del_timer_sync(&my_timer);
+```
+注意不要删除超时的定时器，它们会自动删除。del_timer()保证定时器不会被激活。但是对于多处理，需要使用`del_timer_sync(&my_timer)`来进行异步操作，等待其它核上的定时器的结束。
+
+#### 11.7.2 定时器条件竞争
+
+因为定时器和当前执行代码的异步性，因此可能存在条件竞争；应该尽量使用`del_timer_sync()`取代`del_timer()`函数。
+
+因为内核异步执行中断处理程序，所以应该重点保护定时器中断处理程序中的共享数据。
+
+#### 11.7.3 实现定时器
+
+内核在时钟中断之后会执行定时器，更新当前时间。
+
+```c
+void run_local_timers(void)
+{
+  hrtimer_run_queues();
+  /* 执行定时器软中断 */
+  raise_softirq(TIMER_SOFTIRQ);
+  softlockup_tick();
+}
+```
+执行中断，在当前处理器上运行所有的超定时器。为了提高定时器的搜索效率，内核将定时器按照超时时间划分为五组。当定时器超时时间接近时，定时器将随组一起下移。保证了定时器管理代码的高效性。
+
+### 11.8 延迟执行
+
+内核提供了许多延迟方法处理各种延迟要求。
+
+#### 11.8.1 忙等待
+
+最简单的延迟方法，仅仅在延迟时间是节拍的整数倍，或者精确度要求不高时才可以使用。本质上是在循环中不断旋转直到希望的时钟节拍数耗尽
+
+```c
+/* 10个节拍 */
+unsigned long timeout=jiffies+10;
+while(time_before(jiffies,timeout))
+  ;
+```
+这个方法会消耗CPU资源，效率比较低，当等待时间较长时，应该尽量让任务挂起，允许内核重新执行调度任务。
+```c
+unsigned long timeout=jiffies+5*HZ;
+while(time_before(jiffies,timeout)){
+  /* 重新执行调度 */
+  cond_resched();
+}
+
+```
+volatile 使得jiffies每次都直接从主内存中货色，不是通过寄存器中的变量别名来访问。从而确保前面的循环能按照预期的方式执行。
+
+#### 11.8.2 短延迟
+
+时间很多(比时钟节拍还短)。并且对延迟的时间很精确。内核提供了下面单个延迟函数，定义在`<linux/delay.h>`和`<asm/delay.h>`中。并使用`jiffies`
+
+```c
+/* 指定微妙(us)延迟 */
+void udelay(unsigned long usecs);
+/* 指定纳秒延迟 */
+void ndelay(unsigned long nsecs);
+/* 指定毫秒延迟 */
+void mdelay(unsigned long msecs);
+```
+mdelay间接使用ndelay,ndelay使用`udelay()`;udelay依靠执行次数循环达到延迟效果(由内核判断1s内执行多少次循环)。udelay更多的是根据循环的比例进行设置。
+
+**BogoMIPS:bogus(伪的)和MIPS(每秒处理百万指令)；主要记录处理器空闲时的速度。该值存放在`loop_per_jiffy`中，可以由`/proc/cpuinfo`进行读取**
+
+内核在启动时利用`calibrate_delay()`计算`loop_per_jiffy`值。udelay()应当只在小延迟中调用，因为快速机器上的大延迟可能导致溢出。尽量减少使用`mdelay`以避免忙等待，消耗CPU资源。
+
+### 11.8.3 schedule_timeout()
+
+让延迟执行的任务睡眠到指定的延迟时间耗尽后再重新运行。主要是重新调度，因此该方法也不能保证睡眠时间正好等于指定的延迟时间，只能尽量靠近过。指定时间到达后，内核唤醒被延迟的任务并将其重新放回运行队列，用法如下：
+
+```c
+/* 将任务设置为可中断睡眠状态 */
+set_current_state(TASK_INTERRUPTIBLE);
+/* 小睡一会儿，“s”秒后唤醒 */
+
+schedule_timeout(s*HZ);
+```
+注意：
+- 使用schedule_timeout任务之前,必须将其窗台设置为`TASK_INTERRUPTIBLE`(可接受信号)或者`TASK_UNINTERRUPTIBLE`(不可接收信号)。
+- schedule_timeout()需要调用调度程序，必须保证用时短，调用代码应该处于进程上下文中，并且不能持有锁。
+- 可以使用`schedule_timeout()`函数代替`schedule()`函数来，让任务等待某个特定事件的到来。
+
+
+## 第 12 章 内存管理
+
+内核的特性决定其内存分配，不像用空间那样简单，处理分配错误也是十分困难。
+
+### 12.1 页
+
+内核键页作为内存管理的基本单位。内存管理单元(MMU,管理内存并把虚拟地址转换为物理地址的硬件)是以页为氮气进行处理。虚拟内存中页是最小单位。
+
+
+
+
+
+
