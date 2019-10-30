@@ -759,6 +759,191 @@ schedule_timeout(s*HZ);
 
 内核键页作为内存管理的基本单位。内存管理单元(MMU,管理内存并把虚拟地址转换为物理地址的硬件)是以页为氮气进行处理。虚拟内存中页是最小单位。
 
-体系结构不同支持的页大小也不同，大多数32位体系结构支持4KB的页，64位支持8KB的页。4KB表示支持4KB大小页，并且有1GB物理内存的机器上，二级页表，物理内存会被划分为262144(2^18)个页。
+体系结构不同支持的页大小也不同，大多数32位体系结构支持4KB的页，64位支持8KB的页。4KB表示支持4KB大小页，并且有1GB物理内存的机器上，二级页表，物理内存会被划分为262144(2^18)个页。内核使用struct page结构表示系统中的每个物理页，位于`linux/mm_types.h`中。主要结构如下：
 
+```c
+struct page{
+  /* 存放页的状态(是否为脏页)等 */
+  unsigned long         flags;
+  /* 页被引用的次数统计,为-1时表示内核中没有引用这一页 */
+  atomic_t              _count;
+  /* 页缓存引用数目 */
+  atomic_t              _mapcount;
+  /* 私有数据指向 */
+  unsigned long         priavte;
+  /* 指向页相关的地址空间 */
+  struct address_space  *mapping;
+  pgoff_t               index;
+  struct list_head      lru;
+  /* 指向页的虚拟地址 */
+  void                  *virtual;
+}
+```
+
+virtual域是页的虚拟地址。通常情况下，它就是页在虚拟内存中的地址。高端内存，并不是永久地映射到内核地址空间上。这时virtual值为NULL。需要时必须，动态映射这些页。
+
+注意：
+
+- page是与物理页相关而不是与虚拟页相关；内核仅仅用这个数据结构来描述当前时刻在相关的物理页中存放的东西
+- 系统中的每个物理页都要分配一个这样的结构体。
+
+### 12.2 区
+
+_参考连链接：_
+
+- [Linux的内核空间（低端内存、高端内存）](https://blog.csdn.net/qq_38410730/article/details/81105132)
+- [内存映射与DMA笔记](https://www.cnblogs.com/lifan3a/articles/4972064.html)
+- [Linux内核地址空间的内存分布及分配](https://blog.csdn.net/abc3240660/article/details/81484984)
+- [Linux用户空间与内核空间](https://blog.csdn.net/f22jay/article/details/7925531)
+
+因为硬件的限制性，因此需要内核把页划分为不同的区(zone)。内核对具有相似特性的页来进行分组。Linux中主要处理的硬件缺陷内存寻址问题如下：
+
+- 只能用特定的内存地址来执行DMA(直接内存访问)
+- 一些体系结构的内存的物理寻址范围比虚拟寻址范围大的多。一些内存不能永久地映射到内核空间上。
+
+针对上述问题，Linux主要使用了四种区：
+
+- ZONE_DMA--区上页能用来执行DMA操作
+- ZONE_DMA32--和ZONE_DMA相似，不过只能被32位设备访问。某些体系结构中该区比ZONE_DMA更大。
+- ZONE_NORMAL--包含能正常映射的页。
+- ZONE_HIGHMEM--包含“高端内存”，其中的页不能永久地映射到内核地址空间。
+
+注意：不同体系结构上分区方式不同。
+
+ZONE_HIGHMEM的工作方式也差不多。在32位x86系统上，其为高于869MB的所有物理内存。其它体系结构上，其ZONE_HIGHMEM为空。
+
+![x86-32上的区](../img/2019-10-30-20-13-22.png)
+
+
+内核又将3~4G的虚拟地址空间，划分为如下几个部分: 
+
+![内核地址空间](http://blog.chinaunix.net/attachment/201212/11/27177626_135523006360CV.png)
+
+896MB又可以细分为ZONE_DMA和ZONE_NORMAL区域。 
+- 低端内存(ZONE_DMA)：3G-3G+16M 用于DMA __pa线性映射 
+- 普通内存(ZONE_NORMAL)：3G+16M-3G+896M __pa线性映射 （若物理内存<896M，则分界点就在3G+实际内存） 
+- 高端内存(ZONE_HIGHMEM)：3G+896-4G 采用动态的分配方式
+
+ZONE_DMA+ZONE_NORMAL属于直接映射区:虚拟地址=3G+物理地址 或 物理地址=虚拟地址-3G，从该区域分配内存不会触发页表操作来建立映射关系。 
+
+ZONE_HIGHMEM属于动态映射区:128M虚拟地址空间可以动态映射到(X-896)M(其中X位物理内存大小)的物理内存，从该区域分配内存需要更新页表来建立映射关系，vmalloc就是从该区域申请内存，所以分配速度较慢。
+
+直接映射区的作用是为了保证能够申请到物理地址上连续的内存区域，因为动态映射区，会产生内存碎片，导致系统启动一段时间后，想要成功申请到大量的连续的物理内存，非常困难，但是动态映射区带来了很高的灵活性(比如动态建立映射，缺页时才去加载物理页)。
+
+整体映射关系如下：
+
+![整体映射关系](https://images0.cnblogs.com/blog2015/687284/201506/041141519417456.jpg)
+
+内核将物理内存等分成N块4KB，称之为一页，每页都用一个struct page来表示。
+
+下图是通过vmalloc申请了3个page大小的内存示例图，由此可见该区域是虚拟地址连续，物理地址不一定连续：
+
+![分配方式](https://img-blog.csdn.net/20160929211618447)
+
+alloc_page和__get_free_page最终都是调用的同一个子函数: 
+
+![内存分配函数调用关系](https://img-blog.csdn.net/20160929202400829)
+
+- kmalloc: 只能在低端内存区域分配(基于ZONE_NORMAL)，最大32个PAGE，共128K，kzalloc/kcalloc都是其变种 (slab.h中如果定义了KMALLOC_MAX_SIZE宏，那么可以达到8M或者更大) 
+- vmalloc: 只能在高端内存区域分配(基于ZONE_HIGHMEM) 
+- alloc_page: 可以在高端内存区域分配，也可以在低端内存区域分配，最大4M(2^(MAX_ORDER-1)个PAGE) 
+- __get_free_page: 只能在低端内存区域分配，get_zeroed_page是其变种，基于alloc_page实现
+- ioremap是将已知的一段物理内存映射到虚拟地址空间，物理内存可以是片内控制器的寄存器起始地址，也可以是显卡外设上的显存，甚至是通过内核启动参数“mem=”预留的对内核内存管理器不可见的一段物理内存。
+
+kmalloc和vmalloc申请的内存块大小是以字节为单位(实际上考虑到最小细分度，开辟的可能比申请的多，存在些许浪费)，而__get_free_page申请的内存块大小是以PAGE数量为单位。
+
+```c
+unsigned long __get_free_pages(gfp_t gfp_mask, unsigned int order)
+{
+    struct page *page;
+
+    /*
+     * __get_free_pages() returns a 32-bit address, which cannot represent
+     * a highmem page
+     */
+    VM_BUG_ON((gfp_mask & __GFP_HIGHMEM) != 0);
+
+    page = alloc_pages(gfp_mask, order);
+    if (!page)
+        return 0;
+    return (unsigned long) page_address(page);
+}
+```
+
+由上可见，__get_free_pages不能为带__GFP_HIGHMEM标志的请求分配内存。
+
+kmalloc和__get_free_page函数返回的地址都是虚拟地址，和物理地址只差一个固定的偏移值3G，无需操作页表。 
+alloc_page返回的是第一个物理页的page指针，需要经过page_address函数才能取得虚拟地址。 
+(使用alloc_page(s)在高端内存申请大于1个page的内存，就无法保证物理地址上的连续性)
+
+kmalloc基于slab实现的，slab是为分配小内存提供的一种高效机制(slab会把page再细分成更小的颗粒)
+
+![Linux内存分配函数比较](http://blog.chinaunix.net/attachment/201505/21/14811365_1432193673zeOw.png)
+
+
+大页: 
+如果进程太多，页表数据会非常大，此时可以把默认的页大小由4K改为2M或者更大。
+
+如果想要实现大数据DMA，可以用kmalloc申请N个buffer，用[SG DMA(非SG的叫Block DMA)技术传输](https://blog.csdn.net/u012769691/article/details/46814305)
+
+
+有些64位体系结构，如Intel的x86-64体系结构可以映射和处理64位的内存空间。因此x86_64没有ZONE_HIGHMEM区，所有的物理内存都处于ZONE_DMA和ZONE_NORMAL区。**用户空间默认从高端内存分配所需内存，虽然x86_64没有高端内存也没有关系，内核设计了适当的回退机制，用户空间一样可以在低端内存分配内存，只不过需要二次映射，浪费一点效率。**
+
+### 拓展：关于64位的内存分配
+_参考链接：_ 
+
+- [Linux 3.x 内核学习笔记——x86 64位内存管理](https://blog.csdn.net/liminyu/article/details/12519729)
+- [64位Linux下的地址映射](https://blog.csdn.net/hhhanpan/article/details/80548687)
+- [Linux Kernel Documentation](https://www.kernel.org/doc/)
+- [Linux Memory Management](https://www.kernel.org/doc/html/latest/admin-guide/mm/index.html)
+
+在 x86-64 下，处理器默认 CS， DS， ES， SS的段基址为 0，所以下面就不讨论逻辑地址到线性地址的转换了，因为基址为0，经过运算后线性地址和逻辑地址是一样的。
+
+分页过程会将48-bit的线性地址转换为52-bit的物理地址, 可以看出虽然是64bit的操作系统但在处理器层面并没有提供2^64大小的访问范围.48-bit 线性地址可以有以下 3 种映射分配
+
+![IA32-e模式下4K页面线性地址映射](https://img-blog.csdn.net/20180602171013337)
+
+
+
+x86_64线性地址不是64bit，物理地址也不是64位，Intel当前CPU最高物理地址是52bit,但实际支持的物理内存地址总线宽度是40bit。x86CPU仅支持64位虚拟地址中的48位。对于用户模式地址，64位中的虚拟地址高16位的地址总被设置为0x0；对于内核模式地址，总被设置为0xF.
+
+这是因为**x86_64处理器地址线只有48条，故而导致硬件要求传入的地址48位到63位地址必须相同。** 
+
+![IA32-e模式下线性地址映射](https://img-blog.csdn.net/20180602171505683)
+
+64位地址采用4层地址映射，如下图：
+
+![64位地址映射方式](https://img-blog.csdn.net/20131009181225203?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGltaW55dQ==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
+
+pgd、pud、pmd、pte各占了9位，加上12位的页内index，共用了48位。即可管理的地址空间为2^48=256T。而在32位地址模式时，该值仅为2^32=4G。
+
+另外64位地址时支持的物理内存最大为64T，见e820.c中MAX_ARCH_PFN的定义：
+```c
+#define MAX_ARCH_PFN MAXMEM>>PAGE_SHIFT
+```
+其中MAXMEM为2^46，PAGE_SHIFT为12。
+
+而在32位地址时最大支持的物理内存为64G（开启PAE选项）。
+
+相对32位地址空间，64位地址空间的具体地址分布如下：
+
+![64和32位的地址空间分布](https://img-blog.csdn.net/20131009181344968?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGltaW55dQ==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
+
+64位地址时将0x0000,0000,0000,0000 – 0x0000,7fff,ffff,f000这128T地址用于用户空间。参见定义：
+
+`#define TASK_SIZE_MAX  ((1UL<<47)-PAGE_SIZE)`；注意这里还减去了一个页面的大小做为保护。
+
+而0xffff,8000,0000,0000以上为系统空间地址。注意：该地址前4个都是f，这是因为目前实际上只用了64位地址中的48位（高16位是没有用的），而从地址0x0000,7fff,ffff,ffff到0xffff,8000,0000,0000中间是一个巨大的空洞，是为以后的扩展预留的。
+
+而真正的系统空间的起始地址，是从0xffff,8800,0000,0000开始的，参见：
+```c
+#define __PAGE_OFFSET     _AC(0xffff,8800,0000,0000, UL)
+```
+而32位地址时系统空间的起始地址为0xC000,0000。
+
+另外0xffff,8800,0000,0000 – 0xffff,c7ff,ffff,ffff这64T直接和物理内存进行映射，0xffff,c900,0000,0000 – 0xffff,e8ff,ffff,ffff这32T用于vmalloc/ioremap的地址空间。
+
+而32位地址空间时，当物理内存大于896M时（Linux2.4内核是896M，3.x内核是884M，是个经验值），由于地址空间的限制，内核只会将0~896M的地址进行映射，而896M以上的空间用做一些固定映射和vmalloc/ioremap。而64位地址时是将所有物理内存都进行映射。
+
+![地址内存映射](https://www.linuxidc.com/upload/2015_02/150208073889792.png)
 
