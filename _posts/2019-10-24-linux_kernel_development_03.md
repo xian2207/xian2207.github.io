@@ -812,14 +812,14 @@ _参考连链接：_
 
 ZONE_HIGHMEM的工作方式也差不多。在32位x86系统上，其为高于869MB的所有物理内存。其它体系结构上，其ZONE_HIGHMEM为空。
 
-![x86-32上的区](../img/2019-10-30-20-13-22.png)
+![x86-32上的区](htps://wangpengcheng.github.io/img/2019-10-30-20-13-22.png)
 
 
 内核又将3~4G的虚拟地址空间，划分为如下几个部分: 
 
 ![内核地址空间](http://blog.chinaunix.net/attachment/201212/11/27177626_135523006360CV.png)
 
-896MB又可以细分为ZONE_DMA和ZONE_NORMAL区域。 
+896MB又可以细分为ZONE_DMA和ZONE_NORMAL区域.
 - 低端内存(ZONE_DMA)：3G-3G+16M 用于DMA __pa线性映射 
 - 普通内存(ZONE_NORMAL)：3G+16M-3G+896M __pa线性映射 （若物理内存<896M，则分界点就在3G+实际内存） 
 - 高端内存(ZONE_HIGHMEM)：3G+896-4G 采用动态的分配方式
@@ -947,3 +947,298 @@ pgd、pud、pmd、pte各占了9位，加上12位的页内index，共用了48位�
 
 ![地址内存映射](https://www.linuxidc.com/upload/2015_02/150208073889792.png)
 
+
+其中每个区都用strcut zone表示，在`<linux/mmzone.h>`中定义：
+
+```c
+struct zone {
+	/* Read-mostly fields */
+
+	/* zone watermarks, access with *_wmark_pages(zone) macros */
+	unsigned long _watermark[NR_WMARK];
+	unsigned long watermark_boost;
+
+	unsigned long nr_reserved_highatomic;
+
+	/*
+	 * We don't know if the memory that we're going to allocate will be
+	 * freeable or/and it will be released eventually, so to avoid totally
+	 * wasting several GB of ram we must reserve some of the lower zone
+	 * memory (otherwise we risk to run OOM on the lower zones despite
+	 * there being tons of freeable ram on the higher zones).  This array is
+	 * recalculated at runtime if the sysctl_lowmem_reserve_ratio sysctl
+	 * changes.
+	 */
+	long lowmem_reserve[MAX_NR_ZONES];
+
+#ifdef CONFIG_NUMA
+	int node;
+#endif
+	struct pglist_data	*zone_pgdat;
+	struct per_cpu_pageset __percpu *pageset;
+
+#ifndef CONFIG_SPARSEMEM
+	/*
+	 * Flags for a pageblock_nr_pages block. See pageblock-flags.h.
+	 * In SPARSEMEM, this map is stored in struct mem_section
+	 */
+	unsigned long		*pageblock_flags;
+#endif /* CONFIG_SPARSEMEM */
+
+	/* zone_start_pfn == zone_start_paddr >> PAGE_SHIFT */
+	unsigned long		zone_start_pfn;
+
+	/*
+	 * spanned_pages is the total pages spanned by the zone, including
+	 * holes, which is calculated as:
+	 * 	spanned_pages = zone_end_pfn - zone_start_pfn;
+	 *
+	 * present_pages is physical pages existing within the zone, which
+	 * is calculated as:
+	 *	present_pages = spanned_pages - absent_pages(pages in holes);
+	 *
+	 * managed_pages is present pages managed by the buddy system, which
+	 * is calculated as (reserved_pages includes pages allocated by the
+	 * bootmem allocator):
+	 *	managed_pages = present_pages - reserved_pages;
+	 *
+	 * So present_pages may be used by memory hotplug or memory power
+	 * management logic to figure out unmanaged pages by checking
+	 * (present_pages - managed_pages). And managed_pages should be used
+	 * by page allocator and vm scanner to calculate all kinds of watermarks
+	 * and thresholds.
+	 *
+	 * Locking rules:
+	 *
+	 * zone_start_pfn and spanned_pages are protected by span_seqlock.
+	 * It is a seqlock because it has to be read outside of zone->lock,
+	 * and it is done in the main allocator path.  But, it is written
+	 * quite infrequently.
+	 *
+	 * The span_seq lock is declared along with zone->lock because it is
+	 * frequently read in proximity to zone->lock.  It's good to
+	 * give them a chance of being in the same cacheline.
+	 *
+	 * Write access to present_pages at runtime should be protected by
+	 * mem_hotplug_begin/end(). Any reader who can't tolerant drift of
+	 * present_pages should get_online_mems() to get a stable value.
+	 */
+	atomic_long_t		managed_pages;
+	unsigned long		spanned_pages;
+	unsigned long		present_pages;
+
+	const char		*name;
+
+#ifdef CONFIG_MEMORY_ISOLATION
+	/*
+	 * Number of isolated pageblock. It is used to solve incorrect
+	 * freepage counting problem due to racy retrieving migratetype
+	 * of pageblock. Protected by zone->lock.
+	 */
+	unsigned long		nr_isolate_pageblock;
+#endif
+
+#ifdef CONFIG_MEMORY_HOTPLUG
+	/* see spanned/present_pages for more description */
+	seqlock_t		span_seqlock;
+#endif
+
+	int initialized;
+
+	/* Write-intensive fields used from the page allocator */
+	ZONE_PADDING(_pad1_)
+
+	/* free areas of different sizes */
+	struct free_area	free_area[MAX_ORDER];
+
+	/* zone flags, see below */
+	unsigned long		flags;
+
+	/* Primarily protects free_area */
+	spinlock_t		lock;
+
+	/* Write-intensive fields used by compaction and vmstats. */
+	ZONE_PADDING(_pad2_)
+
+	/*
+	 * When free pages are below this point, additional steps are taken
+	 * when reading the number of free pages to avoid per-cpu counter
+	 * drift allowing watermarks to be breached
+	 */
+	unsigned long percpu_drift_mark;
+
+#if defined CONFIG_COMPACTION || defined CONFIG_CMA
+	/* pfn where compaction free scanner should start */
+	unsigned long		compact_cached_free_pfn;
+	/* pfn where async and sync compaction migration scanner should start */
+	unsigned long		compact_cached_migrate_pfn[2];
+	unsigned long		compact_init_migrate_pfn;
+	unsigned long		compact_init_free_pfn;
+#endif
+
+#ifdef CONFIG_COMPACTION
+	/*
+	 * On compaction failure, 1<<compact_defer_shift compactions
+	 * are skipped before trying again. The number attempted since
+	 * last failure is tracked with compact_considered.
+	 */
+	unsigned int		compact_considered;
+	unsigned int		compact_defer_shift;
+	int			compact_order_failed;
+#endif
+
+#if defined CONFIG_COMPACTION || defined CONFIG_CMA
+	/* Set to true when the PG_migrate_skip bits should be cleared */
+	bool			compact_blockskip_flush;
+#endif
+
+	bool			contiguous;
+
+	ZONE_PADDING(_pad3_)
+	/* Zone statistics */
+	atomic_long_t		vm_stat[NR_VM_ZONE_STAT_ITEMS];
+	atomic_long_t		vm_numa_stat[NR_VM_NUMA_STAT_ITEMS];
+} ____cacheline_internodealigned_in_smp;
+```
+
+其中的lock域是一个自旋锁，它防止该结构被并发访问。但它只保护结构，不是保护驻留在这个区中的所有页；没有锁来保护单个页。
+
+watermark数组持有该区的最小值、最低和最高水平值。内核使用水位为每个内存区设置合适的内存消耗基准；该值随着空闲内存的多少而变化。
+
+name域是一个以NULL结束的字符串表示这个区的名字。内核启动期间初始化这个值，其代码位于`mm/page_alloc.c`中。
+
+### 12.3 
+
+内核中存在请求内存符底层机制，并提供了对它进行访问的接口。以页为基本单位，进行保存。定义在`linux/gfp.h`中，其中的核心函数是：
+
+```c
+/* 分配2^order个连续的物理页，并返回一个指针，指向第一个页的page结构体，如果出错就返回NULL */
+
+struct page *alloc_pages(gfp_t gfp_mask,unsigned int order);
+/* 将页的物理地址转换为逻辑地址,返回指向逻辑地址的指针 */
+void *page_address(struct page *page);
+/* 直接创建并返回第一个页的逻辑地址 */
+unsigned long __get_free_pages(gfp_t gfp_mask,unsigned int order);
+/* 获取单个页 */
+struct page *alloc_page(gfp_t gfp_mask);
+unsigned long __get_free_page()gfp_t gfp_mask);
+/* 返回页内容全为0 */
+unsigned long get_zeroed_page(unsigned int gfp_mask);
+```
+
+![低级页分配方法](htps://wangpengcheng.github.io/img/2019-10-31-21-03-49.png)
+
+#### 12.3.2 释放页
+
+可以使用如下函数进行页的释放
+
+```c
+void __free_pages(struct page *page,unsigned int order)
+void free_pages(unsigned long addr,unsigned int order)
+void free_page(unsigned long addr)
+```
+页的释放错误可能会引起内核的崩溃。
+
+### 12.4 kmalloc()
+
+其在`<linxu/slab.h>`中声明；可以获取以字节为党文的一块内核内存。
+```c
+void *kmalloc(size_t size,gfp_t flags)
+```
+
+#### 12.4.1 gfp_mask标志
+
+页和内存的分配都使用了分配器标志，它有一下三类：
+
+1. 行为修饰符：内核应当如何分配所需的内存
+![行为修饰符类别](htps://wangpengcheng.github.io/img/2019-10-31-21-13-21.png)
+![行为修饰符类别2](htps://wangpengcheng.github.io/img/2019-10-31-21-14-37.png)
+可以同时多个指定：`ptr=kmalloc(size,__GFP_WAIT|__GFP_IO|GFP_FS)`
+
+2. 区修饰符：从那儿进行内存分配。
+![区修饰符](htps://wangpengcheng.github.io/img/2019-10-31-21-16-12.png)
+注意：
+   - `__GFP_HIGHMEM`中`ZONE_HIGHMEM`优先
+   - 如果没有任何指定，就优先从`ZONE_NORMAL`进行分配。
+   - 不能给`__get_free_pages()`或者`kmalloc()`指定`ZONE_HIGHMEM`.其返回的是逻辑地址不是page结构，只有`alloc_pages()`才能分配高端内存 
+3. 类型标志:组合了行为修饰符和区修饰符。
+![类型标志](htps://wangpengcheng.github.io/img/2019-10-31-21-20-48.png)
+![类型标志修饰表](htps://wangpengcheng.github.io/img/2019-10-31-21-21-30.png)
+![什么时候用什么标志](htps://wangpengcheng.github.io/img/2019-10-31-21-22-43.png)
+
+不能睡眠表示，即使没有足够的连续内存块可以使用，内核也可能无法释放出可用内存，因为内核不能让调用者休眠。因此`GFP_ATOMIC`分配成功的机会比较小。在中断处理程序、软中断和tasklet中使用较多。
+
+#### 12.4.2 kfree()
+
+定义在`<linux/slab.h>`中
+
+```c
+void kfree(const void *ptr);
+```
+
+释放内存已经被释放或者不是由kmalloc分配的将会引起严重后果。注意使用避免内存泄露。
+
+### 12.5 vmalloc()
+
+vmalloc()主要是逻辑地址的分配，物理内存可能不连续。这也是用户空间分配函数的工作方式。其在物理RAM中不是需要连续的。vmallo()的性能较低，需要对物理地址进行一一映射。会导致比直接内存映射大得多的TLB抖动。使用示例
+
+```c
+char* buf;
+buf=vmalloc(16*PAGE_SIZE);/* get 16 pages */ 
+if(!buf)
+...
+
+vfree(buf);
+```
+
+### 12.3 slab层
+
+slab层主要作为数据结构高速缓冲层的角色；能方便开发人员随时获取空闲的链表。
+
+#### 12.6.1 slab层的设计
+
+slab将不同的对象划分为所谓的高速缓存组，其中每个缓存组都存放不同类型的对象。每种对象类型对应一个高速缓存。kmalloc()建立在slab层智商，使用了一组通用高速缓存
+
+高速缓存被划分为slab，一个slab由一个或者多个连续的物理页组成。每个高速缓存由多个slab组成。每个slab包含一些对象成员(被缓存的数据结构)。当内核需要分配一个新的对象时，先从部分满的slab中进行分配。实在找不到就重新分配一个。
+
+磁盘索引节点在内存中由inode进行管理，其由slab进行分配。
+
+![高速缓存、slab及对象之间的关系](htps://wangpengcheng.github.io/img/2019-10-31-21-51-37.png)
+
+每个高速缓存都使用kmem_cache结构来表示。这个包含三个链表:slabs_full、slabs_partial和slab_empty；存放在kmem_list3(定义于`mm/slab.c`)结构中.其基本数据结构如下：
+
+```c
+struct slab{
+  /* 链表连接节点 */
+  struct list_head list;
+  /* slab着色的偏移量 */
+  unsigned long colouroff;
+  /* slab中的第一个对象 */
+  void *s_mem;
+  /* slab中已分配的对象数 */
+  unsigned int inuse;
+  /* 第一个空闲对象(如果有的话) */
+  kmem_bufctl_t free;
+}
+```
+
+slab分配器可以通过`__get_free_pages()`创建新的slab
+
+![创建内存函数](htps://wangpengcheng.github.io/img/2019-10-31-21-58-32.png)
+
+#### 12.6.2 slab分配器的接口
+
+一个新的高速缓存通过一下函数创建
+
+```c
+struct kmem_cache *kmem_cache_create(
+                                    const char *name,/* 高速缓存名称 */
+                                    size_t size, /* 高速缓存中每个元素的大小 */
+                                    size_t align,/* slab内第一个对象的偏移，保证页内对齐 */
+                                    unsigned long flags,/* 可选设置项，用来控制高速缓存的行为 */
+                                    void (*ctor)(void *)
+                                    )
+```
+flags可选参数如下：
+
+- 
