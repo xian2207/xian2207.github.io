@@ -812,7 +812,7 @@ _参考连链接：_
 
 ZONE_HIGHMEM的工作方式也差不多。在32位x86系统上，其为高于869MB的所有物理内存。其它体系结构上，其ZONE_HIGHMEM为空。
 
-![x86-32上的区](htps://wangpengcheng.github.io/img/2019-10-30-20-13-22.png)
+![x86-32上的区](https://wangpengcheng.github.io/img/2019-10-30-20-13-22.png)
 
 
 内核又将3~4G的虚拟地址空间，划分为如下几个部分: 
@@ -1126,7 +1126,7 @@ unsigned long __get_free_page()gfp_t gfp_mask);
 unsigned long get_zeroed_page(unsigned int gfp_mask);
 ```
 
-![低级页分配方法](htps://wangpengcheng.github.io/img/2019-10-31-21-03-49.png)
+![低级页分配方法](https://wangpengcheng.github.io/img/2019-10-31-21-03-49.png)
 
 #### 12.3.2 释放页
 
@@ -1151,20 +1151,20 @@ void *kmalloc(size_t size,gfp_t flags)
 页和内存的分配都使用了分配器标志，它有一下三类：
 
 1. 行为修饰符：内核应当如何分配所需的内存
-![行为修饰符类别](htps://wangpengcheng.github.io/img/2019-10-31-21-13-21.png)
-![行为修饰符类别2](htps://wangpengcheng.github.io/img/2019-10-31-21-14-37.png)
+![行为修饰符类别](https://wangpengcheng.github.io/img/2019-10-31-21-13-21.png)
+![行为修饰符类别2](https://wangpengcheng.github.io/img/2019-10-31-21-14-37.png)
 可以同时多个指定：`ptr=kmalloc(size,__GFP_WAIT|__GFP_IO|GFP_FS)`
 
 2. 区修饰符：从那儿进行内存分配。
-![区修饰符](htps://wangpengcheng.github.io/img/2019-10-31-21-16-12.png)
+![区修饰符](https://wangpengcheng.github.io/img/2019-10-31-21-16-12.png)
 注意：
    - `__GFP_HIGHMEM`中`ZONE_HIGHMEM`优先
    - 如果没有任何指定，就优先从`ZONE_NORMAL`进行分配。
    - 不能给`__get_free_pages()`或者`kmalloc()`指定`ZONE_HIGHMEM`.其返回的是逻辑地址不是page结构，只有`alloc_pages()`才能分配高端内存 
 3. 类型标志:组合了行为修饰符和区修饰符。
-![类型标志](htps://wangpengcheng.github.io/img/2019-10-31-21-20-48.png)
-![类型标志修饰表](htps://wangpengcheng.github.io/img/2019-10-31-21-21-30.png)
-![什么时候用什么标志](htps://wangpengcheng.github.io/img/2019-10-31-21-22-43.png)
+![类型标志](https://wangpengcheng.github.io/img/2019-10-31-21-20-48.png)
+![类型标志修饰表](https://wangpengcheng.github.io/img/2019-10-31-21-21-30.png)
+![什么时候用什么标志](https://wangpengcheng.github.io/img/2019-10-31-21-22-43.png)
 
 不能睡眠表示，即使没有足够的连续内存块可以使用，内核也可能无法释放出可用内存，因为内核不能让调用者休眠。因此`GFP_ATOMIC`分配成功的机会比较小。在中断处理程序、软中断和tasklet中使用较多。
 
@@ -1193,7 +1193,21 @@ vfree(buf);
 
 ### 12.3 slab层
 
+_参考链接：_ [Linux内存管理中的slab分配器](https://www.cnblogs.com/pengdonglin137/p/3878552.html)
+
 slab层主要作为数据结构高速缓冲层的角色；能方便开发人员随时获取空闲的链表。
+
+Linux内核中基于伙伴算法实现的分区页框分配器适合大块内存的请求，它所分配的内存区是以页框为基本单位的。对于内核中小块连续内存的请求，比 如说几个字节或者几百个字节，如果依然分配一个页框来来满足该请求，那么这很明显就是一种浪费，即产生内部碎片（internal fragmentation）
+
+为了解决小块内存的分配，Linux内核基于Solaris 2.4中的slab分配算法实现了自己的slab分配器。除此之外，slab分配器另一个主要功能是作为一个高速缓存，它用来存储内核中那些经常分配并释放的对象。
+
+slab分配器有以下三个基本目标：
+
+1. 减少伙伴算法在分配小块连续内存时所产生的内部碎片；
+
+2. 将频繁使用的对象缓存起来，减少分配、初始化和释放对象的时间开销。
+
+3. 通过着色技术调整对象以更好的使用硬件高速缓存；
 
 #### 12.6.1 slab层的设计
 
@@ -1203,7 +1217,7 @@ slab将不同的对象划分为所谓的高速缓存组，其中每个缓存组�
 
 磁盘索引节点在内存中由inode进行管理，其由slab进行分配。
 
-![高速缓存、slab及对象之间的关系](htps://wangpengcheng.github.io/img/2019-10-31-21-51-37.png)
+![高速缓存、slab及对象之间的关系](https://wangpengcheng.github.io/img/2019-10-31-21-51-37.png)
 
 每个高速缓存都使用kmem_cache结构来表示。这个包含三个链表:slabs_full、slabs_partial和slab_empty；存放在kmem_list3(定义于`mm/slab.c`)结构中.其基本数据结构如下：
 
@@ -1224,9 +1238,20 @@ struct slab{
 
 slab分配器可以通过`__get_free_pages()`创建新的slab
 
-![创建内存函数](htps://wangpengcheng.github.io/img/2019-10-31-21-58-32.png)
+![创建内存函数](https://wangpengcheng.github.io/img/2019-10-31-21-58-32.png)
+
+**高速缓存分类**
+
+- 普通高速缓存：普通高速缓存并不针对内核中特定的对象，它首先会为kmem_cache结构本身提供高 速缓存，这类缓存保存在cache_cache变量中，该变量即代表的是cache_chain链表中的第一个元素。
+- 专用高速缓存：是根据内核所需，通过指定具体的对象而创建。
 
 #### 12.6.2 slab分配器的接口
+
+每个高速缓存通过kmem_cache结构来描述，这个结构中包含了对当前高速缓存各种属性信息的描述。所有的高速缓存通过双链表组织在一起，形成 高速缓存链表cache_chain。
+
+slab分配器所提供的小块连续内存的分配是通过通用高速缓存实现的。通用高速缓存所提供的对象具有几何分布的大小，范围为32到131072字节。内核中提供了kmalloc()和kfree()两个接口分别进行内存的申请和释放。
+
+kmem_cache_create()用于对一个指定的对象创建高速缓存。它从cache_cache普通高速缓存中为新的专有缓存分配一个高速 缓存描述符，并把这个描述符插入到高速缓存描述符形成的cache_chain链表中。kmem_cache_destory()用于撤销一个高速缓存， 并将它从cache_chain链表上删除。
 
 一个新的高速缓存通过一下函数创建
 
@@ -1236,9 +1261,151 @@ struct kmem_cache *kmem_cache_create(
                                     size_t size, /* 高速缓存中每个元素的大小 */
                                     size_t align,/* slab内第一个对象的偏移，保证页内对齐 */
                                     unsigned long flags,/* 可选设置项，用来控制高速缓存的行为 */
-                                    void (*ctor)(void *)
+                                    void (*ctor)(void *)/* 高速缓存构造函数，添加高速缓存时才被调用一般为NULL */
                                     )
 ```
 flags可选参数如下：
 
-- 
+- `SLAB_HWCACHE_ALIGN`--命令slab层把一个slab内的所有对象按照高速缓存对齐。防止“错误的共享”。以浪费内存为待见，进行性能的提升。
+- `SLAB_POISON`--使用已知的值填充slab，有利于对为初始化内存的访问。
+- `SLAB_RED_ZONE`--slab层在已分配的内存周围插入“红色警戒区”以探测缓冲越界。
+- `SLAB_PANIC`--当分配失败时提醒slab层。
+- `SLAB_CHACHE_DMA`--表示命令slab层使用可以执行DMA的内存给每个slab分配空间。只有分配DMA对象并且必须驻留在`ZONE_DMA`区时才需要这个标志。
+
+内核初始化期间，定义于`kernel/fork.c`的fork_init()中会创建高速缓存.
+
+删除一个高速缓存
+
+```c
+int kmem_cache_destroy(struct kmem_cache *cachep);
+```
+
+创建高速缓存后可以，通过下列函数获取对象:
+
+- `void kmem_cache_alloc(struct kmem_cache *cachep,gfp_t flags)`，查找空闲页，没有slab就自己分配一个。
+- `void kmem_cache_free(struct kmem_cache *cachep,void *objp)`:释放一个对象
+
+下面是一个使用示例：
+
+```c
+/*  定义全局变量存放高速缓存指针 */
+
+struct kmem_cache *task_struct_cachep;
+/* 创建一个task_struct类型的高速缓存，存放在ARCH_MIN_TASKALIGH个字节偏移的地方 */
+task_struct_cachep=kmem_cache_create("task_struct",
+                                    sizeof(struct task_struct),
+                                    ARCH_MIN_TASKALIGH,
+                                    SLAB_PANIC|SLAB_NOTRACK,
+                                    NULL
+                                    );
+/* 定义数据结构 */
+struct task_struct *tsk;
+/* 从高速缓存中获取对象 */
+tsk=kmem_cache_alloc(task_struct_cachep,GFP_KERNEL);
+if(!tsk) return NULL;
+/* 销毁对象，并将内存返回给高速缓存 */
+//kmem_cache_free(task_struct_cachep,tsk);
+
+/* 防止被破坏，阻止其被撤销 */
+
+int err;
+err=kmem_cache_destroy(task_struct_cachep);
+if(err) /* 出错，撤销高速缓存 */
+
+```
+### 12.7 在栈上的静态分配
+
+内核在创建进程的时候，在创建task_struct的同时，会为进程创建相应的堆栈。每个进程会有两个栈，一个用户栈，存在于用户空间，一个内核栈，存在于内核空间。
+
+当进程在用户空间运行时，cpu堆栈指针寄存器里面的内容是用户堆栈地址，使用用户栈；
+
+当进程在内核空间运行时，cpu堆栈指针寄存器里面的内容是内核栈空间地址，使用内核栈。
+
+当进程因为中断或者系统调用而陷入内核态之行时，进程所使用的堆栈也要从用户栈转到内核栈。
+进程陷入内核态后，先把用户态堆栈的地址保存在内核栈之中，然后设置堆栈指针寄存器的内容为内核栈的地址，这样就完成了用户栈向内核栈的转换；当进程从内核态恢复到用户态之行时，在内核态之行的最后将保存在内核栈里面的用户栈的地址恢复到堆栈指针寄存器即可。这样就实现了内核栈和用户栈的互转。
+
+那么，我们知道从内核转到用户态时用户栈的地址是在陷入内核的时候保存在内核栈里面的，但是在陷入内核的时候，我们是如何知道内核栈的地址的呢？
+
+关键在进程从用户态转到内核态的时候，进程的内核栈总是空的。这是因为，当进程在用户态运行时，使用的是用户栈，当进程陷入到内核态时，内核栈保存进程在内核态运行的相关信心，但是一旦进程返回到用户态后，内核栈中保存的信息无效，会全部恢复，因此每次进程从用户态陷入内核的时候得到的内核栈都是空的。所以在进程陷入内核的时候，直接把内核栈的栈顶地址给堆栈指针寄存器就可以了。
+
+每个进程的内核栈大小既依赖于体系结构，也与编译选项有关。一般每个进程都用两页(32位8KB,64位16KB)的内核栈。
+
+#### 12.7.1 单页内核栈
+
+啮合栈可以是1页也可以是2页，取决于编译时的配置选项。
+
+#### 12.7.1 在栈上光明正大的工作
+
+因为thread_info在栈末端，栈溢出是会损害这个数据，进行动态分配(new)是比较适用于大块内存的分配。动态分配内存是一种明智的选择。
+
+### 12.8 高端内存的映射
+
+高端内存的页不能永久地映射到内核地址空间上。因此，通过alloc_pages()函数以`__GFP_HIGHMEM`标志获得的页不可能有逻辑地址。
+
+#### 12.8.1 永久映射
+
+使用`void *kmap(struct page *page)`函数映射给定的page到内核地址空间。如果是低端则会返回该页的虚拟地址；如果是高端则会建立一个永久映射，再返回地址。函数可以睡眠。可以使用`void kunmap(struct page *page)`解除对应的映射。
+
+#### 12.8.2 临时映射
+_参考链接：_ [Linux kmap和kmap_atomic解析](https://blog.csdn.net/zhanghaiyang9999/article/details/82143032);[高端内存映射之kmap_atomic固定映射--Linux内存管理(二十一)
+](https://www.cnblogs.com/linhaostudy/p/10206300.html);[linux内存映射](https://www.cnblogs.com/liuxiaoming/p/3219682.html)
+
+kernel 可以原子地映射一个高端内存页到 kernel 中的保留映射集中的一个，此保留映射集也是专门用于中断上下文等不能睡眠的地方映射高端内存页的需要。
+
+
+临时映射，不能睡眠，绝对不会阻塞；通过下列函数建立一个临时映射：
+
+```c
+/* 建立临时映射 */
+void *kmap_atomic(struct page *page,enum km_type type);
+/* 同下列函数取消映射 */
+void kunmap_atomic(void *kvaddr,enum km_type type);
+```
+kernel可以在多个cpu上同时运行不同的task，然而它们共同使用一个内存地址空间，也就是说，地址空间对于多个cpu看到的是同一个，kmap_atomic使用的是地址空间顶部的一小段地址空间，内核逻辑将这一小段地址空间分成了若干个节，每一节的大小是一个page的大小，可以用来映射一个page，根据公用地址空间的原理，所有的cpu共同使用这些节，因此如何能保证N个cpu调用kmap_atomic不会将page映射到一个地址呢？这就是这个数学公式所起的作用：
+idx = type + KM_TYPE_NR*smp_processor_id();
+vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
+其中KM_TYPE_NR代表type的最大值加1：
+
+![页框管理图](https://images0.cnblogs.com/blog/215944/201307/27200819-58ab448ef15440e98c97941e234a76f2.jpg)
+
+### 12.9 每个CPU的分配
+
+每个CPU上的数据，对于给定的处理器其数据是唯一的。每个CPU的数据存放在一个数组中。数组中的每一项对应着系统上一个存在的树立起。按照当前处理器号确定这个数组的当前元素。访问数据的方式如下：
+
+```c
+int cpu;
+/* 获取当前处理器，并禁止内核抢占 */
+cpu=get_cpu();
+/* 获取数据 */
+my_percpu[cpu]++;
+printk("my_percpu on cpu=%d is %lu\n",cpu,my_percpu(cpu));
+/* 激活内核抢占 */
+put_cpu();
+```
+
+### 12.10 新的每个CPU接口
+_参考链接：_ [linux percpu机制解析](https://blog.csdn.net/wh8_2011/article/details/53138377);[Linux内核同步机制之（二）：Per-CPU变量](http://www.wowotech.net/linux_kenrel/per-cpu.html)
+
+
+操作系统创建percpu接口定义在`linux/percpu.h`中；声明了所有的接口操作例程，可以在文件`mm/slab.c`和`asm/percpu.h`中找到他们的定义。
+
+#### 12.10.1 编译时每个CPU数据
+
+```c
+/* 定义每个CPU变量 */
+DEFINE_PER_CPU(type,name);
+/* 声明变量 */
+DECLARE_PER_CPU(type,name);
+/* 返回当前cpu的值并++ */
+get_cpu_var(name)++;
+/* 增加指定处理器上的数据 */
+per_cpu(name,cpu)++;
+/* 完成，重新激活内核抢占 */
+put_cpu_var(name);
+
+```
+
+注意：per_cpu函数既不会禁止内核抢占，也不会提供任何形式上的锁。
+
+#### 12.10.2 运行时的每个CPU数据
+
