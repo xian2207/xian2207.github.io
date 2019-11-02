@@ -1409,3 +1409,37 @@ put_cpu_var(name);
 
 #### 12.10.2 运行时的每个CPU数据
 
+相关原型定义在文件`linux/percpu.h`中
+
+```c
+/* 宏为，系统中的每个处理器分配一个指定类型对象的实例 */
+void *allocate_perccpu(type);
+void *__alloc_percpu(size_t size,size_t align);
+/* 释放内存 */
+void free_percpu(const void *);
+```
+下面是一个简单的使用
+```c
+void *percpu_ptr;
+unsigned long *foo;
+percpu_ptr=alloc_precpu(unsigned long);
+if(!ptr)
+  /* 内存分配错误... */
+foo=get_cpu_var(percpu_ptr);
+/* 操作foo ... */
+
+/* 重新释放锁 */
+put_cpu_var(percpu_ptr);
+```
+
+### 12.11 使用每个CPU数据的原因
+
+可以有效减少，数据锁定。方便梳理器快速访问内存。
+
+### 12.12 分配函数的选择
+
+需要连续物理内存，可以使用某个低级页分配器或者`kmalloc()`；
+
+高端内存分配，使用`alloc_pages()`
+虚拟内存使用`vmalloc()`函数
+
