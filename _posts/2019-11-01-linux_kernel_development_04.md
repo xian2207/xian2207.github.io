@@ -27,6 +27,8 @@ _参考链接:_
 
 - [X86/X64处理器体系结构及寻址模式](https://blog.csdn.net/liuyez123/article/details/51096914)
 - [x64内核内存空间结构](https://blog.csdn.net/farmwang/article/details/52016027)
+- [Linux内核在x86_64 CPU中地址映射](http://ilinuxkernel.com/?p=1303)
+- [CPU地址映射](http://www.ilinuxkernel.com/files/Linux_x64_Memory_Address_Mapping.pdf)
 
 #### 1.1 处理器体系结构
 
@@ -189,10 +191,11 @@ FS对于具体文件系统来说，相当于一个管理者，提供统一的文
 
 图1 Linux中文件系统的逻辑关系示意图。
 
-![虚拟文件系统](../img/2019-11-02-21-34-36.png)
+![虚拟文件系统](https://wangpengcheng.github.io/img/2019-11-02-21-34-36.png)
 
+![虚拟文件系统](https://img-blog.csdn.net/20180802213817663?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM4NDEwNzMw/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
 **写操作时的系统调用情况**
-![写操作调用](../img/2019-11-02-21-35-34.png)
+![写操作调用](https://wangpengcheng.github.io/img/2019-11-02-21-35-34.png)
 
 ### 13.4 VFS 对象及其数据结构
 
@@ -292,68 +295,6 @@ struct super_operations {
 ```
 调用方式：`sb->s_op->write_super(sb)`;sb是指向文件系统超级块的指针，从该指针进入超级块对应的函数表，并从中获得`write_super()`函数。相当于C++中的this指针。
 
-#### VFS的dentry结构
-结构dentry是实际文件系统的目录项在虚拟文件系统VFS中的对应物，实质上就是前面所讲的目录缓冲区。当系统访问一个具体文件时，会根据这个文件在磁盘上的目录在内存中创建一个dentry结构，它除了要存放文件目录信息之外，还要存放有关文件路径的一些动态信息。
-
-例如：它建立了文件名与节点inode之间的联系，保存了目录项与其父、子目录之间的关系。之所以建立这样的一个文件目录的对应物，是为了同一个目录被再次访问时，其相关信息就可以直接由dentry获得，而不必再次重复访问磁盘。
-
-结构dentry在文件include/linux/dcache.h中定义如下：
-
-```c
-struct dentry {
-	atomic_t d_count;
-	unsigned int d_flags;		/* 记录目录项被引用次数的计数器 */
-	spinlock_t d_lock;		/* 目录项的标志 */
-	int d_mounted;
-	struct inode *d_inode;		/* 与文件名相对应的inode */
- 
-	struct hlist_node d_hash;	/* 目录项形成的散列表 */
-	struct dentry *d_parent;	/* 指向父目录项的指针 */
-	struct qstr d_name;        //包含文件名的结构
- 
-	struct list_head d_lru;		/* 已经没有用户使用的目录项的链表 */
-	union {
-		struct list_head d_child;	/* 父目录的子目录项形成的链表 */
-	 	struct rcu_head d_rcu;
-	} d_u;
-	struct list_head d_subdirs;	/* i节点别名的链表 */
-	struct list_head d_alias;	/* inode alias list */
-	unsigned long d_time;		/* used by d_revalidate */
-	const struct dentry_operations *d_op;        //指向dentry操作函数集的指针
-	struct super_block *d_sb;	/* 目录树的超级块，即本目录项所在目录树的根 */
-	void *d_fsdata;			/* 文件系统的特定数据 */
- 
-	unsigned char d_iname[DNAME_INLINE_LEN_MIN];	/* 短文件名 */
-};
-```
-结构中的域d_name是qstr类型的结构。该结构的定义如下：
-```c
-struct qstr {
-	unsigned int hash;            //文件名
-	unsigned int len;            //文件名长度
-	const unsigned char *name;        //散列值
-};
-
-```
-内核通过维护一个散列表dentry_hashtable来管理dentry。系统一旦在内存中建立一个dentry，该dentry结构就会被链入散列表的某个队列中。
-
-结构中的域d_count记录了本dentry被访问的次数。当某个dentry的d_count的值为0时，就意味着这个dentry结构已经没有用户使用了，这时这个dentry会被d_lru链入一个由系统维护的另一个队列dentry_unused中。由于内核从不删除曾经建立的dentry，于是，同一个目录被再次访问时，其相关信息就可以直接由dentry获得，而不必重复访问存储文件系统的外存。
-
-另外，当本目录项有父目录节点时，其dentry结构通过域d_child挂入父目录项的子目录d_subdirs队列中，同时使指针d_parent指向父目录的dentry结构。若本目录有子目录，则将它们挂接在域d_subdirs指向的队列中。
-
-dentry操作如下：
-
-```c
-struct dentry_operations {
-	int (*d_revalidate)(struct dentry *, struct nameidata *);        //判断目录项是否有效
-	int (*d_hash) (struct dentry *, struct qstr *);            //生成一个散列值
-	int (*d_compare) (struct dentry *, struct qstr *, struct qstr *);        //比较两个文件名
-	int (*d_delete)(struct dentry *);        //删除count为0的dentry
-	void (*d_release)(struct dentry *);        //释放一个dentry对象
-	void (*d_iput)(struct dentry *, struct inode *);        //丢弃目录项对应的inode
-	char *(*d_dname)(struct dentry *, char *, int);
-};
-```
 
 ### 13.7 索引节点对象
 
@@ -472,25 +413,38 @@ struct inode_operations {
     /* 创建一个硬链接，dentry参数指定硬链接名，链接对象是dir中的old_dir */
 	int (*link) (struct dentry *,struct inode *,struct dentry *);
     /* 删除一个硬链接 */    
-	int (*unlink) (struct inode *,struct dentry *);        
+	int (*unlink) (struct inode *dir,struct dentry *dentry);        
 	/* 创建一个软链接 */
-    int (*symlink) (struct inode *,struct dentry *,const char *);
-	/* 创建一个文件夹 */
-    int (*mkdir) (struct inode *,struct dentry *,int);
+    int (*symlink) (struct inode *dir,struct dentry *dentry,const char *sysname);
+	/* 创建一个文件夹，最后为一个模式*/
+    int (*mkdir) (struct inode *,struct dentry *,int mode);
 	int (*rmdir) (struct inode *,struct dentry *);
-	int (*mknod) (struct inode *,struct dentry *,int,dev_t);
-	int (*rename) (struct inode *, struct dentry *,
+	/* 创建特殊文件，文件在dir目录中，其目录项为dentry，关联的设备为rdev,mode设置权限 */
+    int (*mknod) (struct inode *dir,struct dentry *dentry,int mode,dev_t rdev);
+	/* 重命名 */
+    int (*rename) (struct inode *, struct dentry *,
 			struct inode *, struct dentry *);
-	int (*readlink) (struct dentry *, char __user *,int);
+	/* 拷贝数据到特定的缓冲buffer中。 */
+    int (*readlink) (struct dentry *, char *,int buflen);
+    /* 查找执行的索引节点存储在nameidata中 */
 	void * (*follow_link) (struct dentry *, struct nameidata *);
+    /* 清除查找后的结果 */
 	void (*put_link) (struct dentry *, struct nameidata *, void *);
+    /* 修改文件的大小 */
 	void (*truncate) (struct inode *);
-	int (*permission) (struct inode *, int);
+	/* 检查文件是否允许特定的访问模式 */
+    int (*permission) (struct inode *, int);
+    /* 通知发生了改变事件，一般被notify_change()调用 */
 	int (*setattr) (struct dentry *, struct iattr *);
+    /* 在通知索引节点需要从磁盘中更新时，VFS会调用该函数，扩展属性允许key/value这样的一对值与文件关联 */
 	int (*getattr) (struct vfsmount *mnt, struct dentry *, struct kstat *);
-	int (*setxattr) (struct dentry *, const char *,const void *,size_t,int);
-	ssize_t (*getxattr) (struct dentry *, const char *, void *, size_t);
-	ssize_t (*listxattr) (struct dentry *, char *, size_t);
+	/* 给dentry指定的文件设置扩展属性。属性名为name,值为value */
+    int (*setxattr) (struct dentry *, const char *,const void *,size_t,int);
+    /* 向value中拷贝给定文件的扩展属性name对应的数值 */
+	ssize_t (*getxattr) (struct dentry *, const char *, void * value, size_t);
+	/* 将指定文件的所有属性拷贝到一个缓冲列表 */
+    ssize_t (*listxattr) (struct dentry *, char *, size_t);
+    /* 删除指定属性 */
 	int (*removexattr) (struct dentry *, const char *);
 	void (*truncate_range)(struct inode *, loff_t, loff_t);
 	long (*fallocate)(struct inode *inode, int mode, loff_t offset,
@@ -499,4 +453,353 @@ struct inode_operations {
 		      u64 len);
 };
 ```
+### 13.9 目录对象
 
+VFS的dentry结构
+结构dentry是实际文件系统的目录项在虚拟文件系统VFS中的对应物，实质上就是前面所讲的目录缓冲区。当系统访问一个具体文件时，会根据这个文件在磁盘上的目录在内存中创建一个dentry结构，它除了要存放文件目录信息之外，还要存放有关文件路径的一些动态信息。
+
+例如：它建立了文件名与节点inode之间的联系，保存了目录项与其父、子目录之间的关系。之所以建立这样的一个文件目录的对应物，是为了同一个目录被再次访问时，其相关信息就可以直接由dentry获得，而不必再次重复访问磁盘。
+
+结构dentry在文件include/linux/dcache.h中定义如下：
+
+```c
+struct dentry {
+	atomic_t d_count;
+	unsigned int d_flags;		/* 记录目录项被引用次数的计数器 */
+	spinlock_t d_lock;		/* 目录项的标志 */
+	int d_mounted;
+	struct inode *d_inode;		/* 与文件名相对应的inode */
+ 
+	struct hlist_node d_hash;	/* 目录项形成的散列表 */
+	struct dentry *d_parent;	/* 指向父目录项的指针 */
+	struct qstr d_name;        //包含文件名的结构
+ 
+	struct list_head d_lru;		/* 已经没有用户使用的目录项的链表 */
+	union {
+		struct list_head d_child;	/* 父目录的子目录项形成的链表 */
+	 	struct rcu_head d_rcu;
+	} d_u;
+	struct list_head d_subdirs;	/* i节点别名的链表 */
+	struct list_head d_alias;	/* inode alias list */
+	unsigned long d_time;		/* used by d_revalidate */
+	const struct dentry_operations *d_op;        //指向dentry操作函数集的指针
+	struct super_block *d_sb;	/* 目录树的超级块，即本目录项所在目录树的根 */
+	void *d_fsdata;			/* 文件系统的特定数据 */
+ 
+	unsigned char d_iname[DNAME_INLINE_LEN_MIN];	/* 短文件名 */
+};
+```
+结构中的域d_name是qstr类型的结构。该结构的定义如下：
+```c
+struct qstr {
+	unsigned int hash;            //文件名
+	unsigned int len;            //文件名长度
+	const unsigned char *name;        //散列值
+};
+
+```
+内核通过维护一个散列表dentry_hashtable来管理dentry。系统一旦在内存中建立一个dentry，该dentry结构就会被链入散列表的某个队列中。
+
+结构中的域d_count记录了本dentry被访问的次数。当某个dentry的d_count的值为0时，就意味着这个dentry结构已经没有用户使用了，这时这个dentry会被d_lru链入一个由系统维护的另一个队列dentry_unused中。由于内核从不删除曾经建立的dentry，于是，同一个目录被再次访问时，其相关信息就可以直接由dentry获得，而不必重复访问存储文件系统的外存。
+
+另外，当本目录项有父目录节点时，其dentry结构通过域d_child挂入父目录项的子目录d_subdirs队列中，同时使指针d_parent指向父目录的dentry结构。若本目录有子目录，则将它们挂接在域d_subdirs指向的队列中。
+
+dentry操作如下：
+
+```c
+struct dentry_operations {
+    /* 判断目录项是否有效 */
+	int (*d_revalidate)(struct dentry *, struct nameidata *);
+	/* 生成一个散列值 */
+    int (*d_hash) (struct dentry *, struct qstr *);
+    /* 比较两个文件名 */
+	int (*d_compare) (struct dentry *, struct qstr *, struct qstr *);
+	/* 删除count为0的dentry */
+    int (*d_delete)(struct dentry *);
+    /* 释放一个dentry对象 */
+	void (*d_release)(struct dentry *);
+    /* 丢弃目录项对应的inode */
+	void (*d_iput)(struct dentry *, struct inode *);
+	char *(*d_dname)(struct dentry *, char *, int);
+};
+```
+
+目录对象有三种有效状态：
+
+- 被使用：对应一个有效的索引节点,并且d_count为正值。基本不会被丢弃
+- 未被使用：对应有效的索引节点，但是d_count为0；可以丢弃
+- 负状态：没有对应的有效索引节点，因为索引节点已经被删除了。但是目录项仍然保留，以便快速解析以后的路径查询。
+
+#### 13.9.2 页目录缓存
+
+为了避免每次操作都要遍历整个目录树，内核将目录对象缓存在目录项缓存(dcache)中。其中包含主要三个部分如下：
+
+- “被使用的”目录项链表：通过索引节点的i_dentry项链接相关的索引节点。连一个索引节点可能有多个链接，可能有多个目录项对象。
+- “最近被使用的”双向链表：包含未被使用的和负状态的目录项对象。插入较多。链头节点的数目比链尾节点的数据要新。
+- 散列表和相应的散列函数用来快速的将给定路径解析为相关目录项对象。
+
+### 13.11 文件对象
+
+每个文件都有一个32位的数字来表示下一个读写的字节位置，Linux中专门使用数据结构file来保存打开文件的文件位置，此外，file结构还把指向该文件索引节点的指针也放在其中。file结构形成一个双链表，称为系统打开文件表，其最大长度为NR_FILE,在fs.h中定义为8192。file结构在include/inux/fs.h中定义如下：
+
+```c
+struct file
+{
+    struct list_head f_list; /*所有打开的文件形成一个链表*/
+    struct dentry *f_dentry; /*指向相关目录项的指针*/
+    struct vfsmount *f_vfsmnt; /*指向 VFS 安装点的指针*/
+    struct file_operations *f_op; /*指向文件操作表的指针*/
+    mode_t f_mode; /*文件的打开模式*/
+    loff_t f_pos; /*文件的当前位置*/
+    unsigned short f_flags; /*打开文件时所指定的标志*/
+    unsigned short f_count; /*使用该结构的进程数*/
+    unsigned long f_reada, f_ramax, f_raend, f_ralen, f_rawin;/*预读标志、要预读的最多页面数、上次预读后的文件指针、预读的字节数以及预读的页面数*/
+    int f_owner; /* 通过信号进行异步 I/O 数据的传送*/
+    unsigned int f_uid, f_gid; /*用户的 UID 和 GID*/
+    int f_error; /*网络写操作的错误码*/
+    unsigned long f_version; /*版本号*/
+    void *private_data; /* tty 驱动程序所需 */
+};
+```
+
+#### 13.12 文件操作
+
+```c
+struct file_operations {
+    struct module *owner;
+    /* 更新偏移纸指针，由系统调用lleek*(调用它) */
+    loff_t （*llseek） （struct file *, loff_t, int）;
+    /* 从给定文件的offset偏移处读取conut字节的数据到buf中，同时更新文件指针，一般由read进行调用 */
+    ssize_t （*read） （struct file *, char *, size_t, loff_t *）;
+    /* 从给定的buf中取出conut字节的数据，写入给定文件的offset偏移处，同时更新文件指针 */
+    ssize_t （*write） （struct file *, const char *, size_t, loff_t *）;
+    /* 返回目录列表中的下一个目录，由系统调用readdir()调用它 */
+    int （*readdir） （struct file *, void *, filldir_t）;
+    /* 函数睡眠等待给定文件活动，由系统调用poll()调用它 */
+    unsigned int （*poll） （struct file *, struct poll_table_struct *）;
+    /* 用来 */
+    int （*ioctl） （struct inode *, struct file *, unsigned int, unsigned long）;
+    /* 将给定的文件映射到指定的地址空间上。由系统调用mmap()调用它 */
+    int （*mmap） （struct file *, struct vm_area_struct *）;
+    /* 创建一个新的文件对象，并将其和对应的索引节点对象关联起来 */
+    int （*open） （struct inode *, struct file *）;
+    /* 更新一个文件相关信息 */
+    int （*flush） （struct file *）;
+    /* 当文件最后一个引用被注销时，该函数会被VFS调用,具体功能由文件系统决定 */
+    int （*release） （struct inode *, struct file *）;
+    /* 将给定的所有缓存数据写回磁盘，由系统调用fsync()调用它 */
+    int （*fsync） （struct file *, struct dentry *, int datasync）;
+    /* 打开或关闭异步I/O的通告信号 */
+    int （*fasync） （int, struct file *, int）;
+    /* 给指定文件上锁 */
+    int （*lock） （struct file *, int, struct file_lock *）;
+    /* 从给定文件中读取数据，并将其写入由vector描述的count个缓冲中去，同时增加文件的偏移量。由系统调用readv()调用它 */
+    ssize_t （*readv） （struct file *, const struct iovec *, unsigned long, loff_t *）;
+    /* 由给定vector描述的count个缓冲中的数据写入到由file指定的文件中去，同时减小文件的偏移量。由系统调用writev()调用它 */
+    ssize_t （*writev） （struct file *, const struct iovec *, unsigned long, loff_t *）;
+    /* 从一个文件向另外一个文件发送数据 */
+    ssize_t （*sendpage） （struct file *, struct page *, int, size_t, loff_t *, int）;
+    unsigned long （*get_unmapped_area）（struct file *, unsigned long, unsigned long,
+    unsigned long, unsigned long）;
+};
+```
+
+# 13.12.2 主要结构之间的关系
+
+<b style="color:red">超级块是对一个文件系统的描述；索引节点是对一个文件物理属性的描述；目录项是对一个文件逻辑属性的描述。一个进程所处的位置是由fs_struct来描述的，一个进程（或用户）打开的文件是由file_struct来描述的，而整个系统所打开的文件是由file结构描述的</b>。图2表示不同数据结构之间的关系：
+
+![主要关系](https://img2018.cnblogs.com/blog/1478048/201905/1478048-20190502145913933-1482788026.png)
+
+### 13.13 和文件系统相关的数据结构
+
+根据文件系统所在的物理介质和数据在物理介质上的组织方式来区分不同的文件系统类型的。 file_system_type结构用于描述具体的文件系统的类型信息。被Linux支持的文件系统，都有且仅有一 个file_system_type结构而不管它有零个或多个实例被安装到系统中。
+
+而与此对应的是每当一个文件系统被实际安装，就有一个vfsmount结构体被创建，这个结构体对应一个安装点。
+
+```c
+//<linux/fs.h>
+struct file_system_type {
+        const char *name;                /*文件系统的名字*/
+        struct subsystem subsys;         /*sysfs子系统对象*/
+        int fs_flags;                    /*文件系统类型标志*/
+
+        /*在文件系统被安装时，从磁盘中读取超级块,在内存中组装超级块对象*/
+        struct super_block *(*get_sb) (struct file_system_type*, 
+                                        int, const char*, void *);
+        
+        void (*kill_sb) (struct super_block *);  /*终止访问超级块*/            
+        struct module *owner;                    /*文件系统模块*/
+        struct file_system_type * next;          /*链表中的下一个文件系统类型*/
+        struct list_head fs_supers;              /*具有同一种文件系统类型的超级块对象链表*/
+};
+//<linux/mount.h>
+struct vfsmount
+{
+        struct list_head mnt_hash;               /*散列表*/
+        struct vfsmount *mnt_parent;             /*父文件系统*/
+        struct dentry *mnt_mountpoint;           /*安装点的目录项对象*/
+        struct dentry *mnt_root;                 /*该文件系统的根目录项对象*/
+        struct super_block *mnt_sb;              /*该文件系统的超级块*/
+        struct list_head mnt_mounts;             /*子文件系统链表*/
+        struct list_head mnt_child;              /*子文件系统链表*/
+        atomic_t mnt_count;                      /*使用计数*/
+        int mnt_flags;                           /*安装标志*/
+        char *mnt_devname;                       /*设备文件名*/
+        struct list_head mnt_list;               /*描述符链表*/
+        struct list_head mnt_fslink;             /*具体文件系统的到期列表*/
+        struct namespace *mnt_namespace;         /*相关的名字空间*/
+};
+```
+
+vfsmount结构体中维护的各种链表，就是为了能够跟踪这些关联信息。mnt_flags中存储了一定的安装标志如下：
+
+![安装标志列表](../img/2019-11-03-20-15-35.png)
+
+#### 13.14 和进程相关的数据结构
+
+系统中每个进程都有自己的一组打开的文件。如：根文件系统、当前工作目录、安装点等。其中`file_struct`、`fs_struct`、`namespace`将VFS层和系统的进程紧密结合在一起
+
+file_struct 由进程描述符中的files目录项指向。所有单个进程相关的信息(打开文件及文件描述符)都包含在其中，其结构如下：
+
+```c
+struct files_struct {//打开的文件集
+        atomic_t count;              /*结构的使用计数*/
+        struct fdtable  *fdt;          /* 指向其它fd表的指针*/
+        struct fdtable  fdtab;          /* 基fd表 */
+        spinlock_t file_lock;           /* 单个文件的锁*/
+        int         next_fd;            /* 缓存下一个可用的fd */
+        struct embedded_fd_set  close_on_exec_init;   /* exec()时关闭的文件描述符链接 */
+        struct embedded_fd_set  open_fds_init;   /* 打开的文件描述符链表 */
+        struct file *fd_aray[NR_OPEN_DEFAULT];   /* 缺省的文件数组对象 */
+        ……
+ };
+```
+
+fs_struct结构体由进程描述符符fs域致电该。它包含文件系统和进程相关的信息，定义在文件`<linux/fs_struct.h>`中，下面是它的具体结构和各项描述
+
+```c
+struct fs_struct {//建立进程与文件系统的关系
+        int     users;   /* 用户数目 */
+        rwlock_t lock;      /* 保护该结构体的锁 */
+        int      umask;     /* 掩码 */
+        int      int_exec; /* 当前正在执行的文件 */
+        struct    path root; /* 根目录路径 */
+        struct      path pwd; /*当前工作目录的路径 */
+};
+
+```
+
+namespace结构体，定义在文件<linux/mmt_namespace.h>中，由进程描述符中的`mmt_namespace`域指向。它使得每一个进程在系统中都看到唯一的安装文件系统--不仅是唯一的根目录，而且是唯一的文件系统层次结构。
+
+```c
+struct mmt_namespace{
+    atomic_t    count;   /* 结构的使用计数 */
+    struct vfsmount  *root;  /* 根目录的安装点对象 */
+    struct list_head  list; /* 安装点链表 */
+    wait_queue_head_t  poll;  /* 轮询的等待队列 */
+    int                 event; /* 事件计数 */
+}
+```
+
+默认情况下，所有的进程共享通信杨的命名空间。只有在进行`clone()`操作时使用`CLONE_NEWS`标志，才会给进程一个唯一的命名空间结构体的拷贝。大多数情况下，都是直接集成父进程的命名空间。
+
+
+### 13.15 总结
+
+VFS即虚拟文件系统是Linux文件系统中的一个抽象软件层；因为它的支持，众多不同的实际文件系统才能在Linux中共存，跨文件系统操作才能实现。 VFS借助它四个主要的数据结构即超级块、索引节点、目录项和文件对象以及一些辅助的数据结构，向Linux中不管是普通的文件还是目录、设备、套接字等 都提供同样的操作界面，如打开、读写、关闭等。只有当把控制权传给实际的文件系统时，实际的文件系统才会做出区分，对不同的文件类型执行不同的操作。由此 可见，正是有了VFS的存在，跨文件系统操作才能执行，Unix/Linux中的“一切皆是文件”的口号才能够得以实现。
+
+超级块、安装点和具体的文件系统关系：
+
+![文件系统关系](http://www.ibm.com/developerworks/cn/linux/l-cn-vfs/5.jpg)
+
+#### 13.16 补充知识
+
+##### 13.16.1  文件缓冲区
+
+为了方便文件的读写操作，Linux中在内核内存中设置了一块缓冲区，用来进行相关数据的读写缓冲，提高系统运行效率：
+
+![缓冲区构造](https://img-blog.csdn.net/20180803205149781?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM4NDEwNzMw/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
+因此，内核中设置了两套用来管理缓冲区的数据结构。
+
+###### 13.16.2 磁盘数据块缓冲区
+
+在Linux中，每一个磁盘数据块缓冲区用buffer_head结构来描述。buffer_head结构如下：
+```c
+struct buffer_head {
+	unsigned long b_state;		/* 缓冲区状态位图 */
+	struct buffer_head *b_this_page;/* 指向同一页面的缓冲块，形成环形链表 */
+	struct page *b_page;		/* 指向页缓冲指针 */
+ 
+	sector_t b_blocknr;		/* 逻辑块号 */
+	size_t b_size;			/* 块大小 */
+	char *b_data;			/* 指向数据块缓冲区的指针 */
+ 
+	struct block_device *b_bdev;        /*指向块设备结构的指针*/
+	bh_end_io_t *b_end_io;		/* I/O completion */
+ 	void *b_private;		/* reserved for b_end_io */
+	struct list_head b_assoc_buffers; /* associated with another mapping */
+	struct address_space *b_assoc_map;	/* mapping this buffer is
+						   associated with */
+	atomic_t b_count;		/* 块引用计数 */
+};
+```
+其中，域b_data是指向内存中磁盘块缓冲区的指针；域b_size表示缓冲区的大小。由于进程以页面为单位来访问缓冲区，所以结构中用域b_this_page把同一页面缓冲块组成了一个环形链表。
+
+缓冲区的大小不是固定的，**当前Linux支持5中大小的缓冲区，分别是512、1024、2048、4096和8192字节**。Linux所支持的文件系统都是用共同的块高速缓冲，在同一时刻，块高速缓冲中存在着来自不同物理设备的数据块，为了支持这些不同大小的数据块，Linux使用几种不同大小的缓冲区。
+
+另外，系统根据磁盘数据块缓冲区的使用状态将它们分别组成了多个队列。
+
+内存中的一个磁盘块缓冲区的队列示意图如下所示：
+![磁盘缓冲](https://img-blog.csdn.net/20180803205959797?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM4NDEwNzMw/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
+**磁盘数据块缓冲区是一种全局资源，可以被所有的文件系统共享使用。**
+
+###### 13.16.3 页缓冲区
+**为了方便进程对文件的使用，并在需要时能把以块为单位的磁盘块缓冲区（块的大小一般为512字节）映射到以页为单位（页的大小一般4k）的用户空间，VFS还建立了页缓冲区。由于进程是通过VFS的i节点来访问文件的，因此，文件的页缓冲区也就被设置在inode结构中。**
+
+inode结构中有一个指向自身的i_data域的指针i_mapping，这个i_data域是一个address_space的结构。而每一个页面的所有信息由struct page来描述，它有一个名称为mapping的域，这是一个指针，它指向一个struct address_space类型结构。
+
+缓冲区的数据结构struct address_space的主要内容如下：
+
+```c
+struct address_space {
+	struct inode		*host;		    /* 属主的索引节点 */
+	struct radix_tree_root	page_tree;	        /* 全部页面的radix数 */
+	spinlock_t		tree_lock;	        /* and lock protecting it */
+	unsigned int		i_mmap_writable;        /* count VM_SHARED mappings */
+	struct prio_tree_root	i_mmap;		    /* tree of private and shared mappings */
+	struct list_head	i_mmap_nonlinear;        /*list VM_NONLINEAR mappings */
+	spinlock_t		i_mmap_lock;	    /* protect tree, count, list */
+	unsigned int		truncate_count;	    /* Cover race condition with truncate */
+	unsigned long		nrpages;	    /* 占用的物理边框总数 */
+	pgoff_t			writeback_index;        /* writeback starts here */
+	const struct address_space_operations *a_ops;	    /* 页缓冲区操作函数集指针 */
+	unsigned long		flags;		    /* error bits/gfp mask */
+	struct backing_dev_info *backing_dev_info;     /* 预读信息 */
+	spinlock_t		private_lock;	    /* for use by the address_space */
+	struct list_head	private_list;	    /* 页缓冲区链表 */
+	struct address_space	*assoc_mapping;	    /* 相关缓存 */
+} __attribute__((aligned(sizeof(long))));
+```
+
+页缓冲区与磁盘缓冲区之间的关系如下图所示：
+
+![页缓冲区](https://img-blog.csdn.net/20180803211148145?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzM4NDEwNzMw/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
+依照Linux的一贯风格，Linux将缓冲区操作函数封装在如下的address_space_operations结构中：
+
+通常，i_fop（inode的指向文件操作函数集的指针）并不直接与块设备联系，而是间接通过a_ops（address_space的页缓冲区操作函数集）读写文件。文件的页缓冲就是i_fop与a_ops之间的缓冲，它是块设备缓冲之上的更高一级缓冲，直接用于具体文件的读写。
+
+Linux中通过Proc文件系统，将所有设备抽象为只存在于内存上的文件，有如下优势：
+
+- 可以利用Proc文件系统的文件，开发一些专门用于获取内核数据的应用程序；
+- 完成用户空间和内核空间的通信，能得到内核运行时的数据，安全且方便；
+- 利用Proc文件可使进程直接对内核的参数进行配置的特点，可以在不重新编译内核的情况下优化系统配置。
+
+参考链接： [深入理解linux系统下proc文件系统内容](https://blog.csdn.net/ygm_linux/article/details/19327941)
+
+
+## 第 14 章 块I/O层
+
+系统中能够随机访(不需要按照顺序)访问固定大小的数据片(chunks)的硬件设备称为块设备。固定大小的数据块就称为块。
