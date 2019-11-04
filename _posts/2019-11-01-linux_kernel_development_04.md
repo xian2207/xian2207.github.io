@@ -810,3 +810,549 @@ Linux中通过Proc文件系统，将所有设备抽象为只存在于内存上�
 
 ### 14.1 剖析一个块设备
 
+块设备中最小的可寻址单元是扇区，一般扇区的大小为2的整数倍，常见的是512字节。也有小的如CD-ROM扇区是2KB大小
+
+块设备的最小逻辑单元是块--文件系统的抽象，只能基于块来访问文件系统。块一般是2的整数倍，不能超过一个页的长度。所以块 必须是扇区的整数倍，并且要小于页面大小。因此其通常大小是512字节、1KB或者4KB
+
+所有设备的I/O必须以扇区为单位进行操作。
+
+![块和扇区操作](../img/2019-11-04-15-25-05.png)
+
+### 14.3 缓冲区和缓冲区头
+
+详细见**13.16.2 磁盘数据块缓冲区**
+
+其中`bh_state_bits`枚举如下：
+
+![bh_state_bits](../img/2019-11-04-15-35-03.png)
+
+缓冲区头的目的在于描述磁盘块和物理内存缓冲区(在特定页面商都字节序列)之间的映射关系。
+
+因为缓冲区比较大，操作不方便，使用效率底下。仅仅能描述单个缓冲区，当作为所有I/O容器使用时，缓冲区头会促使内核把对大块数据的I/O操作(比如写操作)分解为对多个buffer_head结构体进行操作。造成不必要的空间浪费。为了避免这种情况，用了bio结构体，灵活且轻量级；
+
+当前的内核在向块设备层提交读写请求时，都会将buffer_head封装在bio结构中，而不再使用原来的buffer_head，例如下面这段代码是ext2文件系统向磁盘写数据的实现：
+
+### 14.3 bio结构体
+
+目前内核中块I/O操作基本容器由bio结构体表示，它定义在文件<linux/bio.h>中。该结构体代表了正在现场的(活动的)以片段(segment)链表形式组织的块I/O操作。一个片段是一小块连续的内存缓冲区。使得进程可以通过片段来描述缓冲区；即使缓冲区分散在内存的多个位置上，bio结构体也能对内核保证I/O操作的执行。其关键结构描述如下：
+
+```c
+//include/linux/blk_types.h
+
+/*
+ * main unit of I/O for the block layer and lower layers (ie drivers and
+ * stacking drivers)
+ */
+struct bio {
+	struct bio		*bi_next;	/* request queue link */
+	struct gendisk		*bi_disk;
+	unsigned int		bi_opf;		/* bottom bits req flags,
+						 * top bits REQ_OP. Use
+						 * accessors.
+						 */
+	unsigned short		bi_flags;	/* status, etc and bvec pool number */
+	unsigned short		bi_ioprio;
+	unsigned short		bi_write_hint;
+	blk_status_t		bi_status;
+	u8			bi_partno;
+
+	struct bvec_iter	bi_iter;
+
+	atomic_t		__bi_remaining;
+	bio_end_io_t		*bi_end_io;
+
+	void			*bi_private;
+#ifdef CONFIG_BLK_CGROUP
+	/*
+	 * Represents the association of the css and request_queue for the bio.
+	 * If a bio goes direct to device, it will not have a blkg as it will
+	 * not have a request_queue associated with it.  The reference is put
+	 * on release of the bio.
+	 */
+	struct blkcg_gq		*bi_blkg;
+	struct bio_issue	bi_issue;
+#ifdef CONFIG_BLK_CGROUP_IOCOST
+	u64			bi_iocost_cost;
+#endif
+#endif
+	union {
+#if defined(CONFIG_BLK_DEV_INTEGRITY)
+		struct bio_integrity_payload *bi_integrity; /* data integrity */
+#endif
+	};
+
+	unsigned short		bi_vcnt;	/* how many bio_vec's */
+
+	/*
+	 * Everything starting with bi_max_vecs will be preserved by bio_reset()
+	 */
+
+	unsigned short		bi_max_vecs;	/* max bvl_vecs we can hold */
+
+	atomic_t		__bi_cnt;	/* pin count */
+
+	struct bio_vec		*bi_io_vec;	/* the actual vec list */
+
+	struct bio_set		*bi_pool;
+
+	/*
+	 * We can inline a number of vecs at the end of the bio, to avoid
+	 * double allocations for a small number of bio_vecs. This member
+	 * MUST obviously be kept at the very end of the bio.
+	 */
+	struct bio_vec		bi_inline_vecs[0];
+};
+```
+
+bio结构体的目的是代表现场正在执行的I/O操作，结构体中的主要域都是用来管理信息的，其中关键是`bi_io_vecs`、`bi_vcnt`和`bi_idx`。其关系如下：
+
+![相关结构体](../img/2019-11-04-15-58-37.png)
+
+### 14.3.1 I/O向量
+_参考链接：_ [Linux中page、buffer_head、bio的联系](https://blog.csdn.net/cxy_chen/article/details/81076601)
+
+
+bi_io_vecs指向一个bio_vec结构体数组，该结构体链表包含了一个特定I/O操作所需要使用到的所有的片段。每个bio_vec结构都是一个形式为`<page,offset,len>`的向量。描述了片段对应的物理页、块在物理页中的偏移位置、从给定偏移量开始的块长度。整个结构体数组表示了一个完整的缓冲区。bio_vec结构体定义在`linux/bio.h`文件中：
+
+```c
+struct bio_vec{
+    /* 指向这个缓冲区所驻留的物理页 */
+    struct page     *bv_page;
+    /* 这个缓冲区以字节为单位的大小 */
+    unsigned int    bv_len;
+    /* 缓冲区所驻留页中以字节为单位的偏移量 */
+    unsigned int    bv_offset;
+}
+```
+
+`bi_vcnt`用来描述`bi_io_vec`指向的数组中的片段数目。`bi_idx`域指向数组的当前索引。
+
+每个I/O请求通过一个bio结构体描述，其中包含多个块(bio_vec).其操作的第一个片段由`bi_io_vec`结构体所指向，然后不断更新`bi_idx`直到达到`bi_vcnt`的最后一个片段。
+
+`bi_cnt`域记录bio结构体使用计数，如果其值为0，就应该撤销该bio结构体
+
+现在基本以bio结构体代替了buffer_head结构体有一下好处：
+
+- 容易处理高端内存，它处理的是物理页而不是直接指针。
+- bio结构体可以代表普通页I/O,同时也可以代表直接I/O
+- 便于执行分散-集中(矢量化)块I/O操作，操作中的数据可取自多个物理页面
+- 轻量级，它仅仅是一个矢量数组。
+
+### 14.4 请求队列
+
+块设备将它们挂起的I/O请求保存在请求队列中，该队列由`resues_queue`结构体表示。队列只要不为空，队列对应的块设备驱动程序就会从队列头获取请求，然后将其送入对应的块设备上去。每个请求可能由多个bio结构体组成。
+
+注意：虽然磁盘上的块必须连续，但是在内存中这些块并不一定要连续
+
+### 14.5 I/O调度程序(快表)
+
+为了优化寻址操作，内核会在提交前，先执行名为合并(将多个请求结合成为一个新请求)与排序(请求按照扇区增长的方向有序排序)的预操作。内核中负责提交I/O请求的子系统名为I/O调度程序。(注意I/O调度和进程调度不同哟不要混淆)
+
+#### 14.5.2 Linux 电梯
+
+详见，王道操作系统和[linux 磁盘i/o电梯算法](https://blog.csdn.net/JackLiu16/article/details/79018330)
+
+#### 14.5.3 最终期限I/O调度
+
+为了避免饥饿，设置最后期限，每个请求都有一个超时时间(默认为读500ms，写为5s)，根据读写插入到特定的读/写FIFO队列中。新队列总是被加入到队列尾部，这样就避免了饥饿。最后期限I/O调度程序将请求从排序队列的头部去下，再推入到派发队列中，派发队列然后将请求提交给磁盘驱动，从而保证了最小化的请求寻址。如果请求超时，在从FIFO中提取请求进行服务。
+
+![最后期限I/O调度程序的三个队列](../img/2019-11-04-18-32-17.png)
+
+注意：它并不能严格保证请求的响应时间。
+
+#### 14.5.4 预测I/O调度程序
+
+读写分开造成了两次寻址，损害了全局吞吐量。预测调度在最终期限的基础上，添加了一个派发队列。并为每个队列设置了超时时间。主要是增加了预测启发能力。
+
+提交骑牛之后们并不直接返回处理其它请求，而是会**有意空闲片刻**(空心啊时间可以设置，默认为6ms).可以上引用程序来提交其它读请求--任何对相邻磁盘位置操作的请求都会立刻得到处理。等待时间结束后，预测调度程序会重新返回原来的位置，继续执行以前剩下的请求。
+
+相邻的请求到来，可以减少I/O的操作次数。
+
+#### 14.5.5 玩去哪公正的排序I/O调度程序
+
+完全公正调度(CFQ)：将进入的I/O请求放入特定的队列中。队列分类与请求来自的进程有关。每个队列中，刚进入的请求与相邻请求合并在一起，并行插入分类。然后以时间片轮转调度队列，从每个队列中选取请求数，然后进行下一轮调度。确保每个进程结构公平的磁盘贷款片段。一般用于多媒体。
+
+#### 14.5.6 空操作的I/O调度程序
+
+空操作不进行排序，也不进行其它形式的寻址操作。只有执行合并这一点。主要针对块设备。比如闪存卡。等没有寻道复返的块设备。为随机设备而设计
+
+
+#### 14.5.7 I/O调度程序的选择
+
+![可选参数](../img/2019-11-04-19-22-12.png)
+
+每一种调度程序都可以被启用，并内置在内核中。默认情况下，块设备使用完全公平的I/O调度程序。
+
+### 第 15 章 进程地址空间
+
+#### 15.1 地址空间
+_参考链接：_ 
+
+- [linux进程虚拟地址空间](https://www.cnblogs.com/beixiaobei/p/10507462.html)
+- [Linux进程地址空间和进程的内存分布](https://blog.csdn.net/cl_linux/article/details/80328608)
+- **[从编写源代码到程序在内存中运行的全过程解析](https://blog.csdn.net/kang___xi/article/details/79571137)(一定要看)**
+- [深入浅出静态链接和动态链接](https://blog.csdn.net/kang___xi/article/details/80210717)
+
+进程地址空间，由可寻址的虚拟内存组成，内核允许进程使用这种虚拟内存中的地址。每个进程都有一个32位或64位的平坦(flat)地址空间(地址空间范围是一个独立的连续空间)。一些操作系统提供了段地址空间(被分段拥有)。每个进程都有唯一的平坦地址空间。一个进程的地址空间与另外一个进程的地址空间即使有相同的内存地址，实际上也彼此不相干--线程
+
+内存地址是一个给定的值，一般是一个范围。这些可访问的合法地址空间为**内存区域(memory areas)**.通过内核，进程可以给自己的地址空间动态的添加或者减少内存区域。
+
+**进程只能访问有效内存区域内的地址**。如果一个进程以不正确的方式/非有效地址；内核会终止该进程。并返回“段错误的信息”。内存区域包含各种内存对象如下：
+
+- 代码段(text section)：代码内存映射
+- 数据段(data section):已初始化全局变量的内存映射
+- bss段(bss/零页)：未初始化的全局变量，页面中的信息全部为0；
+- 用户空间栈(stack)：用于用户进程的零页内存映射。
+- 内存映射段：使用mmap()映射的任何内存段
+- c库或者动态链接程序等共享库的代码段、数据段
+- 共享内存段：
+- 匿名的内存映射，如由malloc()分配的内存。
+
+![用户进程空间](https://img-blog.csdn.net/20140904220105333?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvemhhbmd6aGVianV0/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+
+![用户进程空间](https://img-blog.csdn.net/20140904220124724?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvemhhbmd6aGVianV0/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+
+![用户进程内存](https://images0.cnblogs.com/i/569008/201405/270929306664122.jpg)
+
+注意：
+- 可执行文件和可执行程序是不同的。可执行文件由操作系统装载后才是可执行程序。
+- 装载过程中如果发现函数是动态链接库符号，则会将动态链接库中相关数据一起装载。静态链接库无需此过程。
+
+### 15.2 内存描述符
+
+_参考链接：_ [Linux源码解析-内存描述符（mm_struct）](https://blog.csdn.net/tiankong_/article/details/75676131);[]()
+
+内核使用内存描述符结构体表示进程的地址空间，该结构包含了和地址空间有关的全部信息。
+
+```c
+//include/linux/mm_types.h
+struct mm_struct {
+	struct vm_area_struct * mmap;		/* 虚拟内存区链表，指向线性区对象的链表头部 */
+	struct rb_root mm_rb;                   /* 指向线性区对象的红黑树*/
+	struct vm_area_struct * mmap_cache;	/* last find_vma result 指向最近找到的虚拟区间 */
+#ifdef CONFIG_MMU 
+/*用来在进程地址空间中搜索有效的进程地址空间的函数*/
+ 
+	unsigned long (*get_unmapped_area) (struct file *filp,
+				unsigned long addr, unsigned long len,
+				unsigned long pgoff, unsigned long flags);
+/*释放线性区的调用方法*/
+ void (*unmap_area) (struct mm_struct *mm, unsigned long addr);
+#endif
+	unsigned long mmap_base;		/* base of mmap area ，内存映射区的基地址*/
+	unsigned long task_size;		/* size of task vm space */
+	unsigned long cached_hole_size; 	/* if non-zero, the largest hole below free_area_cache */
+	unsigned long free_area_cache;		/* first hole of size cached_hole_size or larger */
+	pgd_t * pgd;                            /* 页表目录指针*/
+	atomic_t mm_users;			/* How many users with user space?，共享进程的个数 */
+	atomic_t mm_count;			/* How many references to "struct mm_struct" (users count as 1)，主使用计数器，采用引用计数，描述有多少指针指向当前的mm_struct */
+	int map_count;				/* number of VMAs ,线性区个数*/
+	struct rw_semaphore mmap_sem;
+	spinlock_t page_table_lock;		/* Protects page tables and some counters，保护页表和引用计数的锁 （使用的自旋锁）*/
+ 
+	struct list_head mmlist;		/* List of maybe swapped mm's.	These are globally strung
+						 * together off init_mm.mmlist, and are protected
+						 * by mmlist_lock
+						 */
+ 
+ 
+	unsigned long hiwater_rss;	/* High-watermark of RSS usage,进程拥有的最大页表数目 */
+	unsigned long hiwater_vm;	/* High-water virtual memory usage ,进程线性区的最大页表数目*/
+ 
+	unsigned long total_vm, locked_vm, shared_vm, exec_vm;
+	unsigned long stack_vm, reserved_vm, def_flags, nr_ptes;
+	unsigned long start_code, end_code, start_data, end_data;     /*维护代码区和数据区的字段*/
+	unsigned long start_brk, brk, start_stack;       /*维护堆区和栈区的字段*/
+	unsigned long arg_start, arg_end, env_start, env_end;  /*命令行参数的起始地址和尾地址，环境变量的起始地址和尾地址*/
+ 
+	unsigned long saved_auxv[AT_VECTOR_SIZE]; /* for /proc/PID/auxv */
+ 
+	/*
+	 * Special counters, in some configurations protected by the
+	 * page_table_lock, in other configurations by being atomic.
+	 */
+	struct mm_rss_stat rss_stat;
+ 
+	struct linux_binfmt *binfmt;
+ 
+	cpumask_t cpu_vm_mask;
+ 
+	/* Architecture-specific MM context */
+	mm_context_t context;
+ 
+	/* Swap token stuff */
+	/*
+	 * Last value of global fault stamp as seen by this process.
+	 * In other words, this value gives an indication of how long
+	 * it has been since this task got the token.
+	 * Look at mm/thrash.c
+	 */
+	unsigned int faultstamp;
+	unsigned int token_priority;
+	unsigned int last_interval;
+ 
+	unsigned long flags; /* Must use atomic bitops to access the bits */
+ 
+	struct core_state *core_state; /* 多线程支持 */
+#ifdef CONFIG_AIO
+	spinlock_t		ioctx_lock;
+	struct hlist_head	ioctx_list;
+#endif
+#ifdef CONFIG_MM_OWNER
+	/*
+	 * "owner" points to a task that is regarded as the canonical
+	 * user/owner of this mm. All of the following must be true in
+	 * order for it to be changed:
+	 *
+	 * current == mm->owner
+	 * current->mm != mm
+	 * new_owner->mm == mm
+	 * new_owner->alloc_lock is held
+	 */
+	struct task_struct *owner;
+#endif
+ 
+#ifdef CONFIG_PROC_FS
+	/* store ref to file /proc/<pid>/exe symlink points to */
+	struct file *exe_file;
+	unsigned long num_exe_file_vmas;
+#endif
+#ifdef CONFIG_MMU_NOTIFIER
+	struct mmu_notifier_mm *mmu_notifier_mm;
+#endif
+};
+
+```
+
+mm_user记录正在使用该地址的进程数目。比如两个线程共享该地址孔昂见，则其值为2。同时mm_count(主题引用数目)也是1。mm_count为0表示没有引用了，该结构体就会被撤销。一般mm_users值为0之后，其才为0.当内存在一个地址空间上操作，并需要使用该地址相关的引用计数时**内核便增加mm_count--mm_count存在的意义(区别主使用计数和使用该地址的进程数)**
+
+所有的mm_struct结构体都通过自身的mmlist域链接在一个双向链表中，该链表的首元素是`init_mm`内存描述符。操作该链表时，需要使用`mmlist_lock`锁来防止并发访问。
+
+![mm_struct](https://img-blog.csdn.net/20170112101815302?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvcXFfMjY3Njg3NDE=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
+
+##### 15.2.1 分配内存描述符
+
+task_struct中的mm指向内存分配描述符。fork()函数利用copy_mm()函数复制父进程的内存描述符。<b style="color:red">mm_struct结构体，实际是通过allocate_mm()宏从mm_cachep_slab缓存中分配得到的。通常每个进程唯一</b>。在调用clone时设置`CLONE_VM`标志共享地址空间；就会生成线程。copy_mm()将mm域指向其父进程的内存描述符。
+
+#### 15.2.2 撤销内存描述符
+
+进程退出时，内核会调用exit_mm()函数，执行内存的销毁，同时更新一些统计量。函数调用`mmput()`函数减少内存描述中符的mm_users用户计数，如果计数为0，调用`mmdrop()`减少mm_count使用计数。使用计数也为0，则调用`free_mm()`宏通过kmem_cache_free()将mm_struct结构体归还到mm_cachep_slab中(**注意理解进程销毁本质上是各种资源的回归。所有进程都是操作系统的子线程不过是可以占用资源罢了**)
+
+#### 15.2.3 mm_struct与内核线程
+
+内核线程，没有进程地址空间，没有相关的内存描述符，因此内核线程对应的进程描述符中mm域为空，没有用户上下文。当新的内核线程运行是，为了避免处理器周期向新地址空间进行切换，内核线程将直接使用前一个进程的内存描述符。(内核中共享内存)
+
+当一个进程被调度时，该进程的mm指向的地址空间被装载到内存中，进程描述符中的active_mm域会被更新，指向新的地址空间，内核线程没有地址空间，mm为NULL,内核线程别调度时，内核发现它的mm为NULL。就会保留前一个进程的地址空间，随后跟新内核线程的active_mm域，使其指向前一个进程的内存描述符，使用前一个进程的页表；它们仅仅使用地址空间中内核相关的信息，基本和普通内存相同。
+
+**进程消失，mm_struct可能会被内核线程借用**
+
+### 15.3 虚拟内存区域
+
+内存区域由vm_area_struct结构体描述。(逻辑)内存区域在Linux内核中常被称为虚拟内存区域(VMAS):指定地址空间上的一个独立内存范围描述符。内核将其作为一个内存对象进行管理。操作相同，只是指向的位置不同。VMA可以是内存映射文件或者进程用户空间栈
+
+```c
+
+/*
+ * This struct defines a memory VMM memory area. There is one of these
+ * per VM-area/task.  A VM area is any part of the process virtual memory
+ * space that has a special rule for the page-fault handlers (ie a shared
+ * library, the executable area etc).
+ */
+struct vm_area_struct {
+	/* The first cache line has the info for VMA tree walking. */
+
+	unsigned long vm_start;		/*  区间首地址 */
+	unsigned long vm_end;		/* 区间尾部地址 */
+
+	/* 前后链表指针, sorted by address */
+	struct vm_area_struct *vm_next, *vm_prev;
+    /* 数上该VMA的节点 */
+	struct rb_node vm_rb;
+
+	/*
+	 * Largest free memory gap in bytes to the left of this VMA.
+	 * Either between this VMA and vma->vm_prev, or between one of the
+	 * VMAs below us in the VMA rbtree and its ->vm_prev. This helps
+	 * get_unmapped_area find a free area of the right size.
+	 */
+	unsigned long rb_subtree_gap;
+
+	/* Second cache line starts here. */
+
+	struct mm_struct *vm_mm;	/* 结构体所属的地址空间 */
+	pgprot_t vm_page_prot;		/* VMA访问权限 */
+	unsigned long vm_flags;		/* 标志 see mm.h. */
+
+	/*
+	 * For areas with an address space and backing store,
+	 * linkage into the address_space->i_mmap interval tree.
+	 */
+	struct {
+		struct rb_node rb;
+		unsigned long rb_subtree_last;
+	} shared;
+
+	/*
+	 * A file's MAP_PRIVATE vma can be in both i_mmap tree and anon_vma
+	 * list, after a COW of one of the file pages.	A MAP_SHARED vma
+	 * can only be in the i_mmap tree.  An anonymous MAP_PRIVATE, stack
+	 * or brk vma (with NULL file) can only be in an anon_vma list.
+	 */
+	struct list_head anon_vma_chain; /* Serialized by mmap_sem &
+					  * page_table_lock */
+	struct anon_vma *anon_vma;	/* 匿名VMA对象，Serialized by page_table_lock */
+
+	/* 指向结构体的相关操作表指针 */
+	const struct vm_operations_struct *vm_ops;
+
+	/* 存储中的文件偏移量 */
+	unsigned long vm_pgoff;		/* Offset (within vm_file) in PAGE_SIZE
+					   units */
+	struct file * vm_file;		/* 被映射的文件(可以为NULL). */
+	void * vm_private_data;		/* was vm_pte (shared mem) */
+
+#ifdef CONFIG_SWAP
+	atomic_long_t swap_readahead_info;
+#endif
+#ifndef CONFIG_MMU
+	struct vm_region *vm_region;	/* NOMMU mapping region */
+#endif
+#ifdef CONFIG_NUMA
+	struct mempolicy *vm_policy;	/* NUMA policy for the VMA */
+#endif
+	struct vm_userfaultfd_ctx vm_userfaultfd_ctx;
+} __randomize_layout;
+
+```
+每个内存描述符和进程地址空间都唯一对应(VMA与mm_struct唯一对应)。内存区域位置是[vm_start,vm_end]。(同一个地址空间内的不同内存区间不能重叠)
+
+#### 15.3.1 VMA标志
+
+主要是页面的行为和信息可能取值和含义如下：
+
+![VMA标志](../img/2019-11-04-21-25-35.png)
+
+VM_IO在设备驱动程序中mmap()函数进行I/O空间映射时才被设置,该标志也表示内存区域不能被包含在任何进程的**存放转存(core dump([coredump介绍](https://blog.csdn.net/zkuili/article/details/81260021);[linux下core dump](https://www.cnblogs.com/alantu2018/p/8468879.html)))**
+
+VM_SEQ_READ标志韩式内核应用程序对映射内容执行有序的(线性和连续的)读操作;这样内核可以有选择的执行预读文件.VM_RAND_READ与其刚好相反,映射内容执行随机的读操作,内核减少或者取消文件预读。
+
+#### 15.3.2 VMA相关操作
+
+_参考链接：_ [内存管理概述、内存分配与释放、地址映射机制（mm_struct, vm_area_struct）、malloc/free 的实现](http://www.cnblogs.com/zengkefu/p/5589799.html)(**必看**)
+
+虚拟内存结构如下：
+
+![虚拟内存结构](http://img.blog.csdn.net/20130917084015218?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvam51X3NpbWJh/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+
+- 内存映射模块(mmap)：负责把磁盘文件的逻辑地址映射到虚拟地址，以及把虚拟地址映射到物理地址。
+- 交换模块（swap）：负责控制内存内容的换入和换出，它通过交换机制，使得在物理内存的页面（RAM 页）中保留有效的页 ，即从主存中淘汰最近没被访问的页，保存近来访问过的页。
+- 核心内存管理模块（core）：负责核心内存管理功能，即对页的分配、回收、释放及请页处理等，这些功能将被别的内核子系统（如文件系统）使用。
+- 结构特定的模块：负责给各种硬件平台提供通用接口，这个模块通过执行命令来改变硬件MMU 的虚拟地址映射，并在发生页错误时，提供了公用的方法来通知别的内核子系统。这个模块是实现虚拟内存的物理基础。
+
+![虚拟进程地址示意图](http://img.blog.csdn.net/20130917084033515?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvam51X3NpbWJh/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/Center)
+
+```c
+struct vm_operations_struct
+{
+    /* 将指定的内存区域加入到地址空间 */
+    void (*open)(struct vm_area_struct *area);
+    /* 将指定的内存区域从地址空间删除，该函数被调用 */
+    void (*close)(struct vm_area_struct *area);
+    /* 等没有出现在物理内存中的页面被访问时，该函数被页面故障处理调用 */
+    *int (*fault) (struct vm_area_struct *,struct vm_fault*);
+    /* 页面为只读是，该函数被页面故障处理调用 */
+    *int page_mkwrite(struct vm_area_struct *area,struct vm_fault *vmf);
+    /* get_user_pages()函数调用失败时，该函数被access_process_vm()调用 */
+    *int access(struct vm_area_struct *vma,unsigned long address,void *buf,int len,int write)
+};
+```
+
+#### 15.3.3 内存区域的树型结构和内存区域的链表结构
+
+内存描述符中的mmap和mm_rb之一访问内存区域。它们包含完全相同的vm_area)struct结构体的指针，仅仅组织方法不同。内核为了内存区域上的各种不同操作都能获得高性能，同时使用了这两种数据结构。
+
+#### 15.3.4 实际使用中的内存域
+
+可以使用/proc文件系统和`pmap`工具查看给定的进程内存空间和其中所含的内存区域。
+如使用`cat /proc/24027/maps`查看htop的全部内存域如下：
+```shell
+
+55cebaed2000-55cebaef9000 r-xp 00000000 08:0e 2100205                    /usr/bin/htop
+55cebb0f9000-55cebb0fa000 r--p 00027000 08:0e 2100205                    /usr/bin/htop
+55cebb0fa000-55cebb0fe000 rw-p 00028000 08:0e 2100205                    /usr/bin/htop
+55cebb0fe000-55cebb0ff000 rw-p 00000000 00:00 0 
+55cebc1b7000-55cebcdb8000 rw-p 00000000 00:00 0                          [heap]
+7fcb4c0a8000-7fcb4c0b3000 r-xp 00000000 08:0c 548535                     /lib/x86_64-linux-gnu/libnss_files-2.23.so
+7fcb4c0b3000-7fcb4c2b2000 ---p 0000b000 08:0c 548535                     /lib/x86_64-linux-gnu/libnss_files-2.23.so
+7fcb4c2b2000-7fcb4c2b3000 r--p 0000a000 08:0c 548535                     /lib/x86_64-linux-gnu/libnss_files-2.23.so
+7fcb4c2b3000-7fcb4c2b4000 rw-p 0000b000 08:0c 548535                     /lib/x86_64-linux-gnu/libnss_files-2.23.so
+7fcb4c2b4000-7fcb4c2ba000 rw-p 00000000 00:00 0 
+7fcb4c2ba000-7fcb4c2c5000 r-xp 00000000 08:0c 548528                     /lib/x86_64-linux-gnu/libnss_nis-2.23.so
+7fcb4c2c5000-7fcb4c4c4000 ---p 0000b000 08:0c 548528                     /lib/x86_64-linux-gnu/libnss_nis-2.23.so
+7fcb4c4c4000-7fcb4c4c5000 r--p 0000a000 08:0c 548528                     /lib/x86_64-linux-gnu/libnss_nis-2.23.so
+7fcb4c4c5000-7fcb4c4c6000 rw-p 0000b000 08:0c 548528                     /lib/x86_64-linux-gnu/libnss_nis-2.23.so
+7fcb4c4c6000-7fcb4c4dc000 r-xp 00000000 08:0c 548533                     /lib/x86_64-linux-gnu/libnsl-2.23.so
+7fcb4c4dc000-7fcb4c6db000 ---p 00016000 08:0c 548533                     /lib/x86_64-linux-gnu/libnsl-2.23.so
+7fcb4c6db000-7fcb4c6dc000 r--p 00015000 08:0c 548533                     /lib/x86_64-linux-gnu/libnsl-2.23.so
+7fcb4c6dc000-7fcb4c6dd000 rw-p 00016000 08:0c 548533                     /lib/x86_64-linux-gnu/libnsl-2.23.so
+7fcb4c6dd000-7fcb4c6df000 rw-p 00000000 00:00 0 
+7fcb4c6df000-7fcb4c6e7000 r-xp 00000000 08:0c 548539                     /lib/x86_64-linux-gnu/libnss_compat-2.23.so
+7fcb4c6e7000-7fcb4c8e6000 ---p 00008000 08:0c 548539                     /lib/x86_64-linux-gnu/libnss_compat-2.23.so
+7fcb4c8e6000-7fcb4c8e7000 r--p 00007000 08:0c 548539                     /lib/x86_64-linux-gnu/libnss_compat-2.23.so
+7fcb4c8e7000-7fcb4c8e8000 rw-p 00008000 08:0c 548539                     /lib/x86_64-linux-gnu/libnss_compat-2.23.so
+7fcb4c8e8000-7fcb4ce1f000 r--p 00000000 08:0e 730626                     /usr/lib/locale/locale-archive
+7fcb4ce1f000-7fcb4ce22000 r-xp 00000000 08:0c 548520                     /lib/x86_64-linux-gnu/libdl-2.23.so
+7fcb4ce22000-7fcb4d021000 ---p 00003000 08:0c 548520                     /lib/x86_64-linux-gnu/libdl-2.23.so
+7fcb4d021000-7fcb4d022000 r--p 00002000 08:0c 548520                     /lib/x86_64-linux-gnu/libdl-2.23.so
+7fcb4d022000-7fcb4d023000 rw-p 00003000 08:0c 548520                     /lib/x86_64-linux-gnu/libdl-2.23.so
+7fcb4d023000-7fcb4d03a000 r-xp 00000000 08:0c 559690                     /lib/x86_64-linux-gnu/libgcc_s.so.1
+7fcb4d03a000-7fcb4d239000 ---p 00017000 08:0c 559690                     /lib/x86_64-linux-gnu/libgcc_s.so.1
+7fcb4d239000-7fcb4d23a000 r--p 00016000 08:0c 559690                     /lib/x86_64-linux-gnu/libgcc_s.so.1
+7fcb4d23a000-7fcb4d23b000 rw-p 00017000 08:0c 559690                     /lib/x86_64-linux-gnu/libgcc_s.so.1
+7fcb4d23b000-7fcb4d40d000 r-xp 00000000 08:0e 725176                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.26
+7fcb4d40d000-7fcb4d60d000 ---p 001d2000 08:0e 725176                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.26
+7fcb4d60d000-7fcb4d618000 r--p 001d2000 08:0e 725176                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.26
+7fcb4d618000-7fcb4d61b000 rw-p 001dd000 08:0e 725176                     /usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.26
+7fcb4d61b000-7fcb4d61e000 rw-p 00000000 00:00 0 
+7fcb4d61e000-7fcb4d636000 r-xp 00000000 08:0c 548522                     /lib/x86_64-linux-gnu/libpthread-2.23.so
+7fcb4d636000-7fcb4d835000 ---p 00018000 08:0c 548522                     /lib/x86_64-linux-gnu/libpthread-2.23.so
+7fcb4d835000-7fcb4d836000 r--p 00017000 08:0c 548522                     /lib/x86_64-linux-gnu/libpthread-2.23.so
+7fcb4d836000-7fcb4d837000 rw-p 00018000 08:0c 548522                     /lib/x86_64-linux-gnu/libpthread-2.23.so
+7fcb4d837000-7fcb4d83b000 rw-p 00000000 00:00 0 
+7fcb4d83b000-7fcb4d9fb000 r-xp 00000000 08:0c 548538                     /lib/x86_64-linux-gnu/libc-2.23.so
+7fcb4d9fb000-7fcb4dbfb000 ---p 001c0000 08:0c 548538                     /lib/x86_64-linux-gnu/libc-2.23.so
+7fcb4dbfb000-7fcb4dbff000 r--p 001c0000 08:0c 548538                     /lib/x86_64-linux-gnu/libc-2.23.so
+7fcb4dbff000-7fcb4dc01000 rw-p 001c4000 08:0c 548538                     /lib/x86_64-linux-gnu/libc-2.23.so
+7fcb4dc01000-7fcb4dc05000 rw-p 00000000 00:00 0 
+7fcb4dc05000-7fcb4dd0d000 r-xp 00000000 08:0c 548541                     /lib/x86_64-linux-gnu/libm-2.23.so
+7fcb4dd0d000-7fcb4df0c000 ---p 00108000 08:0c 548541                     /lib/x86_64-linux-gnu/libm-2.23.so
+7fcb4df0c000-7fcb4df0d000 r--p 00107000 08:0c 548541                     /lib/x86_64-linux-gnu/libm-2.23.so
+7fcb4df0d000-7fcb4df0e000 rw-p 00108000 08:0c 548541                     /lib/x86_64-linux-gnu/libm-2.23.so
+7fcb4df0e000-7fcb4df33000 r-xp 00000000 08:0c 527167                     /lib/x86_64-linux-gnu/libtinfo.so.5.9
+7fcb4df33000-7fcb4e132000 ---p 00025000 08:0c 527167                     /lib/x86_64-linux-gnu/libtinfo.so.5.9
+7fcb4e132000-7fcb4e136000 r--p 00024000 08:0c 527167                     /lib/x86_64-linux-gnu/libtinfo.so.5.9
+7fcb4e136000-7fcb4e137000 rw-p 00028000 08:0c 527167                     /lib/x86_64-linux-gnu/libtinfo.so.5.9
+7fcb4e137000-7fcb4e164000 r-xp 00000000 08:0c 527077                     /lib/x86_64-linux-gnu/libncursesw.so.5.9
+7fcb4e164000-7fcb4e364000 ---p 0002d000 08:0c 527077                     /lib/x86_64-linux-gnu/libncursesw.so.5.9
+7fcb4e364000-7fcb4e365000 r--p 0002d000 08:0c 527077                     /lib/x86_64-linux-gnu/libncursesw.so.5.9
+7fcb4e365000-7fcb4e366000 rw-p 0002e000 08:0c 527077                     /lib/x86_64-linux-gnu/libncursesw.so.5.9
+7fcb4e366000-7fcb4e38d000 r-xp 00000000 08:0e 654606                     /usr/lib/libtcmalloc_minimal.so.4.2.6
+7fcb4e38d000-7fcb4e58c000 ---p 00027000 08:0e 654606                     /usr/lib/libtcmalloc_minimal.so.4.2.6
+7fcb4e58c000-7fcb4e58d000 r--p 00026000 08:0e 654606                     /usr/lib/libtcmalloc_minimal.so.4.2.6
+7fcb4e58d000-7fcb4e58e000 rw-p 00027000 08:0e 654606                     /usr/lib/libtcmalloc_minimal.so.4.2.6
+7fcb4e58e000-7fcb4e5b3000 rw-p 00000000 00:00 0 
+7fcb4e5b3000-7fcb4e5d9000 r-xp 00000000 08:0c 548521                     /lib/x86_64-linux-gnu/ld-2.23.so
+7fcb4e77e000-7fcb4e786000 rw-p 00000000 00:00 0 
+7fcb4e7d0000-7fcb4e7d7000 r--s 00000000 08:0e 918486                     /usr/lib/x86_64-linux-gnu/gconv/gconv-modules.cache
+7fcb4e7d7000-7fcb4e7d8000 rw-p 00000000 00:00 0 
+7fcb4e7d8000-7fcb4e7d9000 r--p 00025000 08:0c 548521                     /lib/x86_64-linux-gnu/ld-2.23.so
+7fcb4e7d9000-7fcb4e7da000 rw-p 00026000 08:0c 548521                     /lib/x86_64-linux-gnu/ld-2.23.so
+7fcb4e7da000-7fcb4e7db000 rw-p 00000000 00:00 0 
+7ffe68218000-7ffe6823a000 rw-p 00000000 00:00 0                          [stack]
+7ffe68366000-7ffe68369000 r--p 00000000 00:00 0                          [vvar]
+7ffe68369000-7ffe6836b000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsyscall]
+```
+显示了内存空间的全部内存域。
+
+注意：**[多个进程都链接同一个so动态库,代码段共享，数据段不共享](https://blog.csdn.net/u010312436/article/details/81263980)([动态链接库被多个进程访问](https://blog.csdn.net/yl_best/article/details/82914390);[多个进程间共享动态链接库的原理](https://blog.csdn.net/benpaobagzb/article/details/50070427)[多进程引用的动态链接库中的全局变量问题](https://blog.csdn.net/yuyin86/article/details/10239479))**.因此多进程调用相同的动态链接库，它的内存地址也是不同的。windows中的dll中的全局变量在被读取是是共享变量，但是当其被写时复制多个页，对应进程不同的数据，保证数据的独立性，这样即节省了资源右保证了数据的独立性。**在Linux中，载入的动态链接库实际上可以直接使用外部框架或者其他模块的全局数据，但是在Windows下确是隔离的，不能直接访问到。**
