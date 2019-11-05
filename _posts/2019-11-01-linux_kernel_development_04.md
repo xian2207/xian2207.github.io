@@ -1276,7 +1276,7 @@ struct vm_operations_struct
 可以使用/proc文件系统和`pmap`工具查看给定的进程内存空间和其中所含的内存区域。
 如使用`cat /proc/24027/maps`查看htop的全部内存域如下：
 ```shell
-
+#开始地址-结束地址         访问权限 偏移   主:次设备号 i节点                    文件
 55cebaed2000-55cebaef9000 r-xp 00000000 08:0e 2100205                    /usr/bin/htop
 55cebb0f9000-55cebb0fa000 r--p 00027000 08:0e 2100205                    /usr/bin/htop
 55cebb0fa000-55cebb0fe000 rw-p 00028000 08:0e 2100205                    /usr/bin/htop
@@ -1355,4 +1355,124 @@ ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0                  [vsysca
 ```
 显示了内存空间的全部内存域。
 
-注意：**[多个进程都链接同一个so动态库,代码段共享，数据段不共享](https://blog.csdn.net/u010312436/article/details/81263980)([动态链接库被多个进程访问](https://blog.csdn.net/yl_best/article/details/82914390);[多个进程间共享动态链接库的原理](https://blog.csdn.net/benpaobagzb/article/details/50070427)[多进程引用的动态链接库中的全局变量问题](https://blog.csdn.net/yuyin86/article/details/10239479))**.因此多进程调用相同的动态链接库，它的内存地址也是不同的。windows中的dll中的全局变量在被读取是是共享变量，但是当其被写时复制多个页，对应进程不同的数据，保证数据的独立性，这样即节省了资源右保证了数据的独立性。**在Linux中，载入的动态链接库实际上可以直接使用外部框架或者其他模块的全局数据，但是在Windows下确是隔离的，不能直接访问到。**
+注意：**[多个进程都链接同一个so动态库,代码段共享，数据段不共享](https://blog.csdn.net/u010312436/article/details/81263980)([动态链接库被多个进程访问](https://blog.csdn.net/yl_best/article/details/82914390);[多个进程间共享动态链接库的原理](https://blog.csdn.net/benpaobagzb/article/details/50070427)[多进程引用的动态链接库中的全局变量问题](https://blog.csdn.net/yuyin86/article/details/10239479))**.因此多进程调用相同的动态链接库，它的内存地址也是不同的。windows中的dll中的全局变量在被读取是是共享变量，但是当其被写时复制多个页，对应进程不同的数据，保证数据的独立性，这样即节省了资源右保证了数据的独立性。**在Linux中，载入的动态链接库实际上可以直接使用外部框架或者其他模块的全局数据，但是在Windows下确是隔离的，不能直接访问到。**但是在Linux中的写拷贝机制，使得不能使用动态链接库进行进程间通信。但是[windows可以](https://blog.csdn.net/liujiayu2/article/details/46009689)。[动态链接库中的全局变量可能因为多次引用造成重复初始化](https://blog.csdn.net/imxiangzi/article/details/45872025).
+
+### 15.4 操作内存区域
+
+对内存区域的查找和验证。
+
+#### 15.4.1 find_vmal()
+
+```c
+/* 查找第一个vm_end大于addr的区域 */
+struct vm_area_struct *find_vmal(struct mm_struct *mm,unsigned long addr){
+    /* 通过搜索红黑树进行查找，返回起始值不一定是addr，因为需要查找连续的内存 */
+    /* 提前定义结果 */
+    struct vm_area_struct *vma=NULL;
+    if(mm){
+        vma=mm->mmap_cache;
+        /* 检查是否符合要求 */
+        if(!(vma&&vma->vm_end>addr&&vma->vm_start<=addr)){
+            struct rb_node *rb_node;
+            /* 获取红黑树的根节点 */
+            rb_node=mm->mm_rb.rb_node;
+            vma=NULL;
+            /* 遍历红黑树 */
+            while(rb_node){
+                struct vm_area_struct *vma_tmp;
+                /* 查找内存范围 */
+                vma_tmp=rb_entry(rb_node,struct vm_area_struct,vm_rb);
+                /* 尾部地址大于addr */
+                if(vma_tmp->vm_end>addr){
+                    vma=vma_tmp;
+                    /* 再次校验 符合要求直接返回*/
+                    if(vma_tmp->vm_start<=addr)
+                        break;
+                    /* 没找到遍历左子树 */
+                    rb_node=rb_node->rb_left;
+                }else{
+                    /* 遍历右子树 */
+                    rb_node=rb_node->rb_right;
+                }
+            }
+            /* 更新mmap_cache指针 */
+            if(vma) mm->mmap_cache=vma;
+        }
+    }
+    return vma;
+}
+```
+
+#### 15.4.2 find_vma_perv()
+
+其和find_vma()方式相同，不过返回第一个小于addr的VMA.该函数声明在`mm/mmap.c`和文件`<linux/mm.h>`中
+```c
+struct vm_area_struct *find_vma_prev(struct mm_struct *mm,unsigned long addr,struct vm_area_struct **pprev);
+```
+
+#### 15.4.3 find_vma_intersection()
+
+返回第一个和指定地址区间相交的VMA.该函数内联在文件`<linux/mm.h>`中：
+```c
+static inline struct vm_area_struct *
+find_vma_intersection(struct mm_struct *mm,
+                        unsigned long start_addr, 
+                        unsigned long end_addr)
+{
+    struct vm_area_struct *vma;
+    vma=find_vma(mm,start_addr);
+    if(vma&&end_addr<=vma->vm_start) vm=NULL;
+    return vma;
+}
+```
+
+### 15.5 mmap()和do_mmap()：创建地址区间
+
+内核使用do_mmap()函数创建一个新的线性地址区间。如果创建的地址区间和一个已经存在的相邻，并且具有相同的访问权限，两个区间将合并为一个。如果不能合并就创建一个新的VMA了。其函数定义如下：
+
+```c
+unsigned long do_mmap(
+						struct file *file, /* 指定映射源文件 */
+						unsigned long addr, /* 可选，指定搜索空闲区域的起始位置 */
+						unsigned long len,
+						unsigned long port,
+						unsigned long flag, 
+						unsigned long offset /* 映射的文件偏移 */
+					);
+```
+prot参数和flag可选参数如下：
+
+![标志位](../img/2019-11-05-17-04-19.png)
+![标志位2](../img/2019-11-05-17-05-17.png)
+
+### 15.6 mummap()和do_mummap()删除地址区间
+
+do_mummap()函数从特定的进程地址空间中删除指定地址区间
+```c
+int do_mummap(struct mm_struct *m,unsigned long start,size_t len);
+int munmap(void *start,size_t length);
+```
+相关系统调用使用sys_munmap.是对do_mummap()函数的一个简单的封装
+
+```c
+asmlinkage long sys_munmmap(unsigned long addr,size_t len)
+{
+	int ret;
+	struct mm_struct *mm;
+	mm=current->mm;
+	down_write(&mm->mmap_sem);
+	ret=do_mummap(mm,addr,len);
+	up_write(&mm->mmap_sem);
+	return ret;
+}
+```
+
+### 15.7 页表
+
+32位操作系统中使用三级页表进行地址转换；转换过程如下：
+
+![内存转换过程](../img/2019-11-05-20-48-32.png)
+
+多数体系结构，实现了一个翻译后缓冲器(TLB，块表)。TLB作为一个将虚拟地址映射到物理地址的硬件缓存。
+
+Linux中使用写时拷贝的方式共享页表。
