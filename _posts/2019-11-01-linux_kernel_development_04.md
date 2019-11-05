@@ -816,7 +816,7 @@ Linux中通过Proc文件系统，将所有设备抽象为只存在于内存上�
 
 所有设备的I/O必须以扇区为单位进行操作。
 
-![块和扇区操作](../img/2019-11-04-15-25-05.png)
+![块和扇区操作](https://wangpengcheng.github.io/img/2019-11-04-15-25-05.png)
 
 ### 14.3 缓冲区和缓冲区头
 
@@ -824,7 +824,7 @@ Linux中通过Proc文件系统，将所有设备抽象为只存在于内存上�
 
 其中`bh_state_bits`枚举如下：
 
-![bh_state_bits](../img/2019-11-04-15-35-03.png)
+![bh_state_bits](https://wangpengcheng.github.io/img/2019-11-04-15-35-03.png)
 
 缓冲区头的目的在于描述磁盘块和物理内存缓冲区(在特定页面商都字节序列)之间的映射关系。
 
@@ -906,7 +906,7 @@ struct bio {
 
 bio结构体的目的是代表现场正在执行的I/O操作，结构体中的主要域都是用来管理信息的，其中关键是`bi_io_vecs`、`bi_vcnt`和`bi_idx`。其关系如下：
 
-![相关结构体](../img/2019-11-04-15-58-37.png)
+![相关结构体](https://wangpengcheng.github.io/img/2019-11-04-15-58-37.png)
 
 ### 14.3.1 I/O向量
 _参考链接：_ [Linux中page、buffer_head、bio的联系](https://blog.csdn.net/cxy_chen/article/details/81076601)
@@ -956,7 +956,7 @@ struct bio_vec{
 
 为了避免饥饿，设置最后期限，每个请求都有一个超时时间(默认为读500ms，写为5s)，根据读写插入到特定的读/写FIFO队列中。新队列总是被加入到队列尾部，这样就避免了饥饿。最后期限I/O调度程序将请求从排序队列的头部去下，再推入到派发队列中，派发队列然后将请求提交给磁盘驱动，从而保证了最小化的请求寻址。如果请求超时，在从FIFO中提取请求进行服务。
 
-![最后期限I/O调度程序的三个队列](../img/2019-11-04-18-32-17.png)
+![最后期限I/O调度程序的三个队列](https://wangpengcheng.github.io/img/2019-11-04-18-32-17.png)
 
 注意：它并不能严格保证请求的响应时间。
 
@@ -979,7 +979,7 @@ struct bio_vec{
 
 #### 14.5.7 I/O调度程序的选择
 
-![可选参数](../img/2019-11-04-19-22-12.png)
+![可选参数](https://wangpengcheng.github.io/img/2019-11-04-19-22-12.png)
 
 每一种调度程序都可以被启用，并内置在内核中。默认情况下，块设备使用完全公平的I/O调度程序。
 
@@ -1230,7 +1230,7 @@ struct vm_area_struct {
 
 主要是页面的行为和信息可能取值和含义如下：
 
-![VMA标志](../img/2019-11-04-21-25-35.png)
+![VMA标志](https://wangpengcheng.github.io/img/2019-11-04-21-25-35.png)
 
 VM_IO在设备驱动程序中mmap()函数进行I/O空间映射时才被设置,该标志也表示内存区域不能被包含在任何进程的**存放转存(core dump([coredump介绍](https://blog.csdn.net/zkuili/article/details/81260021);[linux下core dump](https://www.cnblogs.com/alantu2018/p/8468879.html)))**
 
@@ -1442,8 +1442,8 @@ unsigned long do_mmap(
 ```
 prot参数和flag可选参数如下：
 
-![标志位](../img/2019-11-05-17-04-19.png)
-![标志位2](../img/2019-11-05-17-05-17.png)
+![标志位](https://wangpengcheng.github.io/img/2019-11-05-17-04-19.png)
+![标志位2](https://wangpengcheng.github.io/img/2019-11-05-17-05-17.png)
 
 ### 15.6 mummap()和do_mummap()删除地址区间
 
@@ -1471,7 +1471,7 @@ asmlinkage long sys_munmmap(unsigned long addr,size_t len)
 
 32位操作系统中使用三级页表进行地址转换；转换过程如下：
 
-![内存转换过程](../img/2019-11-05-20-48-32.png)
+![内存转换过程](https://wangpengcheng.github.io/img/2019-11-05-20-48-32.png)
 
 多数体系结构，实现了一个翻译后缓冲器(TLB，块表)。TLB作为一个将虚拟地址映射到物理地址的硬件缓存。
 
