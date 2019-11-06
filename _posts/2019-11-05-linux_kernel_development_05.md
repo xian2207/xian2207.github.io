@@ -126,7 +126,7 @@ struct address_space_operations {
 
 系统管理员可以在`/proc/sys/vm`中设置回写相关的参数，也可以通过sysctl系统调用设置它们。pdflush相关的所有可设置变量如下：
 
-![可设置变量](../img/2019-11-05-22-07-17.png)
+![可设置变量](https://wangpengcheng.github.io/img/2019-11-05-22-07-17.png)
 
 #### 16.4.1 膝上型计算机模式
 
@@ -365,7 +365,7 @@ struct kset {
 
 三者的数据关系如下：
 
-![数据结构的关系](../img/2019-11-06-19-36-06.png)
+![数据结构的关系](https://wangpengcheng.github.io/img/2019-11-06-19-36-06.png)
 
 #### 17.3.5 管理和操作kobject
 
@@ -475,7 +475,7 @@ printk(KERN_DEBUG "This is a debug notice\n");
 ```
 日志等级如下：
 
-![日志等级](../img/2019-11-06-21-48-53.png)
+![日志等级](https://wangpengcheng.github.io/img/2019-11-06-21-48-53.png)
 
 #### 18.3.3 缓冲区记录
 
@@ -498,7 +498,7 @@ printk(KERN_DEBUG "This is a debug notice\n");
 
 可以在定义`CONFIG_MAGIC_SYSRQ`选项来，直接通过键盘，向系统内核通信。可以使用`Sysrq-h`获取更多信息。
 
-![SysRq命令](../img/2019-11-06-22-01-15.png)
+![SysRq命令](https://wangpengcheng.github.io/img/2019-11-06-22-01-15.png)
 
 ### 18.8 内核调试的传奇
 
@@ -529,7 +529,7 @@ else
 	/* 高位优先 */
 ```
 
-![高位优先](../img/2019-11-06-22-15-28.png)
+![高位优先](https://wangpengcheng.github.io/img/2019-11-06-22-15-28.png)
 
 x86基本都是低位优先
 
@@ -539,4 +539,4 @@ x86基本都是低位优先
 
 ### 19.7 页长度
 
-![不同体系结构](../img/2019-11-06-22-18-20.png)
+![不同体系结构](https://wangpengcheng.github.io/img/2019-11-06-22-18-20.png)
