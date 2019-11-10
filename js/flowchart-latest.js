@@ -579,8 +579,10 @@
                 start: null,
                 drawSVG: function(container, options) {
                     function getDisplaySymbol(s) {
-                        if(s.hasOwnProperty(key)){
-                            if (dispSymbols[s.key]) return dispSymbols[s.key];
+                        if(s){
+                            if(s.hasOwnProperty(key)){
+                                if (dispSymbols[s.key]) return dispSymbols[s.key];
+                            }
                         }
                         switch (s.symbolType) {
                           case "start":
