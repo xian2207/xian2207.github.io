@@ -523,3 +523,584 @@ int main()
 
 ## 第七章 数据管理
 
+本章中的主要内容
+- 动态内存管理：可以做什么以及Linux不允许做什么。
+- 文件锁定：协调锁、共享文件的锁定区域和避免死锁。
+- dbm数据库：一个大多数linux系统都提供的、基本的、不基于SQL的数据库函数库。
+
+### 7.1 
+
+linux中的内存管理中一般情况下是265M的堆栈大小。linux中可以使用标准的c语言接口进行内存分配。注意当linux中的内存耗尽的时候，会linux内核会使用交换空间(独立的磁盘空间)。内核会在物理内存和交换空间之间移动数据和程序代码。
+每个Linux系统中运行的程序都只能看到属于自己的内存映像，不同的程序看到的内存映像不同。只有操作系统知道物理内存是如何安排的。
+
+Linux可以允许输出空指针，但是不允许空指针写入内存。
+
+**linux中一旦程序调用free释放了一块内存，它就不再属于这个进程。它将由malloc函数库负责管理。在对一块内存调用free之后，就绝不能再对其进行读写操作了**
+
+其它内存释放函数：
+
+- `void *calloc(size_t number_of_elements,size_t element_size);`:结构数组分配内存，需要元素个数和每个元素的大小作为其参数。并且分配的内存全部初始化为0.返回数组中第一个元素的指针。
+- `void *realloc(void *existing_memory,size_t new_size);`:释放内存。
+
+
+### 7.2 文件锁定
+
+文件锁与线程锁类似，都是使用锁来进行的。可以使用原子文件锁，来直接锁定文件，也可以只锁定文件的一部分，从而可以独享对这一部分内容的访问。
+
+创建文件锁后，通常被放在一个特定的位置，linux中通常会在/var/spool目录中创建一个文件。
+注意：**文件锁只是建议锁，不是强制锁**
+
+可以贼打开文件时使用锁，想干参数在`fcnt.h`中，在此不做过多叙述。第三章中函数有详细叙述。
+
+文件读取使用fread时，将整个文件都读取到了内存中，再传递给程序，文件内容中未被锁定的部分。当其它部分被更改后，内容锁消失；但是因为程序获取的还是fread上次读取的内容，因此会产生数据的错误。可以使用`read()`和`write()`读取部分内容，避免这个问题的发生。
+
+下面是一个简单的读写锁示例
+
+```c
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+
+const char *test_file = "/tmp/test_lock";
+
+int main() {
+    int file_desc;
+    int byte_count;
+    char *byte_to_write = "A";
+    struct flock region_1;
+    struct flock region_2;
+    int res;
+
+        /* open a file descriptor */
+
+    file_desc = open(test_file, O_RDWR | O_CREAT, 0666);
+    if (!file_desc) {
+        fprintf(stderr, "Unable to open %s for read/write\n", test_file);
+        exit(EXIT_FAILURE);
+    }
+
+        /* put some data in the file */
+
+    for(byte_count = 0; byte_count < 100; byte_count++) {
+        (void)write(file_desc, byte_to_write, 1);
+    }
+
+        /* setup region 1, a shared lock, from bytes 10 -> 30 */
+
+    region_1.l_type = F_RDLCK;
+    region_1.l_whence = SEEK_SET;
+    region_1.l_start = 10;
+    region_1.l_len = 20; 
+    
+        /* setup region 2, an exclusive lock, from bytes 40 -> 50 */
+
+    region_2.l_type = F_WRLCK;
+    region_2.l_whence = SEEK_SET;
+    region_2.l_start = 40;
+    region_2.l_len = 10;
+
+        /* now lock the file */
+
+    printf("Process %d locking file\n", getpid());
+    res = fcntl(file_desc, F_SETLK, &region_1);
+    if (res == -1) fprintf(stderr, "Failed to lock region 1\n");
+    res = fcntl(file_desc, F_SETLK, &region_2);
+    if (res == -1) fprintf(stderr, "Failed to lock region 2\n");    
+
+        /* and wait for a while */
+        
+    sleep(60);
+
+    printf("Process %d closing file\n", getpid());    
+    close(file_desc);
+    exit(EXIT_SUCCESS);
+}
+```
+
+下图显示了当程序开始等待时文件锁定的状态
+
+![文件锁定状态](https://wangpengcheng.github.io/img/2019-09-11-22-05-31.png)
+
+#### 7.2.5 其它锁命令
+
+使用lockf函数。通过文件描述符进行操作
+
+```c
+#include <unistd.h>
+int lockf(int filds,int function ,off_t size_to_lock);
+```
+function参数取值如下：
+
+- F_ULOCK:解锁
+- F_LOCK:设置独占锁
+- F_TLOCK:测试并设置独占锁
+- F_TEST:特使其它进程设置的锁
+
+size_to_clock参数是操作的字节数，它从文件的当前偏移值开始计算。
+
+### 7.3 数据库
+
+#### 7.3.1 abm数据库
+
+这里主要介绍dbm数据库，这个是linux中数据库自带的基本的版本。其基本文件包含在`ndbm.h`中可以使用`-I/usr/include/gdbm -lgdbm`参数进行链接。
+
+#### 7.3.3 dbm访问函数
+
+```c
+#include <ndbm.h>
+//打开数据库
+
+DBM *dbm_open(const char* filename,int file_open_flags,mode_t file_mode);
+//存储数据库
+
+int dbm_store(DBM *database_descriptor,datum key, datum content ,int store_mode );
+//数据库查询函数
+
+datum dbm_fetch(DBM *database_descriptor,datum key);
+//关闭数据库
+
+datum dbm_close(DBM *database_descriptor);
+```
+其它操作函数
+
+```c
+//删除数据库
+
+int dbm_delete(DBM *database_descriptor,datum key);
+//测试数据库错误
+
+int dbm_error(DBM *database_descriptor);
+//清除数据库中所有以被置位的错误条件标志
+
+int dbm_clearerr(DBM *database_descriptor);
+//获取第一个关键数据
+int dbm_firstkey(DBM *database_descriptor);
+//获取第二个关键数据
+
+int dbm_nextkey(DBM *database_descriptor);
+
+```
+## 第 八 章 MySQL
+
+### MySQL安装
+
+参考连接:
+- [Ubuntu 16.04 mysql安装配置](https://www.jianshu.com/p/3111290b87f4)
+- [Ubuntu18.04 安装MySQL](https://blog.csdn.net/weixx3/article/details/80782479)
+
+可以从官网下载，也可以直接使用`sudo apt-get install mysql-server`进行安装。
+
+安装完成后使用`sudo mysql_secure_installation`命令进行初始化设置。
+
+再使用`sudo mysql -uroot -p`进行登录。`use database`使用数据库。
+
+具体的请参考mysql对应文章。
+
+### 8.3 使用c语言访问mysql
+
+使用样例：
+
+```c
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "mysql.h"
+
+MYSQL my_connection;
+MYSQL_RES *res_ptr;
+MYSQL_ROW sqlrow;
+
+int main(int argc, char *argv[]) {
+   int res;
+
+   mysql_init(&my_connection);  
+   if (mysql_real_connect(&my_connection, "localhost", "rick", 
+                                              "secret", "foo", 0, NULL, 0)) {
+   printf("Connection success\n");
+   
+   res = mysql_query(&my_connection, "SELECT childno, fname, age FROM children WHERE age > 5");
+
+   if (res) {
+      printf("SELECT error: %s\n", mysql_error(&my_connection));
+   } else {
+      res_ptr = mysql_store_result(&my_connection);
+      if (res_ptr) {
+       printf("Retrieved %lu rows\n", (unsigned long)mysql_num_rows(res_ptr));
+       while ((sqlrow = mysql_fetch_row(res_ptr))) {
+         printf("Fetched data...\n");
+       }
+       if (mysql_errno(&my_connection)) {
+         fprintf(stderr, "Retrive error: %s\n", mysql_error(&my_connection)); 
+       }
+       mysql_free_result(res_ptr);
+      }
+
+   }
+   mysql_close(&my_connection);
+
+   } else {
+      fprintf(stderr, "Connection failed\n");
+      if (mysql_errno(&my_connection)) {
+         fprintf(stderr, "Connection error %d: %s\n",
+                  mysql_errno(&my_connection), mysql_error(&my_connection));
+      }
+   }
+
+   return EXIT_SUCCESS;
+}
+```
+
+## 第 9 章 开发工具
+
+### 9.2 make命令和makefile
+
+make 选项参数：
+
+- -k:make发生错误时仍然继续执行。
+- -n:马克输出将要执行的操作而不进行执行。
+- -f:使用那个文件作为makefile文件。
+
+具体参看makefile相关文章
+
+- [跟我一起写makefile](https://wangpengcheng.github.io/2019/07/06/write_makefile_with_me/)
+
+### 9.3 源代码控制
+
+- SCCS:源代码控制系统。
+- RCS：版本控制系统。
+- CVS：并发版本控制系统。
+
+
+## 第 10 章 调试
+
+### 10.1 错误类型
+
+- 功能定义错误:程序的功能被错误的定义了。
+- 设计规划错误：程序设计需要多花时间进行思考。
+- 代码编写错误：代码编写过程中的错误。
+
+### 10.2 常用调试技巧
+
+- 测试：找出程序中存在的缺陷或者错误
+- 固化：让程序的错误可重现
+- 定位：确定相关的代码行
+- 纠正：修改代码纠正错误
+- 验证：确定修改解决了问题。
+
+### 10.3 使用gdb进行调试
+
+参考链接:
+
+- [Linux环境下的GDB调试方法](https://blog.csdn.net/horotororensu/article/details/82256832)
+- [Linux下gdb的安装及使用入门](https://www.cnblogs.com/chenmingjun/p/8280889.html)
+
+重要指令和相关操作
+
+- `gdb project_name (-tui)`:启动gdb(gui形式)
+- `help`:显示帮助信息
+- `run`:程序开始运行。
+- `backtrace`:栈跟踪。
+- `print value_name`:输出变量的值。
+- `list`:列出源代码
+- `breakpoint`:设置断点。
+- `display array[0]@5`,显示连续的数据项。
+- `info display`：获取显示信息。
+- `info break`:显示断点信息。
+
+
+### 10.4 其它调试工具
+
+- `splint`:工具可以提供有用的代码审查注释。
+- `ctags`：为程序中的所有函数创建索引。
+- `cxref`：分析c语言源代码并生成一个交叉引用表。
+- `cflow`：打印出一个函数调用树。
+- `prof/gprof`产生执行存档
+
+
+使用`assert(int expression)`对表达式进行求值，如果结果非零，就向标准错误写一些诊断信息，然后调用abort函数结束程序的运行。
+
+```c++
+#include <assert.h>
+void assert(int expression);
+```
+**注意：assert中的宏受NDEBUG的影响，存在这个宏定义时会关闭断言功能**
+
+### 10.6 内存调试
+
+在一个已经分配的内存块的尾部的后面(或者在它头部的前面)写数据，就可能会破坏malloc库用于记录内存分配情况的数据结构。
+
+使用ElectricFence函数库可以使用Linux的虚拟内存保护机制来保护malloc和free所使用的内存。
+
+### 10.6.2 valgrind
+
+这个是一个工具，有能力检测出前面讨论中的很多问题。
+
+## 第 11 章 进程和信号
+
+进程：一个其中运行着一个或者多个线程的地址空间和这些线程所需要的系统资源。进程是操作系统进行资源分配的最小单元。
+
+两个用户同时运行相同程序的进程资源分布图
+
+![两个用户同时运行相同程序](https://wangpengcheng.github.io/img/2019-09-18-18-44-44.png)
+
+使用`ps -ef`指令进行进程表的查询。
+
+使用`ps ax`进行现在运行进程的状态查询。
+
+下面是stat状态码
+
+![stat状态码](https://wangpengcheng.github.io/img/2019-09-18-18-56-40.png)
+
+在Linux中执行期短的突发性任务比持续占用处理器来进行计算或者不断轮训系统来查看是否有新的输入达到的程序要更好。这个是是进程优先级的重要因素。称为nice,一个进程的nice值默认为0并将根据这个程序的表现而不断变化。长期不剪短运行的程序的优先级一般会比较低。这样可以帮助与用户进行呼叫的程序保持及时的响应。
+
+可以使用`ps -l`查看linux进程中的nice值。
+
+### 11.3 启动新进程
+
+#### 11.3.1 替换进程映像
+
+```c
+#include <stdlib.h>
+
+int system(const char *string);
+```
+system运行以字符串参数的形式传递给它的命令，并等待命令的完成。命令的执行情况就如同下面的情况`sh -c string`。
+
+注意：这里system函数并不是启动气他进程的理想手段，应为它必须用一个shell来启动需要的程序。
+
+可以优先使用`exec`系列函数。
+
+exec函数可以把当前进程替换为一个新进程，新进程由path或者file参数指定。可以使用exec函数将程序的执行从一个程序切换到另外一个程序。exec函数比system函数更有效，因为在新的程序启动后，原来的程序就不再运行了。
+
+```c++
+#include <unistd.h>
+char **environ;
+//参数可变函数
+
+int execl(const char *path,const char *arg0,...,(char*)0);
+int execlp(const char *file,const char *arg0,...,(char*)0);
+int execle(const char *path,const chat *arg0,...,(char*)0,char *const envp[]);
+//参数不可变函数。
+
+int execv(const char *path,char *const argv[]);
+int execvp(const char *file,char *const argv[]);
+int execve(const char *path,char *const argv[],char *const envp[]);
+```
+
+注意：使用exec函数相当于直接进行了进程的切换，因此在exec函数之后的都不会进行。
+
+#### 11.3.2 复制进程映像
+
+可以使用线程或者从源程序中创建一个全分离的进程，后者就想init的做法一样，而不想exec调用那样用新程序替换当前执行的线程。可以使用fork创建一个新进程。
+
+```c
+#include <sys/type.h>
+#include <unistd.h>
+
+pid_t fork(void);
+```
+![fork函数的使用示意图](https://wangpengcheng.github.io/img/2019-09-18-19-46-39.png)
+
+一个简单的fork示例：
+
+```c
+
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+    pid_t pid;
+    char *message;
+    int n;
+    printf("fork pogram starting\n");
+    pid=fork();
+    switcg(pid){
+        case -1:
+            perror("fork failed");
+            exit(1);
+        case 0:
+            message="This is the child";
+            n=5;
+            break;
+        default:
+            message="This is the parent";
+            n=3;
+            break;
+    }
+    for(;n>0;--n){
+        puts(message);
+        sleep(1);
+    }
+    exit(0);
+}
+```
+
+子进程被创建并且输出消息5次。原进程(即父进程)，只输出消息3次。具体结果如下
+
+```shell
+fork program starting
+This is the parent
+This is the child
+This is the parent
+This is the child
+This is the parent
+This is the child
+This is the child
+This is the child
+```
+
+#### 等待一个进程
+
+当使用fork启动以这个子进程时，子进程就有了它自己的声明周期并将独立运行。可以在父进程中调用`wait()`函数让父进程等待子进程的结束。
+
+```c
+#include <sys/types.h>
+#include <sys/wait.h>
+
+pid_t wait(int *stat_loc);
+//等待特定进程
+pid_t waitpid(pid_t pid,int *stat_loc,int options);
+```
+
+wait系统调用将暂停父进程直到它的子进程结束为止，这个调用返回子进程的PID。
+
+![wait信号处理](https://wangpengcheng.github.io/img/2019-09-18-20-19-14.png)
+
+```
+
+if(pid!=0){
+    int stat_val;
+    pid_t child_pid;
+    child_pid=wait(&stat_val);
+    printf("child has finished:PID =%d\n",childe_pid);
+    if(WIFEXITED(stat_val))
+        printf("Child exited with code %d\n",WEXITSTATUS(stat_val));
+    else
+        printf("Childe terminated abnormally \n");
+}
+```
+
+#### 僵尸进程
+
+当子进程终结时，它与父进程之间的关联还会保持，直到父进程也正常终止或者父进程调用wait才结束，在这段时间内，虽然子进程已经不再运行，但它仍然存在于系统中，因为它的退出码还需要保存起来，以备父进程今后的wait调用使用。这时称其为一个死(defunct)进程或者僵尸进程。
+
+#### 11.3.4 线程
+
+线程可以共享内存段。但从本质上来说，它们是操作系统内各自独立的实体。
+
+### 11.4 信号
+
+linux中由(raise)表示一个信号的产生，使用术语(catch)表示接收到一个信号。信号的名称在头文件`signal.h`中定义的。它们以SIG开头
+
+![相关操作的实现](https://wangpengcheng.github.io/img/2019-09-18-20-38-49.png)
+
+如果进程接收到这些信号中的一个，但事先没有安排捕获它，进程将会立刻终止。**系统将生成核心转储存文件core**,并将其放在当前目录下。该文件是进程在内存中的映像，它对程序的调试很有用处。
+
+![其它信号](https://wangpengcheng.github.io/img/2019-09-18-20-41-32.png)
+
+相关函数
+```c
+#include <signal.h>
+
+void (*signal(int sig, void((*func)(int))))(int);
+```
+注意:这里并不推荐使用`signal()`接口，建议使用`sigaction()`函数。
+
+#### 11.4.1 发送信号
+
+```c
+#include <sys/types.h>
+#include <signal.h>
+int kill(pid_t pid,int sig);
+
+//使用闹钟设置指定时间后运行
+unsigned int alarm(unsigned int seconds);
+
+```
+kill函数将参数sig给定的信号发送给由参数pid给出的进程号所指定的进程，成功时返回0。错误时返回-1并设置errno变量。其类型如下：
+
+- EINVAL:给定的信号无效。
+- EPERM:发送进程权限不够。
+- ESRCH:目标进程不存在。
+
+信号接受使用pause(),将一个程序的执行挂起直到有一个信号出现位置。当程序接收到一个信号时，预先设置好的信号处理函数将开始运行。程序也将恢复正常的执行。
+
+```c
+#include <unistd.h>
+int pause(void);
+```
+
+**一个简装的信号接口**
+
+```c
+#include <signal.h>
+int sigaction(int sig,const struct sigaction *act,struct sigaction *oact);
+```
+sigaction结构定义在接收到参数sig指定的信号后应该采取的行动。该结构至少应该包括以下几个成员：
+
+```c
+void (*) (int) sa_handler  //函数指针
+sigset_t sa_mask //指定了信号集
+int sa_flags //对信号处理重置的效果，必须在sa_flags成员中包含值SA_RESETHAND
+```
+
+#### 11.4.2 信号集
+
+```c
+#include <signal.h>
+
+//将信号集中添加信号
+
+int sigaddset(sigset_t *set,int signo);
+//将信号集初始化为空
+
+int sigemptyset(sigset_t *set);
+//sigfillset将信号集初始化为包含所有已定义的信号。
+
+int sigfillset(sigset_t *set);
+//从信号集中删除信号
+
+int sigdelset(sigset_t *set,int signo);
+//判断一个给定的信号是否是一个信号集的成员。如果是就返回1，不是返回0，信号无效就返回-1并设置errno
+int sigismember(sigset_t *set,int signo);
+//信号屏蔽字的设置和检查
+
+int sigprocmask(int how,const sigset_t *set,sigset_t *oset);
+//将被阻塞的信号中停留在待处理状态的一组信号写到参数set指向的信号集合中。进程挂起自己的执行，直到信号集中的一个信号到达为止。
+
+int sigpending(sigset_t *set);
+//将进程的屏蔽字替换为由参数sigmask给出的信号集，然后挂起程序的执行。
+
+int sigsuspend(const sigset_t *sigmask);
+
+```
+
+
+sigprocmask中how的取值如下
+
+![sigprocmask中how的取值](https://wangpengcheng.github.io/img/2019-09-18-21-14-51.png)
+
+**sigaction标志**
+
+![sigaction标志](https://wangpengcheng.github.io/img/2019-09-18-21-23-13.png)
+
+**Linux常用信号参考**
+
+![linux常用信号参考](https://wangpengcheng.github.io/img/2019-09-18-21-24-33.png)
+
+引起信号异常终止信号：
+
+![引起信号异常终止信号](https://wangpengcheng.github.io/img/2019-09-18-21-25-37.png)
+
+接收之后挂起的信号
+
+![接收之后挂起的信号](https://wangpengcheng.github.io/img/2019-09-18-21-26-43.png)
+
+下面信号是重启被暂停的进程
+
+![重启被暂停的进程](https://wangpengcheng.github.io/img/2019-09-18-21-27-46.png)
+
