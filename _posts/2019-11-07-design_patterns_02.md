@@ -1374,3 +1374,288 @@ UML结构图（安全组合模式）：
 - 安全组合模式
   - 在 Component 中不定义任何用于访问和管理子构建的接口，而在 Composite 中声明并实现
   - 这种做法是安全的，因为不需要向 Leaf 提供这些管理成员对象的接口，对于 Leaf 来说，Client 不可能调用到这些接口。
+
+透明组合模式的缺点是不够安全，因为 Leaf 和 Composite 在本质上是有区别的。Leaf 不可能有下一个层级，因此为其提供 Add()、Remove()、GetChild() 等接口没有意义。这在编译阶段不会出错，但在运行阶段如果调用这些接口可能会出错（如果没有提供相应的异常处理）。
+
+安全组合模式的缺点是不够透明，因为 Leaf 和 Composite 具有不同的接口，且 Composite 中那些用于访问和管理子构建的接口没有在 Component 中定义，因此 Client 不能完全针对抽象编程，必须有区别地对待 Leaf 和 Composite。
+
+PS： 透明组合模式是组合模式的标准形式，但在实际应用中，安全组合模式的使用频率也非常高。
+
+### 7.4 优缺点
+
+优点：
+
+- 组合模式可以清楚地定义分层次的复杂对象，表示对象的全部或部分层次，它让 Client 忽略了层次的差异，方便对整个层次结构进行控制。
+- Client 可以一致地使用一个组合结构或其中单个对象，不必关心处理的是单个对象还是整个组合结构，简化了 Client 的代码。
+- 在组合模式中，增加新的叶子构件和容器构件很方便，无须对现有类进行任何修改，符合“开闭原则”。
+- 为树形结构提供了一种灵活的解决方案，通过递归组合容器对象和叶子对象，可以形成复杂的树形结构，但对树形结构的控制却非常简单。
+
+缺点：
+
+- 使设计变得更加抽象，对象的业务规则如果很复杂，则实现组合模式具有很大挑战性，而且不是所有的方法都与叶子对象子类都有关联。
+
+### 7.5 适用场景
+
+- 表示对象的“整体-部分”层次结构（树形结构）
+- 希望用户忽略组合对象与单个对象的不同，统一地使用组合结构中的所有对象。
+
+### 7.6 案例
+
+适用组合模式，进行公司部门和人员的管理
+
+#### 7.6.1 透明组合模式
+
+**创建抽象构件**
+Component 需要定义访问及管理子构件的接口：
+
+```c
+// component.h
+#ifndef COMPONENT_H
+#define COMPONENT_H
+
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Component
+{
+public:
+    Component(string name) : m_strName(name) {}
+    virtual ~Component() {}
+    virtual void Add(Component *cmpt) = 0;  // 添加构件
+    virtual void Remove(Component *cmpt) = 0;  // 删除构件
+    virtual Component* GetChild(int index) = 0;  // 获取构件
+    virtual void Operation(int indent) = 0;  // 显示构件（以缩进的方式）
+
+private:
+    Component();  // 不允许
+
+protected:
+    string m_strName;
+};
+
+#endif // COMPONENT_H
+/* 安全组合模式 */
+
+// component.h
+#ifndef COMPONENT_H
+#define COMPONENT_H
+
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Component
+{
+public:
+    Component(string name) : m_strName(name) {}
+    virtual ~Component() {}
+    virtual void Operation(int indent) = 0;  // 显示构件（以缩进的方式）
+
+private:
+    Component();  //注意这里将其构造函数设置为了私有函数，不允许在栈中分配内存，只能输入参数进行工作
+
+protected:
+    string m_strName;
+};
+
+#endif // COMPONENT_H
+
+```
+
+**创建叶子构建**
+
+作为Component的子类，Leaf需要实现Component中定义的所有接口，但是Leaf不能包含子构件。因此，**在Leaf中实现访问和管理子构件的函数时，需要进行异常处理或错误提示。**当然，这无疑会给Leaf的实现带来麻烦。
+
+```c
+// leaf.h
+#ifndef LEAF_H
+#define LEAF_H
+
+#include "component.h"
+
+class Leaf : public Component
+{
+public:
+    Leaf(string name) : Component(name){}
+    virtual ~Leaf(){}
+    void Add(Component *cmpt) {
+        cout << "Can't add to a Leaf" << endl;
+    }
+    void Remove(Component *cmpt) {
+        cout << "Can't remove from a Leaf" << endl;
+    }
+    Component* GetChild(int index) {
+        cout << "Can't get child from a Leaf" << endl;
+        return NULL;
+    }
+    void Operation(int indent) {
+        string newStr(indent, '-');
+        cout << newStr << " " << m_strName <<endl;
+    }
+
+private:
+    Leaf();  // 不允许
+};
+
+#endif // LEAF_H
+/* 安全模式接口 */
+
+// leaf.h
+#ifndef LEAF_H
+#define LEAF_H
+
+#include "component.h"
+
+class Leaf : public Component
+{
+public:
+    Leaf(string name) : Component(name){}
+    virtual ~Leaf(){}
+    void Operation(int indent) {
+        string newStr(indent, '-');
+        cout << newStr << " " << m_strName <<endl;
+    }
+
+private:
+    Leaf();  // 不允许
+};
+
+#endif // LEAF_H
+```
+**注意**： 与透明模式不同，这里已经没有了访问及管理子构件的接口，所有的接口都在 Composite 中，不再赘述（同上）。
+
+**创建容器构建**
+
+由于容器构建中可以包含叶子节点，因此对容器构建进行处理时可以使用递归的方式。
+
+```c
+// composite.h
+#ifndef COMPOSITE_H
+#define COMPOSITE_H
+
+#include <vector>
+#include "component.h"
+
+#ifndef SAFE_DELETE
+#define SAFE_DELETE(p) { if(p){delete(p); (p)=NULL;} }
+#endif
+
+class Composite : public Component
+{
+public:
+    Composite (string name) : Component(name) {}
+    virtual ~Composite() {
+        while (!m_elements.empty()) {
+            vector<Component*>::iterator it = m_elements.begin();
+            SAFE_DELETE(*it);
+            m_elements.erase(it);
+        }
+    }
+    void Add(Component *cmpt) {
+        m_elements.push_back(cmpt);
+    }
+    void Remove(Component *cmpt) {
+        vector<Component*>::iterator it = m_elements.begin();
+        while (it != m_elements.end())  {
+            if (*it == cmpt) {
+                SAFE_DELETE(cmpt);
+                m_elements.erase(it);
+                break;
+            }
+            ++it;
+        }
+    }
+    Component* GetChild(int index) {
+        if (index >= m_elements.size())
+            return NULL;
+
+        return m_elements[index];
+    }
+    // 递归显示
+    void Operation(int indent) {
+        string newStr(indent, '-');
+        cout << newStr << "+ " << m_strName << endl;
+        // 显示每个节点的孩子
+        vector<Component*>::iterator it = m_elements.begin();
+        while (it != m_elements.end()) {
+            (*it)->Operation(indent + 2);
+            ++it;
+        }
+    }
+
+private:
+    Composite();  // 不允许
+
+private:
+    vector<Component *> m_elements;
+};
+
+#endif // COMPOSITE_H
+```
+**创建客户端**
+主程序的客户端创建如下：
+
+```c
+// main.cpp
+#include "composite.h"
+#include "leaf.h"
+
+int main()
+{
+    // 创建一个树形结构
+    // 创建根节点
+    Component *pRoot = new Composite("江湖公司（任我行）");
+
+    // 创建分支
+    Component *pDepart1 = new Composite("日月神教（东方不败）");
+    pDepart1->Add(new Leaf("光明左使（向问天）"));
+    pDepart1->Add(new Leaf("光明右使（曲洋）"));
+    pRoot->Add(pDepart1);
+
+    Component *pDepart2 = new Composite("五岳剑派（左冷蝉）");
+    pDepart2->Add(new Leaf("嵩山（左冷蝉）"));
+    pDepart2->Add(new Leaf("衡山（莫大）"));
+    pDepart2->Add(new Leaf("华山（岳不群）"));
+    pDepart2->Add(new Leaf("泰山（天门道长）"));
+    pDepart2->Add(new Leaf("恒山（定闲师太）"));
+    pRoot->Add(pDepart2);
+
+    // 添加和删除叶子
+    pRoot->Add(new Leaf("少林（方证大师）"));
+    pRoot->Add(new Leaf("武当（冲虚道长）"));
+    Component *pLeaf = new Leaf("青城（余沧海）");
+    pRoot->Add(pLeaf);
+
+    // 小丑，直接裁掉
+    pRoot->Remove(pLeaf);
+
+    // 递归地显示组织架构
+    pRoot->Operation(1);
+
+    // 删除分配的内存
+    SAFE_DELETE(pRoot);
+
+    getchar();
+
+    return 0;
+}
+```
+
+输出如下：
+```sh
+-+ 江湖公司（任我行） 
+—+ 日月神教（东方不败） 
+—– 光明左使（向问天） 
+—– 光明右使（曲洋） 
+—+ 五岳剑派（左冷蝉） 
+—– 嵩山（左冷蝉） 
+—– 衡山（莫大） 
+—– 华山（岳不群） 
+—– 泰山（天门道长） 
+—– 恒山（定闲师太） 
+— 少林（方证大师） 
+— 武当（冲虚道长）
+```
