@@ -981,3 +981,556 @@ Yellow Light
 - Context（环境角色）：持有一个对 Strategy 的引用，最终给客户端调用。
 - Strategy（抽象策略）：定义了一个公共接口，让不同的算法以不同的方式来实现。通过这个接口，Context 可以调用不同的算法。
 - ConcreteStrategy（具体策略）：实现 Strategy 定义的接口，提供具体算法的实现。
+
+**结构图：**
+
+![策略模式结构图](https://design-patterns.readthedocs.io/zh_CN/latest/_images/Strategy.jpg)
+
+**时序图：**
+
+![策略模式时序图](https://design-patterns.readthedocs.io/zh_CN/latest/_images/seq_Strategy.jpg)
+
+### 5.4 案例分析
+
+对于出行，有不同的出行方式，每一种出行方式都是一种具体的策略。如何选择需要根据成本、便利和时间之间的权衡。
+
+### 5.4 代码实现
+
+#### 5.4.1 创建抽象策略
+
+抽象策略由 IStrategy 表示，它提供了一个 Travel() 接口，用于提供出行方式：
+
+```c
+// strategy.h
+#ifndef STRATEGY_H
+#define STRATEGY_H
+
+// 出行策略
+class IStrategy
+{
+public:
+    //关键出行方式
+    virtual void Travel() = 0;
+};
+#endif // STRATEGY_H
+```
+#### 5.4.2 创建具体策略
+
+有三种具体的策略可供选择，骑自行车、开车、坐火车：
+```c
+// concrete_strategy.h
+#ifndef CONCRETE_STRATEGY_H
+#define CONCRETE_STRATEGY_H
+
+#include "strategy.h"
+#include <iostream>
+
+// 骑自行车
+class BikeStrategy : public IStrategy
+{
+public:
+    virtual void Travel() override { std::cout << "Travel by bike" << std::endl; }
+};
+
+// 开车
+class CarStrategy : public IStrategy
+{
+public:
+    virtual void Travel() override { std::cout << "Travel by car" << std::endl; }
+};
+
+// 坐火车
+class TrainStrategy : public IStrategy
+{
+public:
+    virtual void Travel() override { std::cout << "Travel by train" << std::endl; }
+};
+
+#endif // CONCRETE_STRATEGY_H
+```
+#### 5.4.3 创建环境角色
+
+环境角色对外提供了一个Travel接口，最终由客户端调用。在内部，它最终调用的是IStrategy的相应方法：
+```c
+// context.h
+#ifndef CONTEXT_H
+#define CONTEXT_H
+
+#include "strategy.h"
+
+class Context
+{
+public:
+    Context(IStrategy *strategy) { m_pStrategy = strategy; }
+    void Travel() { m_pStrategy->Travel(); }
+
+private:
+    IStrategy *m_pStrategy;
+};
+
+#endif // CONTEXT_H
+```
+#### 5.4.4 创建客户端
+
+```c
+// main.cpp
+#include "context.h"
+#include "concrete_strategy.h"
+
+#ifndef SAFE_DELETE
+#define SAFE_DELETE(p) { if(p){delete(p); (p)=NULL;} }
+#endif
+
+int main()
+{
+    // 创建不同的策略
+    IStrategy *bike = new BikeStrategy();
+    IStrategy *car = new CarStrategy();
+    IStrategy *train = new TrainStrategy();
+
+    //创建策略上下文
+
+    Context *bikeContext = new Context(bike);
+    Context *carContext = new Context(car);
+    Context *trainContext = new Context(train);
+    //执行策略
+
+    bikeContext->Travel();
+    carContext->Travel();
+    trainContext->Travel();
+
+    SAFE_DELETE(bike);
+    SAFE_DELETE(car);
+    SAFE_DELETE(train);
+
+    SAFE_DELETE(bikeContext);
+    SAFE_DELETE(carContext);
+    SAFE_DELETE(trainContext);
+
+    getchar();
+
+    return 0;
+}
+
+/*
+输出如下：
+
+Travel by bike 
+Travel by car 
+Travel by train
+
+*/
+```
+### 5.6 模式分析
+
+- 策略模式是一个比较容易理解和使用的设计模式，策略模式是对算法的封装，将算法的责任和算法本身分隔开，将其委派给不同的对象管理。
+- 策略角色的选择主要由客户端决定
+- 策略模式仅仅封装算法，算法是选择由客户端来决定。
+
+### 5.8 优缺点
+
+优点：
+
+- 各自使用封装的算法，可以很容易地引入新的算法来满足相同的接口。
+- 由于实现的是同一个接口，所以策略之间可以自由切换。
+- Strategy 使客户端能够选择所需的算法，而无需使用 switch/case 或 if/else 语句。
+- 算法的细节完全封装在 Strategy 类中，因此，可以在不影响 Context 类的情况下更改算法的实现。
+
+缺点：
+
+- 客户端必须知道所有的策略，了解它们之间的区别，以便适时选择恰当的算法。
+- 策略模式将造成产生很多策略类，可以通过使用享元模式在一定程度上减少对象的数量。
+
+### 5.9 适用场景
+
+- 多个类有不同的表现形式，每种表现形式可以独立成单独的算法。
+- 需要在不同情况下使用不同的算法，以后算法可能还会增加。
+- 对客户端隐藏具体算法的实现细节，彼此完全独立。
+
+## 6 模板方法模式
+
+**模版方法模式（Template Method Pattern）**:定义一个操作中算法的骨架，而将一些步骤延迟到子类中。模板方法使得子类可以不改变一个算法的结构即可重定义该算法的某些特定步骤。
+
+### 6.1 模板结构
+
+- 抽象类（AbstractClass）：定义抽象的原语操作，具体的子类将重定义它们以实现一个算法的各步骤。主要是实现一个模板方法，定义一个算法的骨架。该模板方法不仅调用原语操作，也调用定义在 AbstractClass 或其他对象中的操作。
+- 具体类（ConcreteClass）：实现原语操作以完成算法中与特定子类相关的步骤。
+
+
+结构模式如下：
+
+![模板方法结构模式](https://img-blog.csdn.net/20180228180146301?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvdTAxMTAxMjkzMg==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
+### 6.2 案例分析
+
+> 招聘会。
+> 不同的公司招聘流程基本相同，
+> 
+> 都含有“宣讲会 -> 接收简历 -> 面试 -> 发放 Offer”；这些固定的流程
+> 
+> 不同公司的细节不同，可以使用模板类来减少代码的重用与设计
+
+### 6.3 代码实现
+
+#### 6.3.1 创建抽象类
+
+抽象类由 Company 表示，它提供了一套固定的模板方法 Recruit()，用于标准化算法的骨架：
+```c
+// abstract_class.h
+#ifndef ABSTRACT_CLASS_H
+#define ABSTRACT_CLASS_H
+
+#include <iostream>
+
+// 公司
+class Company
+{
+public:
+    virtual ~Company() {}
+    // 校园招聘
+    void Recruit() {
+        std::cout << "---------- Begin ----------" << std::endl;
+        CareerTalk();
+        ReceiveResume();
+        Interview();
+        Offer();
+        std::cout << "---------- End ----------" << std::endl;
+    }
+    // 宣讲会
+    void CareerTalk() {
+        std::cout << "Delivery" << std::endl;
+    }
+    // 接收简历
+    void ReceiveResume() {
+        std::cout << "Receive Resume" << std::endl;
+    }
+    // 面试
+    virtual void Interview() = 0;
+    // 发放 Offer
+    virtual void Offer() = 0;
+};
+
+#endif // ABSTRACT_CLASS_H
+```
+**注意：**相同的行为 CareerTalk() 和 ReceiveResume() 有默认实现，不同的行为 Interview() 和 Offer() 采用“占位符”方式，需要由具体公司来实现。
+
+#### 6.3.2 创建具体类
+
+具体公司有两个 - Alibaba、Tencent，它们的面试、录用方式不同：
+```c
+// concrete_class.h
+#ifndef CONCRETE_CLASS_H
+#define CONCRETE_CLASS_H
+
+#include "abstract_class.h"
+#include <iostream>
+
+// 阿里
+class Alibaba : public Company
+{
+public:
+    virtual void Interview() override {
+        std::cout << "First interview -> Second interview -> Third interview" << std::endl;
+    }
+
+    virtual void Offer() override {
+        std::cout << "30W" << std::endl;
+    }
+};
+
+// 腾讯
+class Tencent : public Company
+{
+public:
+    virtual void Interview() override {
+        std::cout << "First interview -> Second interview" << std::endl;
+    }
+
+    virtual void Offer() override {
+        std::cout << "25W" << std::endl;
+    }
+};
+
+#endif // CONCRETE_CLASS_H
+```
+#### 5.3.3 创建客户端
+
+```c
+// main.cpp
+#include "concrete_class.h"
+
+#ifndef SAFE_DELETE
+#define SAFE_DELETE(p) { if(p){delete(p); (p)=NULL;} }
+#endif
+
+int main()
+{
+    // 阿里校招
+    Company *alibaba = new Alibaba();
+    alibaba->Recruit();
+
+    // 腾讯校招
+    Company *tencent = new Tencent();
+    tencent->Recruit();
+
+    SAFE_DELETE(tencent);
+    SAFE_DELETE(alibaba);
+
+    getchar();
+
+    return 0;
+}
+
+/*
+输出结果;
+
+———- Begin ———- 
+Delivery 
+Receive Resume 
+First interview -> Second interview -> Third interview 
+30W 
+———- End ———- 
+———- Begin ———- 
+Delivery 
+Receive Resume 
+First interview -> Second interview 
+25W 
+———- End ———-
+————————————————
+
+*/
+```
+
+### 6.8 优缺点
+优点：
+
+- 在父类中形式化地定义一个算法，而由其子类实现细节的处理，在子类实现详细的处理算法时并不会改变算法中步骤的执行次序。
+- 模板方法模式是一种代码复用技术，在类库设计中尤为重要，它提取了类库中的公共行为，将公共行为放在父类中，而通过其子类来实现不同的行为，它鼓励我们恰当使用继承来实现代码复用。
+- 可实现一种反向控制结构，通过子类覆盖父类的钩子方法来决定某一特定步骤是否需要执行。
+- 在模板方法模式中，可以通过子类来覆盖父类的基本方法，不同的子类可以提供基本方法的不同实现，更换和增加新的子类很方便，符合单一职责原则和开闭原则。
+  
+缺点：
+
+- 需要为每一个基本方法的不同实现提供一个子类，如果父类中可变的基本方法太多，将会导致类的个数增加，系统更加庞大，设计也更加抽象，此时，可结合桥接模式来进行设计。
+
+### 6.9 使用场景
+
+- 对一些复杂的算法进行分割，将算法中固定不变的部分设计为模板方法和父类具体方法，而一些可变的细节由子类实现。
+- 各子类中公共的行为应被提取出来并集中到一个公共父类中，以避免代码重复。
+- 需要通过子类来决定父类算法中某个步骤是否执行，实现子类对父类的反向控制。
+
+
+## 7 备忘录模式
+
+**备忘录模式（Memento Pattern）**：在不破坏封装的前提下，捕获一个对象的内部状态，并在该对象之外保存这个状态，这样可以在以后将对象恢复到原先保存的状态。
+
+### 7.2 模式结构
+
+基本成员如下：
+
+- Originator（发起人）：负责创建一个 Memento，以记录当前时刻自身的内部状态，并可以使用 Memento 恢复内部状态。Originator 可以根据需要决定 Memento 储存自己的哪些内部状态。
+- Memento（备忘录）：负责存储 Originator 对象的内部状态，并可以防止 Originator 以外的其他对象访问备忘录。
+- Caretaker（管理者）：负责管理 Memento，但不能对 Memento 的内容进行访问或者操作。
+
+模式结构图：
+
+![模式结构图](https://img-blog.csdn.net/20180208175956201?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvdTAxMTAxMjkzMg==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
+### 7.3 案例分析
+
+> 月光宝盒 - 让时光倒流
+>
+> 备忘录模式提供了时光倒流的机制，将一个对象某个时刻的状态进行备份，当用户后悔（需要返回之前的状态）时，可以把备份调用出来！
+
+### 7.4 代码实现
+
+#### 7.4.1 创建备忘录
+
+穿越至某一时刻，这个时刻指具体的日期时间，用 DateTime 表示，并为其提供相应的 setter 和 getter 方法：
+
+```c
+// memento.h
+#ifndef MEMENTO_H
+#define MEMENTO_H
+
+#include <iostream>
+#include <string>
+
+// 日期时间
+class DateTime
+{
+public:
+    DateTime(std::string dt)
+        : m_dateTime(dt) {}
+    void SetDateTime(std::string dt) {
+        m_dateTime = dt;
+    }
+    std::string GetDateTime() {
+        return m_dateTime;
+    }
+private:
+    std::string m_dateTime;
+};
+#endif // MEMENTO_H
+```
+#### 7.4.2 创建发起人
+Life 用于创建 DateTime，以记录当前的日期时间，并可以使用 DateTime 进行恢复：
+```c
+// originator.h
+#ifndef ORIGINATOR_H
+#define ORIGINATOR_H
+
+#include "memento.h"
+#include <iostream>
+#include <string>
+
+// 一生
+class Life
+{
+public:
+    void SetDateTime(std::string dt) {
+        std::cout << "Set date time to " << dt << std::endl;
+        m_dateTime = dt;
+    }
+    // 仅用于打印
+    std::string GetDateTime() {
+        return m_dateTime;
+    }
+
+    // 恢复日期时间
+    void SetMemento(DateTime *dt) {
+        m_dateTime = dt->GetDateTime();
+    }
+
+    // 创建日期时间
+    DateTime *CreateMemento() {
+        return new DateTime(m_dateTime);
+    }
+private:
+    std::string m_dateTime;
+};
+#endif // ORIGINATOR_H
+```
+#### 7.4.3 创建管理者
+这是时光倒流的关键，通过 PandoraBox，至尊宝才可以弥补遗憾：
+```c
+// care_taker.h
+#ifndef CARE_TAKER_H
+#define CARE_TAKER_H
+
+#include "originator.h"
+#include <iostream>
+#include <vector>
+
+// 月光宝盒
+class PandoraBox
+{
+public:
+    PandoraBox(Life *life)
+        : m_pLife(life) {}
+
+    ~PandoraBox() {
+        for (int i = 0; i < m_history.size(); i++) {
+            delete m_history.at(i);
+        }
+        m_history.clear();
+    }
+
+    // 保存备份
+    void Save() {
+        std::cout << "Save ..." << std::endl;;
+        m_history.push_back(m_pLife->CreateMemento());
+    }
+
+    // 穿越至上一时刻
+    void Undo() {
+        std::cout << "Undo ..." << std::endl;;
+        m_pLife->SetMemento(m_history.back());
+        m_history.pop_back();
+    }
+
+private:
+    Life *m_pLife;
+    std::vector<DateTime *> m_history;
+};
+
+#endif // CARE_TAKER_H
+```
+#### 7.4.4 创建客户端
+
+```c
+// main.cpp
+#include "originator.h"
+#include "care_taker.h"
+
+#ifndef SAFE_DELETE
+#define SAFE_DELETE(p) { if(p){delete(p); (p)=NULL;} }
+#endif
+
+int main()
+{
+    //创建状态发起人
+    Life *life = new Life();
+    PandoraBox *box = new PandoraBox(life);
+
+    // 设置并保存一个历史时间
+    life->SetDateTime("2000/10/01 00:00:00");
+    box->Save();
+
+    // 设置并保存一个历史时间
+    life->SetDateTime("2010/10/01 00:00:00");
+    box->Save();
+
+    // 设置一个历史时间
+    life->SetDateTime("2018/10/01 00:00:00");
+
+    // 穿越--更改状态
+    box->Undo();
+    std::cout << "Actual date time is " << life->GetDateTime() << std::endl;
+
+    // 再次穿越
+    box->Undo();
+    std::cout << "Actual date time is " << life->GetDateTime() << std::endl;
+
+    SAFE_DELETE(life);
+    SAFE_DELETE(box);
+
+    getchar();
+
+    return 0;
+}
+/*
+输出如下：
+
+Set date time to 2000/10/01 00:00:00 
+Save … 
+Set date time to 2010/10/01 00:00:00 
+Save … 
+Set date time to 2018/10/01 00:00:00 
+Undo … 
+Actual date time is 2010/10/01 00:00:00 
+Undo … 
+Actual date time is 2000/10/01 00:00:00
+
+*/
+
+```
+
+### 7.8 优缺点
+
+优点：
+
+- 提供了一种状态恢复机制，使用户能够方便地回到某个历史的状态。
+- 实现了信息的封装，使得用户不需要关心状态的保存细节。
+
+缺点：
+
+- 如果 Originator 对象很大，那么 Memento 对象也会很大，这势必会占用较大的存储空间，而且每保存一次都需要消耗一定的系统资源。
+
+### 7.9 适用场景
+
+- 保存一个对象在某一个时刻的全部（或部分）状态，这样在以后需要时便能够恢复到先前的状态，实现撤销操作。
+- 防止外界对象破坏一个对象历史状态的封装性，避免将对象历史状态的实现细节暴露给外界对象。
+
+## 8 职责链模式
+
