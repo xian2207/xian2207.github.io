@@ -1534,3 +1534,389 @@ Actual date time is 2000/10/01 00:00:00
 
 ## 8 职责链模式
 
+**职责链模式**（Chain of Responsibility Pattern）：使多个对象都有机会处理请求，从而避免请求的发送者和接收者之间的耦合关系。将这些对象连成一条链，并沿着这条链传递该请求，直到有一个对象处理它为止。
+
+### 8.1 模式结构
+
+UML结构图：
+
+![UML结构图](https://img-blog.csdn.net/20180116180244435?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGlhbmcxOTg5MDgyMA==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast)
+
+- Handler（抽象处理者）：定义了处理请求所需的接口。
+- ConcreteHandler（具体处理者）：处理自己负责的请求，如果无法处理，则将请求传递给与之保持联系的后继者（即：successor）。
+- Client（客户端）：请求的发起者，将访问 Handler 来处理它。
+
+### 8.3 案例分析
+
+> 请假 - 流程处理
+>  
+> 工作人员请假流程处理：
+> 
+> 链中的处理者可以对请求作出响应或者将其传递给上级。每个处理者都有自己的一套规则，而这套规则是他们可以批准的。审批流程：经理（1 天及以下） -> 总监（3 天及以下） -> 总裁（7 天为界限）
+
+### 8.4 代码实现
+
+#### 8.4.1 创建抽象处理者
+抽象处理者除了提供一个处理请假的接口之外，还有哦一个关键的后继者定义，这样就可以构建一条链：
+
+```c
+// handler.h
+#ifndef HANDLER_H
+#define HANDLER_H
+
+#include <iostream>
+
+// 抽象处理者
+class IHandler
+{
+public:
+    IHandler() { m_pSuccessor = NULL; }
+    virtual ~IHandler() {}
+    void SetSuccessor(IHandler *successor) { m_pSuccessor = successor; }
+    virtual void HandleRequest(float days) = 0;
+
+protected:
+    IHandler *m_pSuccessor;  // 后继者,用来表示处理者链
+};
+
+#endif // HANDLER_H
+
+```
+#### 8.4.2 创建具体处理者
+
+具体处理者包含 Manager、Director、CEO，它们的实现基本相同，只是批准的天数不一样：
+```c
+// concrete_handler.h
+#ifndef CONCRETE_HANDLER_H
+#define CONCRETE_HANDLER_H
+
+#include "handler.h"
+
+// 经理
+class Manager : public IHandler
+{
+public:
+    Manager() {}
+    ~Manager() {}
+    virtual void HandleRequest(float days) override {
+        if (days <= 1) {
+            std::cout << "Manager 批准了 " << days << " 天假" << std::endl;
+        } else {
+            m_pSuccessor->HandleRequest(days);
+        }
+    }
+};
+
+// 总监
+class Director : public IHandler
+{
+public:
+    Director() {}
+    ~Director() {}
+    virtual void HandleRequest(float days) override {
+        if (days <= 3) {
+            std::cout << "Director 批准了 " << days << " 天假" << std::endl;
+        } else {
+            m_pSuccessor->HandleRequest(days);
+        }
+    }
+};
+
+// 总裁
+class CEO : public IHandler
+{
+public:
+    CEO() {}
+    ~CEO() {}
+    virtual void HandleRequest(float days) override {
+        if (days <= 7) {
+            std::cout << "CEO 批准了 " << days << " 天假" << std::endl;
+        } else {
+            std::cout << "给你放长假，以后不用来上班啦！" << std::endl;
+        }
+    }
+};
+
+#endif // CONCRETE_HANDLER_H
+```
+**注意： 由于 CEO 位于最高层（处于链的末尾），所以请求到此结束，不会继续向下传递。**
+#### 8.4.3 创建客户端
+
+开始请假，说出你的理由：
+```c
+// main.cpp
+#include "concrete_handler.h"
+
+#ifndef SAFE_DELETE
+#define SAFE_DELETE(p) { if(p){delete(p); (p)=NULL;} }
+#endif
+
+int main()
+{
+    IHandler *manager = new Manager();
+    IHandler *director = new Director();
+    IHandler *ceo = new CEO();
+
+    // 职责链：经理 -> 总监 -> 总裁
+    manager->SetSuccessor(director);
+    director->SetSuccessor(ceo);
+
+    manager->HandleRequest(1);
+    manager->HandleRequest(2);
+    manager->HandleRequest(5);
+    manager->HandleRequest(10);
+
+    SAFE_DELETE(manager);
+    SAFE_DELETE(director);
+    SAFE_DELETE(ceo);
+
+    getchar();
+
+    return 0;
+}
+/*
+输出如下:
+Manager 批准了 1 天假 
+Director 批准了 2 天假 
+CEO 批准了 5 天假 
+给你放长假，以后不用来上班啦！
+*/
+
+```
+
+### 8.6 优缺点
+
+#### 8.6.1 优点
+
+- 降低耦合度，将请求的发送者和接收者解耦。
+- 简化了对象，使得对象不需要知道链的结构。
+- 增强给对象指派职责的灵活性，通过改变链内的成员或者调整它们的次序来动态改变职责。
+- 增加新的具体处理者很方便，无须修改原有代码，只需要在客户端重新建链即可。
+
+#### 8.6.2 缺点
+
+- 由于没有明确的接收者，所以无法保证请求一定会被处理（可能直到链的末端都得不到处理，也可能因为链没有配置正确而得不到处理。）
+- 对于较长的职责链来说，请求可能涉及到多个处理对象，这将会使系统性能受到一定影响，而且不利于代码调试。
+- 如果建链不当，可能会造成循环调用，这将导致系统陷入死循环。
+
+### 8.7 适用场景
+
+- 有多个对象可以处理同一请求，具体哪个对象处理由运行时刻自动确定。客户端只负责提交请求，而无须关心请求的处理对象是谁以及它是如何处理的。
+- 在不明确指定接受者的情况下，向多个对象中的一个提交一个请求。
+- 可动态指定一组对象处理请求，客户端可以动态创建职责链来处理请求，还可以改变链中处理者之间的先后次序。
+
+## 9 访问者模式
+
+**访问者模式**（Visitor Pattern）表示一个作用于某对象结构中的各元素的操作，它使你可以在不改变各元素类的前提下定义作用于这些元素的新操作。
+
+### 9.2 模式结构
+
+- Vistor（访问者）：为对象结构中每一个 ConcreteElement 声明一个 visit() 操作，从这个操作的名称或参数类型可以清楚知道需要访问的具体元素的类型。
+- ConcreteVisitor（具体访问者）：实现每个由 Visitor 声明的操作。
+- Element（元素）：定义一个 accept() 操作，它通常以一个 Vistor 作为参数。
+- ConcreteElement（具体元素）：实现 accept() 操作，通过调用 Visitor 的 visit() 方法来实现对元素的访问。
+- ObjectStructure（对象结构）：能够枚举它的元素，同时提供一个高层的接口，以允许访问者访问它的元素。
+
+**UML图**
+
+![访问模式UML图](https://img-blog.csdn.net/20180224180336621?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvdTAxMTAxMjkzMg==/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
+### 9.3 案例分析
+
+> 古城西安 - 访问记
+> 
+> 在访问西安时，访问者会参观各个景点。对于景点来说，无论访问者是谁，它们都是不变的。而作为访问者，不同角色的访问方式也不尽相同，游客只负责旅游 - 吃喝玩乐，而清洁工则需要打扫卫生、清理垃圾。
+> 
+> 这里，游客和清洁工是具体访问者，兵马俑、钟楼等景点是具体元素，西安这座城市是结构对象。
+
+### 9.4 代码实现
+
+#### 9.4.1 创建访问者
+
+访问者需要为每个景点都提供一个访问方法：
+```c
+// visitor.h
+#ifndef VISITOR_H
+#define VISITOR_H
+
+class BellTower;
+class TerracottaWarriors;
+
+// 访问者
+class IVisitor
+{
+public:
+    virtual ~IVisitor() {}
+    virtual void Visit(BellTower *) = 0;//根据地点的不同，访问的执行方法也不同
+    virtual void Visit(TerracottaWarriors *) = 0;
+};
+
+#endif // VISITOR_H
+```
+####  9.4.2 创建元素
+景点中定义了一个 Accept() 接口，用于接受访问者的访问：
+```c
+// element.h
+#ifndef ELEMENT_H
+#define ELEMENT_H
+
+class IVisitor;
+
+// 地方
+class IPlace
+{
+public:
+    virtual ~IPlace() {}
+    virtual void Accept(IVisitor *visitor) = 0;
+};
+
+#endif // ELEMENT_H
+```
+
+#### 9.4.3 创建具体元素
+
+具体元素有两个 - 钟楼、兵马俑，它们实现了 Accept() 方法：
+```c
+// concrete_element.h
+#ifndef CONCRETE_ELEMENT_H
+#define CONCRETE_ELEMENT_H
+
+#include "element.h"
+#include "visitor.h"
+#include <iostream>
+
+// 钟楼
+class BellTower : public IPlace
+{
+public:
+    virtual void Accept(IVisitor *visitor) override {
+        std::cout << "Bell Tower is accepting visitor." << std::endl;
+        visitor->Visit(this);
+    }
+};
+
+// 兵马俑
+class TerracottaWarriors : public IPlace
+{
+public:
+    virtual void Accept(IVisitor *visitor) override {
+        std::cout << "Terracotta Warriors is accepting visitor." << std::endl;
+        visitor->Visit(this);
+    }
+};
+
+#endif // CONCRETE_ELEMENT_H
+```
+**注意： 在 Accept() 方法中，通过调用 Visitor 的 visit() 方法（以当前对象为参数）来实现对景点的访问。**
+
+#### 9.4.4 创建对象结构
+
+添加景点，并为每一个景点添加访问者：
+```c
+// object_structure.h
+#ifndef OBJECT_STRUCTURE_H
+#define OBJECT_STRUCTURE_H
+
+#include "element.h"
+#include <list>
+
+// 城市（西安）
+class City
+{
+public:
+    void Attach(IPlace *place) {
+        m_places.push_back(place);
+    }
+
+    void Detach(IPlace *place) {
+        m_places.remove(place);
+    }
+
+    void Accept(IVisitor *visitor) {
+        // 为每一个 element 设置 visitor，进行对应的操作
+        for (std::list<IPlace*>::iterator it = m_places.begin(); it != m_places.end(); ++it) {
+            (*it)->Accept(visitor);
+        }
+    }
+
+private:
+    std::list<IPlace *> m_places;
+};
+
+#endif // OBJECT_STRUCTURE_H
+```
+
+#### 9.4.5 创建客户端
+
+```c
+// main.cpp
+#include "concrete_visitor.h"
+#include "object_structure.h"
+
+#ifndef SAFE_DELETE
+#define SAFE_DELETE(p) { if(p){delete(p); (p)=NULL;} }
+#endif
+
+int main()
+{
+    City *city = new City();
+
+    // 景点 - 钟楼、兵马俑
+    IPlace *bellTower = new BellTower();
+    IPlace *warriors = new TerracottaWarriors();
+
+    // 访问者 - 游客、清洁工
+    IVisitor *tourist = new Tourist();
+    IVisitor *cleaner = new Cleaner();
+
+    // 添加景点
+    city->Attach(bellTower);
+    city->Attach(warriors);
+
+    // 接受访问
+    city->Accept(tourist);
+    city->Accept(cleaner);
+
+    SAFE_DELETE(cleaner);
+    SAFE_DELETE(tourist);
+    SAFE_DELETE(warriors);
+    SAFE_DELETE(bellTower);
+    SAFE_DELETE(city);
+
+    getchar();
+
+    return 0;
+}
+/*
+输出如下：
+Bell Tower is accepting visitor. 
+I’m visiting the Bell Tower! 
+Terracotta Warriors is accepting visitor. 
+I’m visiting the Terracotta Warriors! 
+Bell Tower is accepting visitor. 
+I’m cleaning up the garbage of Bell Tower! 
+Terracotta Warriors is accepting visitor. 
+I’m cleaning up the garbage of Terracotta Warriors!
+*/
+
+```
+
+### 9.5 优缺点
+
+#### 9.5.1 优点
+
+- 增加新的访问操作很方便。使用访问者模式，增加新的访问操作就意味着增加一个新的具体访问者类，实现简单，无须修改源代码，符合“开闭原则”。
+- 将有关元素对象的访问行为集中到一个访问者对象中，而不是分散在一个个的元素类中。类的职责更加清晰，有利于对象结构中元素对象的复用，相同的对象结构可以供多个不同的访问者访问。
+- 让用户能够在不修改现有元素类层次结构的情况下，定义作用于该层次结构的操作。
+
+#### 9.5.2 缺点
+
+- 增加新的元素类困难。每增加一个新的元素类都意味着要在访问者中增加一个新的操作，并在每一个具体访问者类中增加相应的具体操作，这违背了“开闭原则”的要求。
+- 破坏封装。访问者模式要求访问者对象访问并调用每一个元素对象的操作，这意味着元素对象有时候必须暴露一些自己的内部操作和内部状态，否则无法供访问者访问。
+
+#### 9.6 适用场景
+
+- 一个对象结构包含多个类型的对象，希望对这些对象实施一些依赖其具体类型的操作。在访问者中针对每一种具体的类型都提供了一个访问操作，不同类型的对象可以有不同的访问操作。
+- 需要对一个对象结构中的对象进行很多不同的并且不相关的操作，而需要避免让这些操作“污染”这些对象的类，也不希望在增加新操作时修改这些类。访问者模式使得我们可以将相关的访问操作集中起来定义在访问者类中，对象结构可以被多个不同的访问者类所使用，将对象本身与对象的访问操作分离。
+- 对象结构中对象对应的类很少改变，但经常需要在此对象结构上定义新的操作。
+

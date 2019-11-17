@@ -105,6 +105,8 @@ COF-23设计模式分类
 
 **设计模式的核心，在于查找稳定部分非稳定部分，用不同的模式，来设计两者之间的关系**
 
+![设计模式](https://img-blog.csdn.net/2018051615452165?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1dpS2lfU3U=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
 # 看懂UML类图和时序图
  
 ## 图说设计模式阅读笔记-创建型模式
