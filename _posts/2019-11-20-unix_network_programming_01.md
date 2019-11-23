@@ -257,7 +257,7 @@ PING 192.168.31.255 (192.168.31.255) 56(84) bytes of data.
 
 下面是TCP/IP协议族的概况
 
-![TCP/IP协议族的概况](../img/2019-11-21-16-02-21.png)
+![TCP/IP协议族的概况](https://wangpengcheng.github.io/img/2019-11-21-16-02-21.png)
 
 相关协议:
 - TCP：传输控制协议，面相连接，全双工字节流。流套接字。关心：确认、超时、重传等细节。
@@ -279,19 +279,19 @@ PING 192.168.31.255 (192.168.31.255) 56(84) bytes of data.
 3. 服务器确认(ACK)客户端的SYN,同时自己发送一个SYN分节，含有服务器将在同一连接中发送的数据的初始序列好。服务器在单个分节中发送SYN和对客户端SYN的ACK(确认)
 4. 客户端必须确认服务器的SYN
 
-![TCP三次握手](../img/2019-11-20-20-11-32.png)
+![TCP三次握手](https://wangpengcheng.github.io/img/2019-11-20-20-11-32.png)
 
 下面是TCP的四次挥手
 
-![TCP四次挥手](../img/2019-11-21-22-07-01.png)
+![TCP四次挥手](https://wangpengcheng.github.io/img/2019-11-21-22-07-01.png)
 
 TCP链接相关状态图如下;
 
-![TCP状态转换图](../img/2019-11-22-17-06-18.png)
+![TCP状态转换图](https://wangpengcheng.github.io/img/2019-11-22-17-06-18.png)
 
 **TCP的分组交换**
 
-![TCP的分组交换](../img/2019-11-22-17-08-08.png)
+![TCP的分组交换](https://wangpengcheng.github.io/img/2019-11-22-17-08-08.png)
 
 ### 2.8 SCTP关联的建立和终止
 
@@ -303,7 +303,7 @@ SCTP因为是非双全工通信，因此不需要像TCP一样，需要进行四�
 4. 客户端结构服务器消息，并以一个COOKIE ECHO消息回射服务器的状态cookie.同时在分组中捆绑了用户数据
 5. 服务器以一个COOKIE ACK消息确认客户回射的cookie是正确的，本关联于是建立。该消息也可能在同一个分组中还捆绑了用户数据。
 
-![SCTP四路握手](../img/2019-11-22-20-10-05.png)
+![SCTP四路握手](https://wangpengcheng.github.io/img/2019-11-22-20-10-05.png)
 
 注意：**SCTP使用四路握手，是为了避免拒绝服务共计**。SCTP中cookie状态提供了一个任意长度的字段，并且要求实施基于加密的安全性以防护攻击，TCP中cookie编码只有32位长的初始序列号中。
 
@@ -313,22 +313,22 @@ SCTP因为是非双全工通信，因此不需要像TCP一样，需要进行四�
 
 其状态转换图如下：
 
-![SCTP状态转换图](../img/2019-11-22-20-17-44.png)
+![SCTP状态转换图](https://wangpengcheng.github.io/img/2019-11-22-20-17-44.png)
 
 分组连接状态如下：
 
-![SCTP分组连接](../img/2019-11-22-20-19-13.png)
+![SCTP分组连接](https://wangpengcheng.github.io/img/2019-11-22-20-19-13.png)
 
 当多个客户端连接服务器的相同端口时，会产生多个套接字
 
-![多个客户端的连接](../img/2019-11-22-20-22-37.png)
+![多个客户端的连接](https://wangpengcheng.github.io/img/2019-11-22-20-22-37.png)
 
 ### 2.11 缓冲区大小及限制
 
 - IPv4:最大大小是65535字节，包括IPv4首部；因为总长度字段，只有16位。
-![IPv4首部](../img/2019-11-22-20-25-58.png)
+![IPv4首部](https://wangpengcheng.github.io/img/2019-11-22-20-25-58.png)
 - IPv6:是65575字节，包括40字节的IPv6首部。净荷长度占据16位(不包括IPv6首部)。特大净荷可以将净荷字段扩展到32位，但是需要MTU(最大传输单元)超过65535的数据链路提供支持。
-![IPv6首部](../img/2019-11-22-20-26-42.png)
+![IPv6首部](https://wangpengcheng.github.io/img/2019-11-22-20-26-42.png)
 - MTU:网络硬件规定，以太网的MTU是1500字节。IPv4最小为68字节，IPv6最小为1280字节。
 - 最小重组缓冲区：IPv4或IPv6的任何实现都必须保证支持的最小数据报大小；IPv4-576;IPv6-1500字节。
 - MSS(最大分节大小):TCP中通告对端在每个分节中能发送的最大TCP数据量；从而避免分片；其经常设置为MTU减去IP和TCP首部的固定长度。MSS值是一个16位的字段，限定 其最大值为65535.但是在IPv6中MSS基本无效。
@@ -336,19 +336,19 @@ SCTP因为是非双全工通信，因此不需要像TCP一样，需要进行四�
 
 TCP输出步奏如下：
 
-![TCP套接字步奏](../img/2019-11-22-21-01-47.png)
+![TCP套接字步奏](https://wangpengcheng.github.io/img/2019-11-22-21-01-47.png)
 
 UDP输出步奏如下：
 
-![UDP输出步奏](../img/2019-11-22-21-02-50.png)
+![UDP输出步奏](https://wangpengcheng.github.io/img/2019-11-22-21-02-50.png)
 
 SCTP输出如下：
 
-![SCTP输出](../img/2019-11-22-21-03-31.png)
+![SCTP输出](https://wangpengcheng.github.io/img/2019-11-22-21-03-31.png)
 
 ### 2.13 常见的因特网应用的协议使用
 
-![常见网络协议](../img/2019-11-22-21-05-11.png)
+![常见网络协议](https://wangpengcheng.github.io/img/2019-11-22-21-05-11.png)
 
 # 第二部分 基本套接字
 
@@ -386,7 +386,7 @@ struct sockaddr_in {
 ```
 **注意：in_zero 未使用,我们应该把它置位0,按照惯例我们应该先把结构体置位0,而不是单单把sin_zero置位0**
 
-![POSIX规范](../img/2019-11-22-21-17-20.png)
+![POSIX规范](https://wangpengcheng.github.io/img/2019-11-22-21-17-20.png)
 
 #### 3.2.2 Pv6套接字地址结构: `sockaddr_in6`
 
@@ -466,7 +466,7 @@ struct sockaddr_strorage {
 - 大端：高字节放低地址，如0x0102,内存中放的是0x0102
 - 小端：高字节放高地址，低字节放低地址如0x0102,内存中放的是0x0201
 
-![大端字节序](../img/2019-11-22-21-33-36.png)
+![大端字节序](https://wangpengcheng.github.io/img/2019-11-22-21-33-36.png)
 
 **网际协议使用大端字节序传送多字节整数**；网络协议中的字节序函数如下：
 
@@ -535,7 +535,7 @@ const char *inet_ntop(int family, const void *addrptr, char *strptr, size_t len)
 //返回：结果指针（成功） NULL（失败）
 ```
 
-![相关地址转换](../img/2019-11-22-21-54-12.png)
+![相关地址转换](https://wangpengcheng.github.io/img/2019-11-22-21-54-12.png)
 
 ### 3.8 sock_notop和相关函数
 
@@ -677,13 +677,13 @@ ssize_t readlinebuf(void **vptrptr)
 
 TCP连接过程中基本使用如下：
 
-![TCP服务其套接字过程](../img/2019-11-23-15-32-46.png)
+![TCP服务其套接字过程](https://wangpengcheng.github.io/img/2019-11-23-15-32-46.png)
 
-![套接字类型](../img/2019-11-23-20-59-19.png)
+![套接字类型](https://wangpengcheng.github.io/img/2019-11-23-20-59-19.png)
 
-![type值](../img/2019-11-23-21-00-02.png)
+![type值](https://wangpengcheng.github.io/img/2019-11-23-21-00-02.png)
 
-![组合值](../img/2019-11-23-21-00-39.png)
+![组合值](https://wangpengcheng.github.io/img/2019-11-23-21-00-39.png)
 
 ### 4.2 socket
 
@@ -723,7 +723,7 @@ int bind(int sockfd, const struct sockaddr *myaddr, socklen_t addrlen);
 - 服务器在启动时，若未绑定端口;内核会选择一个临时的端口(客户端)。服务器一般不会。但是在RPC服务器中会监听端口，创建自己的临时端口。
 - TCP客户端一般不会绑定端口，因为这样会限定该套接字只能从指定端口发送。一般内核会根据目睹IP地址和端口，选择源IP地址。
 - 常见错误“address already in use”
-![指定端口关系](../img/2019-11-23-21-58-41.png)
+![指定端口关系](https://wangpengcheng.github.io/img/2019-11-23-21-58-41.png)
 
 ### 4.5 listen 函数
 
@@ -739,6 +739,6 @@ int listen(int sockfd, int backlog);
 监听套接字维护两个队列：未完成连接队列（SYN_RCVD)和已完成连接队列(ESTABLISHED)；backlog要求这两个队列之和不超过它。
 
 **当一个客户SYN到达时，若这些队列是满的，TCP就忽略该分节，不发送RST**
-![监听队列](../img/2019-11-23-22-08-35.png)
+![监听队列](https://wangpengcheng.github.io/img/2019-11-23-22-08-35.png)
 
-![关系](../img/2019-11-23-22-11-04.png)
+![关系](https://wangpengcheng.github.io/img/2019-11-23-22-11-04.png)
