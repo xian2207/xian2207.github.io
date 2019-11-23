@@ -619,15 +619,17 @@ stdio缓冲状态是不可见的，不能被用于代替readline.基于文本行
 
 ```c++
 #include "unp.h"
-
+/* 定义读取次数 */
 static int read_cnt;
 static char *read_ptr;
+/* 定义读取buf */
 static char read_buf[MAXLINE];
+/* 读取函数 */
 static ssize_t my_read(int fd,char *ptr)
 {
     if(read_cnt<=0){
         again:
-            if((read_cnt==read(fd,read_buf,sizeof(read_buf)))<0){
+            if((read_cnt==read(fd,read_buf,sizeof(read_buf)))<0){/* 进行一次读取 */
                 if(errno==EINTER)
                     goto again;
                 return (-1);
@@ -637,7 +639,7 @@ static ssize_t my_read(int fd,char *ptr)
             read_ptr=read_buf;
     }
     read_cnt--;
-    *ptr=*read+ptr++;
+    *ptr=*read+ptr++;/* 重置空指针 */
     return (1);
 }
 
@@ -648,7 +650,7 @@ ssize_t readline(int fd,void *vptr,size_t maxlen)
     ptr=vptr;
     for(n=1;n<maxlen;n++){
         if((rc=my_read(fd,&c)==1)){
-            *ptr++=c;
+            *ptr++=c;/*将字符指针指向c*/
             if(c=='\n') break;/* 检测到新行 */
         }else if(rc==0){
             *ptr=0;
@@ -662,11 +664,81 @@ ssize_t readline(int fd,void *vptr,size_t maxlen)
     /* 返回大小 */
     return (n);
 }
-
+/* 从缓冲取中读取数据 */
 ssize_t readlinebuf(void **vptrptr)
 {
     if(read_cnt)
         *vptrptr=read_ptr;
     return (read_cnt);
 }
+/* 简单来说就是将读取一个字符，转变为了读取多个字符 */
 ```
+### 第 4 章 基本TCP套接字编程
+
+TCP连接过程中基本使用如下：
+
+![TCP服务其套接字过程](../img/2019-11-23-15-32-46.png)
+
+![套接字类型](../img/2019-11-23-20-59-19.png)
+
+![type值](../img/2019-11-23-21-00-02.png)
+
+![组合值](../img/2019-11-23-21-00-39.png)
+
+### 4.2 socket
+
+`int socket(int framily, int type, int protocal)`:
+- `framily`参数表明协议族(协议域),
+- `type`参数表示套接字类型
+- `protocal`表示协议类型(或则设置为0)
+- 并不是所有的`framily`和`type`的组合都是有效的
+- `AF_`前缀表示地址族,`PF_`前缀表示协议族
+- socket函数的返回值为一个非负整数(套接字描述符, sockfd),**套接字描述符知识制定了协议族和套接字类型,并没有指定本地协议或则远程协议**
+
+
+### 4.3 connect 函数
+
+`int connect(int sockfd, const struct sockaddr* servaddr, socklen_t addrlen);`
+- `sockfd`:套接字描述符
+- 第二三个参数表示一个套接字地址结构(内部有服务器IP+Port)
+- 客户端在调用connect前不一定需要调用bind函数，因为如果需要的话，内核会确定源IP地址，并选择一个临时端口作为源端口
+- **出错的情况:**
+  - TCP客户没有收到SYN分节的响应，返回`ETIMEOUT`错误，如往本地子网上一个不存在的IP发送SYN
+  - 硬错误：收到RST(表示复位)，该服务器主机在指定的端口上，没有进程在等待与之链接(服务器没有运行)。客户端收到RST立刻返回`ECONNREFUSED`错误。产生RST的可能条件如下：
+    - 目的地为某端口的SYN到达，然而端口上没有正在监听的服务器；
+    - TCP想取消一个已有连接；
+    - TCP接收到一个根本不存在的连接上的分节.
+  - 软错误: 发送SYN分节引发路由器“destination unreachable”(目的地不可达)；ICMP错误。
+
+###  4.4 bind函数
+
+本地洗衣地址赋予一个套接字，对于网际协议来说，是将IP地址与TCP或UDP的端口号进行组合。
+
+```c
+#include <sys/socket.h>
+int bind(int sockfd, const struct sockaddr *myaddr, socklen_t addrlen);
+//成功返回0，出错返回-1
+```
+
+- 服务器在启动时，若未绑定端口;内核会选择一个临时的端口(客户端)。服务器一般不会。但是在RPC服务器中会监听端口，创建自己的临时端口。
+- TCP客户端一般不会绑定端口，因为这样会限定该套接字只能从指定端口发送。一般内核会根据目睹IP地址和端口，选择源IP地址。
+- 常见错误“address already in use”
+![指定端口关系](../img/2019-11-23-21-58-41.png)
+
+### 4.5 listen 函数
+
+socket被创建时，默认为一个主动套接字，主要使用connect发起连接的客户端套接字。listen函数把一个未连接的套接字转换为一个被动套接字。
+```c
+#include <sys/socket.h>
+int listen(int sockfd, int backlog);
+//成功返回0，出错返回-1
+
+```
+
+函数应该在socket和bind之后，accept函数之前。backlog表示正在连接状态和完全连接状态的队列的最大数目值。
+监听套接字维护两个队列：未完成连接队列（SYN_RCVD)和已完成连接队列(ESTABLISHED)；backlog要求这两个队列之和不超过它。
+
+**当一个客户SYN到达时，若这些队列是满的，TCP就忽略该分节，不发送RST**
+![监听队列](../img/2019-11-23-22-08-35.png)
+
+![关系](../img/2019-11-23-22-11-04.png)
