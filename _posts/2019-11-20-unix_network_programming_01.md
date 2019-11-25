@@ -742,3 +742,357 @@ int listen(int sockfd, int backlog);
 ![监听队列](https://wangpengcheng.github.io/img/2019-11-23-22-08-35.png)
 
 ![关系](https://wangpengcheng.github.io/img/2019-11-23-22-11-04.png)
+
+### 4.6 accept函数
+
+accept拥有两个值-结果参数，cliaddr和addrlen可以返回peer端信息，如果不关心，可以置NULL。
+
+accept主要是从已完成连接队列头返回下一个已完成链接。如果以完成为空，则进行睡眠。
+
+accept成功时会返回一个自动生成的全新描述符，代表客户之间的TCP连接，输入为监听套接字。返回为已连接套接字
+
+```c
+#include <sys/socket.h>
+int accept(int sockfd, struct sockaddr * cliaddr, socklen_t *addrlen);
+//成功返回非负描述符号，出错返回-1
+```
+
+### 4.7 fork和exec函数
+
+fork函数调用一次返回两次，一次返回新派生进程(子进程)的进程ID号，子进程又返回一次，返回值为0，，告知当前进程为子进程。
+
+父进程中调用fork之前打开的所有描述符在fork返回之后由子进程分享。网络服务器利用了这个特性。accept之后调用fork。已连接的套接字就在两个进程之间共享；通常情况，父进程会关闭这个已连接套接字。子进程则继续进行。
+
+还可以使用exec函数进行额外的操作，但是这个操作会直接将当前进程的工作内容切换，并不会有返回值。
+
+![获取相关操作](../img/2019-11-25-15-27-26.png)
+
+### 4.8 并发服务器
+
+并发服务器中使用fork操作，来进行多个客户端的并发处理。同时也要求，在使用close时不仅父进程要关闭，子进程也要关闭socket，对应的文件描述符引用为0，才能真正结束网络链接。
+
+![](../img/2019-11-25-15-36-57.png)
+
+![](../img/2019-11-25-15-37-28.png)
+
+所以需要并发服务器的相关操作伪代码如下：
+```c
+/* 伪代码 */
+pid_t pid;
+int   listenfd, connfd;
+listenfd = socket (...);
+bind (listenfd, ...);
+listen (listenfd, LISTENQ);
+for (; ; ) {
+    connfd = accept (listenfd, ...);
+    if ((pid = fork()) == 0) {
+        close (listenfd); /* child closes listening socket */
+        /* do something */
+        close (connfd);   /* done with this client */
+        exit (0);
+    }
+    close (connfd);       /* parent closes connected socket */
+}
+```
+
+### 4.9 close()函数
+
+- `int close(sockfd);`：可以用来关闭套接字，并终止TCP连接
+- 确实想终止连接可以用`shutdown()`函数。
+
+### 4.10 getsocketname和getpeername函数
+
+相关函数操作如下：
+```c
+#include <sys/socket.h>
+int getsockname (int sockfd, struct sockaddr *localaddr, socklen_t *addrlen);
+int getpeername (int sockfd, struct sockaddr *peeraddr, socklen_t *addrlen);
+```
+使用解释：
+
+- 在一个没有调用`bind`的TCP客户端上，`connect`成功返回后，`getsockname`用于返回由内核赋予该连接的本地IP地址和本地端口号；
+- 在以端口号0调用`bind`后，`getsockname`用于返回由内核赋予的本地端口号；
+- `getsockname`可用于获取某个套接字的地址族。
+- 当一个服务器是由调用过accept的某个进程通过调用`exec`执行程序时，它能够获取客户身份的唯一途径便是调用`getpeername`。
+- 大多数TCP服务器是并发的，大多数UDP服务器是迭代的(UDP无链接，每个应用只需要保持一个线程)。
+
+使用示例：
+
+```c
+/* 代码演示：获取套接字的地址族 */
+int sockfd_to_family(int sockfd)
+{
+	struct sockaddr_storage ss;
+	socklen_t	len;
+ 
+	len = sizeof(ss);
+	if (getsockname(sockfd, (SA *) &ss, &len) < 0)
+		return(-1);
+	return(ss.ss_family);
+}
+```
+
+### 第 5 章 TCP客户端/服务器程序示例
+_参考链接：_
+
+- [《UNIX网络编程卷1》读书笔记–第五章TCP客户/服务实例](https://blog.csdn.net/mashuiping/article/details/65628979)
+- [UNIX网络编程卷一 第五章 TCP客户/服务器程序示例](https://blog.csdn.net/haoyuedangkong_fei/article/details/65448137)
+
+
+本章开始编写一个完整的TCP客户/服务器程序实例。
+- (1) 客户冲标准输入读入一行文本，并写给服务器
+- (2）服务器从网络输入读入这行文本，并回射给客户
+- (3）客户从网络读入这行回射文本，并显示在标准输出上。
+
+![服务器相关操作](https://img-blog.csdnimg.cn/20191023150943597.png)
+
+一个简单的client和sever
+```c++
+/* client */
+#include "unp.h"
+
+int main(int argc, char **argv)
+{
+	int sockfd;
+	struct sockaddr_inservaddr;
+	
+	if (argc != 2)
+	err_quit("usage: tcpcli <IPaddress>");
+	
+	sockfd = Socket(AF_INET, SOCK_STREAM, 0);
+	
+	bzero(&servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_port = htons(SERV_PORT);
+	Inet_pton(AF_INET, argv[1], &servaddr.sin_addr);
+	
+	Connect(sockfd, (SA *) &servaddr, sizeof(servaddr));
+	str_cli(stdin, sockfd);/* do it all */
+	exit(0);
+}
+void str_cli(FILE *fp, int sockfd)
+{
+	char sendline[MAXLINE], recvline[MAXLINE];
+	while (Fgets(sendline, MAXLINE, fp) != NULL) {
+		Writen(sockfd, sendline, strlen(sendline) );
+		if (Readline(sockfd, recvline, MAXLINE) == 0)
+		err_quit("str_cli: server terminated prematurely");
+		Fputs(recvline, stdout);
+	}
+}
+```
+**Sever**
+```c++
+#include "unp.h"
+int main(int argc, char **argv) {
+	int listenfd, connfd;
+	pid_t childpid;
+	socklen_t clilen;
+	struct sockaddr_incliaddr, servaddr;
+	
+	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+	
+	bzero(&servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port        = htons(SERV_PORT);
+	
+	Bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
+	Listen(listenfd, LISTENQ);
+	
+	for ( ; ; ) {
+		clilen = sizeof(cliaddr);
+		connfd = Accept(listenfd, (SA *) &cliaddr, &clilen);
+		if ( (childpid = Fork()) == 0) {/* child process */
+			Close(listenfd);/* close listening socket */
+			str_echo(connfd);/* process the request */
+			exit(0);
+		}
+		Close(connfd);/* parent closes connected socket */
+	}
+}
+void str_echo(int sockfd) {
+	ssize_t n;
+	char buf[MAXLINE];
+	
+again:
+	while ( (n = read(sockfd, buf, MAXLINE)) > 0)
+	Writen(sockfd, buf, n);
+	
+	if (n < 0 && errno == EINTR)
+	goto again;
+	else if (n < 0)
+	err_sys("str_echo: read error");
+}
+
+```
+**工作流程**
+
+- 服务端先在后台运行
+  - 连接阶段:
+    - `socket`创建套接字
+    - 调用`bind`设置服务的端口号为9877，任意一个网卡的IP
+    - 调用`listen`,将套接字改为被动连接套接字，
+    - 维护队列，这一步完成后就可以接收客户的connect了，
+    - 调用`accept`，初次调用时并没有已连接的套接字，进入睡眠.
+  - 工作阶段:
+    - 创建子进程:
+      - 将`accept`放在一个无限循环中，
+      - `accept`返回成功，就`fork`一个子进程
+      - 在子进程中处理已建立连接的任务，父进程就继续等待下一个连接。
+    - 子进程工作:
+      - 在子进程中需要关闭socket创建的描述符，父进程中关闭connect返回的描述符
+        - 因为fork创建进程时这两个描述符都会复制到子进程中，如果不关闭，在子进程退出时由于父进程还打开了connect描述符，将不会发送FIN字节，而且每一个连接都会消耗一个描述符资源永远不会释放。
+      - 在`str_echo`中，服务器从套接字中读取内容，若没有内容就阻塞，然后直接写回套接字。
+- 客户端：
+  - 链接阶段：
+    - 创建套接字
+    - 设置服务器IP和端口号
+    - 调用connect发起连接
+      - 调用connect后会发送SYN字节
+      - 在收到服务端的ACK后
+      - connect就返回，进入established状态
+  - 工作阶段
+    - 从标准输入中读取一行文本
+    - 将它写到套接字中
+    - 从套接字中读一行文本
+    - 写到标准输出
+
+### 5.6 服务器正常启动
+
+服务器和客户端阻塞后：
+
+- 客户端正常是阻塞在`fgets`，等待用户输入；在用户输入`EOF`后，`fgets`返回`NULL`，`str_cli`退出。
+- 客户端程序调用`exit`结束程序，详细流程如下:
+  - `exit`首先会先关闭打开的套接字描述符，(客户单套接字`close`)
+  - 引发`FIN`发送到套接字中，进入`FIN_WAIT_1`状态，(客户端发送`FIN`)
+  - 收到服务器的`ACK`后进入`FIN_WAIT_2`状态，(服务器发送回复:`ACK`)
+  - 再收到`FIN`后发送`ACK`然后进入`TIME_WAIT`状态(服务器发送:`FIN`, 客户端回复:`ACK`)
+  - 等待`2MSL`
+- 客户端程序运行时查看套接字状态
+```sh
+$ netstat -a |grep 9877
+tcp        0      0 *:9877                  *:*                     LISTEN     
+tcp        0      0 localhost:36368         localhost:9877          ESTABLISHED
+tcp        0      0 localhost:9877          localhost:36368         ESTABLISHED
+```
+- 客户端程序终止运行后查看套接字状态
+```sh
+$ netstat -a |grep 9877
+tcp        0      0 *:9877                  *:*                     LISTEN     
+tcp        0      0 localhost:36368         localhost:9877          TIME_WAIT
+```
+注意：服务器的意外崩溃，或者主进程的主动结束，可能存在子进程的僵尸进程。
+
+### 5.8 问题分析
+
+#### 5.8.1 僵尸进程
+
+当主动关闭服务器后，使用ps查看进程状态发现存在僵尸进程
+
+```shell
+$ ps -o pid,ppid,stat,args
+  PID  PPID STAT COMMAND
+30143 30142 Ss   -bash
+34810 30143 S    ./tcpserv01
+34812 34810 Z    [tcpserv01] <defunct>
+34813 30143 R+   ps -o pid,ppid,stat,args
+```
+
+为了避免产生僵尸进程，应该使用`wait`或者`waitpid`等待子进程结束后，再使用主进程终结。
+
+- 父进程如果设置了信号处理函数那么就可以在信号处理函数中调用wait或waitpid.
+- 如果创建的子进程不止一个：
+  - 需要在一个循环中调用`waitpid`来处理，并且设置`WNOHANG`参数。
+  - 因为一个`wait/waitpid`只处理一个僵尸进程，而且调用`wait`时会挂起，这在信号处理函数中是不妥的。
+  - 如果父进程不设置信号处理函数，那么就可以再父进程退出时调用`wait`,或`waitpid`，通常这种情况下父进程都是很快就退出，不然还是会产生僵尸进程。
+
+**让init进程处理僵尸进程**
+
+- 这种情况下存在于：
+  - 父进程没有处理`SIGCHLD`信号，或在信号处理函数中没有`waitpid`
+  - **且**父进程已经结束后才存在的情况
+- 这时init就会成为僵尸进程的父进程，我们就不用管了。**其实这中情况多半是由于父进程忘记处理了**。这里就可以不处理`SIGCHLD`信号，因为这个信号并不会导致程序结束，只要在父进程中close然后调用`wait/waitpid`就好了。
+
+#### 5.8.2 处理被中断的系统调用
+
+
+为了说明这个问题，我们引入信号处理函数，其实信号处理就相当于一个软件中断，中断随时都可能发生，因此我们编写代码过程中需要考虑中断的情况。
+
+```c
+int main(int argc, char **argv){
+	int listenfd, connfd;
+	pid_t childpid;
+	socklen_t clilen;
+	struct sockaddr_incliaddr, servaddr;
+	void sig_chld(int signo);
+	Sigfunc * Signal(int signo, Sigfunc *func);
+	
+	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+	bzero(&servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port        = htons(SERV_PORT);
+
+	Bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
+	Listen(listenfd, LISTENQ);
+	Signal(SIGCHLD, sig_chld);
+
+	for ( ; ; ) {
+		clilen = sizeof(cliaddr);
+		connfd = Accept(listenfd, (SA *) &cliaddr, &clilen);
+		
+		if ( (childpid = Fork()) == 0) {/* child process */
+			Close(listenfd);/* close listening socket */
+			str_echo(connfd);/* process the request */
+			exit(0);
+		}
+		Close(connfd);/* parent closes connected socket */
+	}
+}
+
+void sig_chld(int signo){
+	pid_t pid;
+	int stat;
+	printf("enter sig_chld\n");
+	while ( (pid = waitpid(-1, &stat, WNOHANG)) > 0)
+	//while( (pid = wait(NULL)) > 0)
+	printf("child %d terminated\n", pid);
+	printf("quit sig_chld\n");
+	return;
+}
+
+```
+
+上面例子中中断处理函数中调用printf是不太合适的，因为printf是不可重入函数，在程序规模比较大，进程多时可能出现奇怪错误，这里只为了查看程序状态。
+
+`Signal`是一个书中作者写的一个包裹函数，采用signation函数实现，实现代码中可以设置是否设置SA_RESTART, 这个配置就表示当系统调用被中断以后是否自动重新启动。
+
+因为不同的UNIX系统实现可能不一样，有些系统默认重启有些则默认不重启，因此我们自己配置就可以更好控制，当然也为了不用直接配置`signation`，才将其包装起来。
+
+对于`accept`、`read`、`write`、`select`等慢系统调用通常我们都希望他们被中断之后能继续返回中断前的状态继续执行，因为并不会产生错误，而对于`connect`在中断之后我们则不能重启，因为在中断之后其连接肯定会失败。
+
+### 5.8.3 wait和waitpid
+
+wait接收到任意一个信号之后，就会执行断开操作。但是会留下n-1个僵尸进程。因为所有的信号都在信号处理函数执行之前产生，信号处理函数只执行一次，因为UNIX信号一般是不排队的，正确的解决办法是使用`waitpid`代替wait
+
+```c
+void sig_chld(int signo){
+	pid_t pid;
+	int stat;
+	printf("enter sig_chld\n");
+	while ( (pid = waitpid(-1, &stat, WNOHANG)) > 0)
+	//while( (pid = wait(NULL)) > 0)
+	printf("child %d terminated\n", pid);
+	printf("quit sig_chld\n");
+	return;
+}
+```
+
+指定WNOHANG参数，使得pid在有尚未终止的子进程运行时不要阻塞。
+
+### 5.11 accept返回前连接终止
+
+三路握手完成建立连接后，客户端TCP却发送了一个RST(复位)。服务器中，该连接已经在TCP队列中。等待accept时，RST到达。相当于，服务器开启socket、bind、listen后让accept睡眠一段时间，在此期间启动客户端，一旦连接就发送RST。
+
+![accpt](../img/2019-11-25-22-20-57.png)
