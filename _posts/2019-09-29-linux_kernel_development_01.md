@@ -153,8 +153,7 @@ make modules_install
 
 ### 3.1 进程
 
-**每一个线程都拥有一个独立的程序计数器、进程栈、一组进程寄存器**。_内核调度的对象是线程，而不是进程_ ([从进程和线程了解浏览器的工作原理](https://www.jianshu.com/p/8ff15d3a1dfd))；在Linux中对线程和进程的区分度不是很大。线程之间共享虚拟内存，但是每个线程都拥有自己独立的虚拟处理器
-
+**每一个线程都拥有一个独立的程序计数器、进程栈、一组进程寄存器**。_内核调度的对象是线程，而不是进程_ ([从进程和线程了解浏览器的工作原理](https://www.jianshu.com/p/8ff15d3a1dfd))；在Linux中对线程和进程的区分度不是很大。线程之间共享虚拟内存，但是每个线程都拥有自己独立的虚拟处理器。每个进程都有自己的用户栈和内核栈，陷入内核时，将用户栈寄存器压入内核栈；出去时，重新返回用户栈寄存器，并清空内核栈--**内核栈总是空的**
 ### 3.2 进程描述符及任务结构
 
 _参考链接：_ [Linux进程描述符task_struct结构体详解](https://blog.csdn.net/gatieme/article/details/51383272);[文件描述符（File Descriptor）简介](https://segmentfault.com/a/1190000009724931)
@@ -165,7 +164,7 @@ _参考链接：_ [Linux进程描述符task_struct结构体详解](https://blog.
 
 #### 3.2.1 分配进程描述符
 
-Linux 通过slab分配器分配task_struct结构。slab董涛生成一个task_struct,只需要在栈底(向下增长的栈)或栈顶(向上增加的栈)创建一个新的结构struct_info(定义在<asm/thread_info.h>)中内容如下：
+Linux 通过slab分配器分配task_struct结构。slab生成一个task_struct,只需要在栈底(向下增长的栈)或栈顶(向上增加的栈)创建一个新的结构struct_info(定义在<asm/thread_info.h>)中内容如下：
 
 ```c
 struct thread_info{
