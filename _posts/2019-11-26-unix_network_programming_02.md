@@ -77,14 +77,16 @@ int select(int maxfdp1,fd_set *readset, fd_set *writeset, fd_set *exceptset, con
 - `readset`、`writeset`和`exceptset`指定我们要让内核测试读、写和异常条件的描述符。使用它们可以指定select的监听的描述符集合；**一定要初始化，否则将产生不可描述的问题**使用示例如下：
 ```c
 fd_set rset;
-/* 初始化所有位 */
+/* 初始化所有位--清空集合 */
 FD_ZERO(&set);
-/* 开启1的位 */
+/* 开启1的位--将1加入文件集合中 */
 FD_SET(1,&rset);
 /* 开启4的位 */
 FD_SET(4,&rset);
 /* 开启5的位 */
 FD_SET(5,&rset);
+/* 将1从集合中清除  */
+FD_CLR(14,&rset);
 ```
 
 计时器到时返回0，-1表示出错
@@ -110,3 +112,167 @@ FD_SET(5,&rset);
 
 #### 6.3.2 select的最大描述符
 由FD_SETSIZE指定，一般为256，更改时，需要重新编译内核。
+
+
+### 6.6 shutdown 函数
+
+终止网络的常用方法是调用close函数，close函数的限制可以使用shutdown 来避免close的相关问题：
+```c
+#include <sys/socket.h>
+int shutdown(int sockfd,int howto);
+```
+
+- `close()`把描述符的引用计数减1，`shutdown`直接激发TCP的正常连接序列的终止。
+- shutdown告诉对方我已近完成了数据的发送(对方仍然可以发给我）;howto相关参数如下：
+  - `SHUT_RD`：关闭连接的读这一半
+    - 可以把第二个参数置为`SHUT_RD`防止回环复制
+    - 关闭`SO_USELOOPBACK`套接字选项也能防止回环
+  - `SHUT_WR`：关闭连接的写这一半，也叫半关闭
+  - `SHUT_RDWR`：连接的读半部和写半部都关闭
+
+### 6.8 TCP回射服务器程序
+
+使用一个client数组，来记录对应的已经建立连接的客户端的编号。当客户端连接断开口，将其对应的文件描述符从集合中删除，然后将对应的客户端编号设置为-1。
+
+改用了Read，Write，解决这一问题；并且改用了shutdown来关闭连接而不是用close。修复了批量输入的问题
+
+```c
+void str_cli(FILE * fp, int sockfd){
+  int maxfdp1, stdineof, n;
+  fd_set rset;
+  char buf[MAXLINE];
+
+  stdineof = 0;
+  FD_ZERO(&rset);
+  for( ; ; ){
+    if(stdineof == 0){ // 是一个初始化为0, 的新标志,当标志位0时,打开标准输入检测
+      FD_SET(fileno(fp), &rset);
+    }
+    /* 将当前的socket描述符，添加到rset中 */
+    FD_SET(sockfd, &rset);
+    maxfdp1 = max(fileno(fp), sockfd) + 1;
+    //使用Select监听函数
+    Select(maxfdp1, &rset, NULL, NULL, NULL);
+    if(FD_ISSET(sockfd, &rset)){
+      if((n = Read(sockfd, buf, MAXLINE)) == 0){
+        if(stdineof == 1)
+          return ;
+        else
+          err_quit("str_cli: server terminated prematurely");
+      }
+      Write(fileno(stdout), buf, n);
+    }
+    if(FD_ISSET(fileno(fp), &rset)){
+      if((n = Read(fileno(fp), buf, MAXLINE)) == 0){ // 表示读入EOF标志符,文件已经空了
+        stdineof = 1;// 关闭标准输入 
+        Shutdown(sockfd, SHUT_WR);// 关闭socked 的读操作
+        FD_CLR(fileno(fp), &rset); // 从检测位中删除 输入输入检测
+        continue;
+      }
+      Writen(sockfd, buf, n);
+    }
+  }
+}
+```
+下面是使用select的服务端程序
+
+```c
+#include "unp.h"
+int main(int argc, char const *argv[]) {
+    /* 定义对应的文件描述符 */
+    int i, maxi, maxfd, listenfd, connfd, sockfd;
+    /* 定义客户端连接集合 */
+    int nready, client[FD_SETSIZE];
+    ssize_t n;
+    /* 定义连接客户端集合 */
+    fd_set rset, allset;
+    /* 定义缓冲区 */
+    char buf[MAXLINE];
+    /* 定义客户端关键字 */
+    socklen_t clilen;
+    /* 定义相关地址 */
+    struct sockaddr_in cliaddr, servaddr;
+    /* 开始进行监听 */
+    listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+    /* 初始化服务器地址 */
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(SERV_PORT);
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    /* 连接监听socket和服务器地址 */
+    Bind(listenfd, (SA *)&servaddr, sizeof(servaddr));
+    /* 开始监听 */
+    Listen(listenfd, LISTENQ);
+    maxfd = listenfd;
+    maxi = -1;
+    /* 初始化client集合 */
+    for (i = 0; i < FD_SETSIZE; i++){
+        client[i] = -1;
+    }
+    /* 初始化监听集合 */
+    FD_ZERO (&allset);
+    /* 添加监听集合 */
+    FD_SET(listenfd, &allset);
+    for( ; ; ){
+        rset = allset;
+        /* 指向select */
+        nready = Select(maxfd + 1, &rset, NULL, NULL, NULL);
+        /* select监听函数 */
+        if(FD_ISSET(listenfd, &rset)){
+            clilen = sizeof(cliaddr);
+            /* 获取连接描述符 */
+            connfd = Accept(listenfd, (SA *)&cliaddr, &clilen);
+            /* 将其加入队列中 */
+            for(i = 0; i < FD_SETSIZE; i++){
+                if(client[i] < 0){
+                    client[i] = connfd;
+                    break;
+                }
+            }
+            /* 超过范围开始警告 */
+            if(i == FD_SETSIZE)
+                err_quit("too many clients");
+            /* 将连接符，添加到监听集合中 */
+            FD_SET(connfd, &allset);
+            if(connfd > maxfd)
+                maxfd= connfd;
+            if(i > maxi)
+                maxi = i;
+            /* 没有准备好直接继续，不进行下面的链接检查和读写操作了 */
+            if(--nready <= 0)
+                continue;
+        }
+        /* 遍历所有连接 */
+        for(i = 0; i <= maxi; i++){
+            /* 获取保存的连接描述符 */
+            if((sockfd = client[i]) < 0)
+                continue;
+            if(FD_ISSET(sockfd, &rset)){
+                /* 如果没有读取到，将其清除 */
+                if((n = Read(sockfd, buf, MAXLINE)) == 0){
+                    Close(sockfd);
+                    FD_CLR(sockfd, &allset);
+                    client[i] = -1;
+                }else{/* 否则写入内容 */
+                    
+                    Writen(sockfd, buf, n);
+                }
+                /* 状态错误，直接跳出 */
+                if(--nready <= 0)
+                break;
+            }
+        }
+    }
+}
+
+```
+相关的过程如下:
+
+![相关过程](https://img-blog.csdnimg.cn/20191023192300958.png#pic_center)
+
+**拒绝服务攻击：** 当一个服务器在处理多个客户端时，对于单个客户端的函数调用，如果阻塞了，那么可能导致服务器被挂起，拒绝为所有其它客户提供服务。
+
+解决办法：
+- 使用非阻塞式I/O
+- 让每个客户由单独的控制线程提供服务。
+- 对I/O操作设置超时
