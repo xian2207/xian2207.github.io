@@ -1,8 +1,8 @@
 ---
 layout:     post
-title:      UNIX网络编程 学习笔记 (一)
-subtitle:   UNIX网络编程 学习笔记 (一) 
-date:       2019-11-10
+title:      UNIX网络编程 学习笔记 (二)
+subtitle:   UNIX网络编程 学习笔记 (二) 
+date:       2019-11-26
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
 catalog: true
@@ -17,6 +17,8 @@ _参考链接：_
 
 - [《Unix网络编程》卷1 初级](https://blog.csdn.net/zzxiaozhao/article/details/102637708)
 - [《Unix网络编程》卷1 中级](https://blog.csdn.net/zzxiaozhao/article/details/102662861)
+
+> 2019-11-26 22:10:53
 
 ## I/O复用：select和poll函数
 
@@ -308,7 +310,7 @@ struct pollfd{
 ```
 events常量如下：
 
-![poll处理函数](../img/2019-11-29-17-14-28.png)
+![poll处理函数](https://wangpengcheng.github.io/img/2019-11-29-17-14-28.png)
 
 nfds指定结构数组中元素的个数，是由nfds参数指定的
 
@@ -737,12 +739,12 @@ int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t
 
 下面是opt可以设置的选项的名称：
 
-![套接字层和IP层的套接字选项汇总01](../img/2019-11-29-21-40-06.png)
-![套接字层和IP层的套接字选项汇总02](../img/2019-11-29-21-40-47.png)
+![套接字层和IP层的套接字选项汇总01](https://wangpengcheng.github.io/img/2019-11-29-21-40-06.png)
+![套接字层和IP层的套接字选项汇总02](https://wangpengcheng.github.io/img/2019-11-29-21-40-47.png)
 
 传输层的选项汇总如下:
 
-![传输层套接字选项汇总](../img/2019-11-29-21-42-16.png)
+![传输层套接字选项汇总](https://wangpengcheng.github.io/img/2019-11-29-21-42-16.png)
 
 ### 7.4 套接字状态
 
@@ -883,5 +885,407 @@ struct linger {
   - 获取和设置TCP连接的最大分节大小(MSS);返回值是TCP可以发送给对端的最大数据量；通常是由对端使用SYN分节通告的MSS
 - `TCP_NODELAY`
   - 禁止TCP的Nagle算法(减少局域网上小分组(小于MSS的任何分组)的数目);默认情况下，该选项关闭
+![禁止前后变化](../img/2019-12-01-16-50-13.png)
+
+### 7.10 SCTP套接字选项
+
+略
+
+### 7.11 fcntl函数
+
+执行各种描述符控制操作。
+
+![相关操作小节](../img/2019-12-01-16-53-04.png)
+
+函数使用：`int fcntl(int fd, int cmd, .../* int arg */);`
+
+每种描述符都有一组由F_GETFL命令获取或由F_SETFL命令设置的文件标志，影响套接字描述符的有两个：
+  -  `O_NONBLOCK`(非阻塞式IO)
+  -  `O_ASYNC`(信号驱动式IO)
+
+正确设置非阻塞式IO的写法：
+```c
+int flag;
+/* Set a socket as nonblocking */
+if((flag=fcntl(fd, F_GETFL, 0)) < 0){    //必须要先获取其他文件标志
+    err_sys("F_GETFL, error");
+}
+flag |=O_NONBLOCK;                       //或运算，打开非阻塞标志
+if(fcntl(fd, F_SETFL, flags) <0 ){
+    err_sys("F_SETFL error");
+}
+flag &=~O_NONBLOCK;                      //与运算，关闭非阻塞标志
+if(fcntl(fd, F_SETFL, flags) <0 ){
+    err_sys("F_SETFL error");
+}
+```
+`F_SETOWN`的参数是正值则指出接收信号的进程ID，是负数则绝对值指出信号的组ID
+`F_GETOWN`与上面类似
+使用`socket()`函数创建的套接字没有属组。如果一个新的套接字是从一个监听套接字创建而来，属组将继承过来。
+
+## 第 八 章 基本UDP套接字编程
+
+UDP常见的应用程序：DNS(域名系统)；NFS(网络文件系统)和SNMP(简单网络管理协议)
+
+![UDP相关操作](../img/2019-12-01-18-17-30.png)
+
+UDP的关键函数
+
+```c
+/* 接收信息函数 */
+ssize_t recvform(int sockfd,void *buff,size_t nbytes,int flag,struct sockaddr *from,socklen_t *addrlen);
+/* 发送信息函数 */
+ssize_t sendto(int sockfd,const void *buff,size_t nbytes,int flags,const struct sockaddr *to,socklen_t *addrlen);
+```
+参数解析：
+
+- 前三个参数等同于read和write的三个参数：描述符，**指向读/写入缓冲区的指针**和**读/写字节数**
+- `buff`：接收的内容；可以为0
+- `flag`:设置相关参数
+- `from`:指向一个由函数返回时，填写的数据报发送者的协议地址的套接字地址结构，返回字节在addrlen.
+- `to`:指向一个套接字地址结构(内含数据包接收者协议地址：`IP`以及`Port`),长度由`addrlen`指定。
+- 对于`UDP客户端`而言，是不需要指定端口的，在第一次调用`sendto`的时候，内核会给他指派一个临时端口，但是如果没有指定端口，又没有调用`sendto`将无法接收到消息。
+
+`recvfrom`像是`accept`和`read`的结合;
+
+### 8.3 UDP回射服务器程序：
+
+主要流程如下：
+
+![UDP简单的回射客户端/服务器](../img/2019-12-01-18-31-25.png)
+
+`UDP`服务端是一个典型的迭代器模型，大多数TCP服务器是并发的。对于本套接字，`UDP`层中隐含有排队发送，每个`UDP`套接字都有一个接收缓冲区，实行FIFO机制。主要服务器端代码如下：
+
+```c
+#include "unp.h"
+/* 声明输出函数 */
+void dg_echo(int , SA *, socklen_t);
+
+int main(int argc, char const *argv[]) {
+    int sockfd;
+    struct sockaddr_in servaddr, cliaddr;
+    /* 指定协议和数据报类型，注意这里的协议选择 */
+    sockfd = Socket(AF_INET, SOCK_DGRAM, 0); 
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(SERV_PORT);
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    /* 指定连接的源地址结构 */
+    Bind(sockfd, (SA*)&servaddr, sizeof(servaddr));
+    /* 处理相关网络编程 */
+    dg_echo(sockfd, (SA*)&cliaddr, sizeof(cliaddr));
+}
+
+void dg_echo(int sockfd, SA * pcliaddr, socklen_t clilen){
+    int n;
+    socklen_t len;
+    char msg[MAXLINE];
+    for( ; ; ){
+        len = clilen;
+        /* 接收相关消息 */
+        n = Recvfrom(sockfd, msg, MAXLINE, 0, pcliaddr, &len);
+        /* 对消息进行回传 */
+        Sendto(sockfd, msg, n, 0, pcliaddr, len);
+    }
+}
+```
+
+UDP回射客户端:
+
+```c++
+#include "unp.h"
+/* 声明客户端回射函数 */
+void dg_cli(FILE *, int, const SA *, socklen_t);
+
+int main(int argc, char const *argv[]) {
+  /* 使用提示 */
+    if(argc != 2) err_quit("usage: ./udpcli01 <IPaddress>");
+
+    int sockfd;
+    struct sockaddr_in servaddr;
+    bzero(&servaddr, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(SERV_PORT);
+    /* 获取目的IP地址 */
+    Inet_pton(AF_INET, argv[1], &servaddr.sin_addr);
+    sockfd = Socket(AF_INET, SOCK_DGRAM, 0); 
+    /* 对于UDP客户端而言,是不需要保证端口的,在第一次调用sendto的时候,内核会给他指派一个临时宽口 */ 
+    dg_cli(stdin, sockfd, (SA *)&servaddr, sizeof(servaddr));
+}
+
+void dg_cli(FILE * fp,int sockfd, const SA * servaddr, socklen_t servlen){
+    char buf[MAXLINE];
+    int n;
+    socklen_t len = servlen;
+    for( ; ; ){
+        if(Fgets(buf, MAXLINE, fp) == NULL)
+            return ;
+        else
+            Sendto(sockfd, buf, strlen(buf), 0, servaddr, servlen);
+        /* 读取相关信息，注意，没有指定客户端地址，不会对客户端进行分辨*/
+        if((n = Recvfrom(sockfd, buf, n, 0, NULL, NULL)) == 0){
+            err_quit("connection close");
+    }
+    else if(n < 0)
+        err_quit("Recvfrom error");
+    buf[n] = 0;
+    Fputs(buf, stdout);
+}
+
+```
+
+注意：
+- 因为UDP和TCP不同，是无连接的(没有TCP中的EOF)；服务器端，不会在connet(指定发送端口)之后建立稳定链路。因此需要客户端发送一个singal过去，让服务器进行接收。
+- 一般来说TCP的服务器是并发的，UDP的服务器是迭代的。
+- UDP层中隐含有排队发生。每个UDP套接字都有一个接收缓冲区，到达套接字的每个数据报都进入这个套接字接收缓冲区。进程调用recvfrom时，缓冲区中的下一个数据报以FIFO(先入先出)的顺序反给进程。
+- UDP缓冲区大小有限，可以使用SO_RCVBUF来进行修改。
+- UDP是非稳定连接，因此存在数据报永远无法到达的可能；程序容易陷入。因此最好指定响应时间。超时重传或者断开连接。14.2节讨论
+- 验证接受响应的确认：
+    -  重新`malloc`一个`sockaddr*`变量，子啊`Recvfrom`获得其值，比较该变量和原先发送的`servaddr`,相同就是需要的变量。
+- 服务器程序未运行时：
+    - 服务器主机响应`“port unreachable”`ICMP消息，但是此时的进程不能识别这个异步错误，它永远阻塞于`recvfrom`调用。
+    - 我们需要用`connect`获取这个ICMP消息。
+
+### 8.10 UDP 程序例子小节
+
+![客户端角度总结UDP客户/服务器](../img/2019-12-01-18-57-51.png)
+
+![服务器的UDP](../img/2019-12-01-19-21-07.png)
+
+### 8.11 UDP的connect函数
+
+- 这里的`connect()`不同于`TCP`，**只检查是否存在立即可知的错误，记录对端IP地址和端口号，然后返回给进程**。连接后(使用connet后)主要发生三点变化：
+    - 不指定目的地址，即不用sendto(或第六个参数为空指针),改用write()或send()；写到已连接的UDP上的任何内容都将自动发送到connect指定的协议地址。
+    - 不必使用recvfrom()来获取数据报的发送者，而改用read(),recv(),recvmsg(),**这说明一个UDP套接字仅与一个IP地址作数据交换（可以是多播、广播地址）**
+    - 异步错误将返回给进程；未连接UDP套接字不会接收任何异步错误。
 
 
+![TCP和UDP的套接字](../img/2019-12-01-19-27-50.png)
+
+![已连接的UDP的套接字](../img/2019-12-01-19-30-35.png)
+
+**UDP客户进程或者服务器，只有在使用自己的UDP套接字与确定的唯一对端进行通信时，才能调用connect（通常是UDP客户端）；简而言之使用connect之后输出端基本就被确定下来，因此只适用于客户端**
+
+- 给一个UDP套接字多次调用`connect()`，以**断开套接字**或**指定新的IP地址和端口号**(注意：对于TCP套接字connect只能调用一次)
+- 最便于移植的方法是清零一个地址结构后把它的地址簇成员设置为`AF_UNSPEC`
+- 如果要给同一个目的地址发送多个数据报，显式`connect()`好一点。
+
+一个未连接的套接字上给两个数据报调用sendto函数涉及内核执行下列6个步奏：
+1. 连接套接字
+2. 输出第一个数据报
+3. 断开套接字连接
+4. 连接套接字
+5. 输出第二个数据报
+6. 断开套接字连接
+
+当连接之后，效率会更高。调用connect后调用两次write涉及内核执行如下步骤：
+1. 连接套接字
+2. 输出第一个数据报
+3. 输出第二个数据报
+
+当调用两次sendto时，需复制两次。临时未连接的UDP套接字大于会消耗每个UDP**传输三分之一的开销**。如果要给同一个地址发送多个数据报，显式使用`connect()`好一点
+
+当连接一个没有运行的udp服务器的程序时,连接不会出错，但是发送数据时会返回一个目的端口不可达的ICMP错误(connect造成TCP三次握手，其中第一个分节导致服务器TCP返送RST)，被内核映射成ECONNREFUSED,UnixWare内核不会返回这种错误(page200)；下面是改进过的dg_cli函数
+
+```c
+void dg_cli(FILE *fp, int sockfd, const SA *pservaddr, socklen_t servlen)
+{
+    int n;
+    char sendline[MAXLINE], recvline[MAXLINE + 1];
+    /* 显式的连接ip地址 */
+    Connect(sockfd, (SA *) pservaddr, servlen);
+    /* 进行回写操作 */
+    while (Fgets(sendline, MAXLINE, fp) != NULL) {
+        /* 使用read和write代替sento和recvfrom调用 */
+        Write(sockfd, sendline, strlen(sendline));
+        n = Read(sockfd, recvline, MAXLINE);
+        /* null terminate */
+        recvline[n] = 0;
+        Fputs(recvline, stdout);
+    }
+}
+```
+
+### 8.13 UDP缺乏流量控制
+
+UDP缺乏流量，控制，因此需要在客户端和服务器上进行流量的控制传输。
+
+下面显示一个客户端的发送流量控制
+
+```c
+#include "unp.h"
+#define NDG 2000 /* 发送数据包个数 */
+#define DGLEN 1400 /* 每个数据包的长度 */
+/* 定义处理函数 */
+void dg_cli(FILE *fp,int sockfd,const SA *pservaddr,socklen_t servlen)
+{
+    int i;
+    char sendline[DGLEN];
+    /* 在这里发送多个数据包 */
+    for(i=0;i<NDG;++i){
+        Sendto(sockfd,sendline,DGLEN,0,pservaddr,servlen);
+    }
+}
+```
+服务器的接收流量控制
+```c
+#include "unp.h"
+static void recvgrom_int(int);
+static int count;
+/* 相关输出函数 */
+void dg_echo(int sockfd,SA *pcliaddr,socklen_t clien)
+{
+    socklen_t len;
+    char mesg[MAXLINE];
+    Signal(SIGINT,recvfrom_int);
+    for(;;){
+        len=clilen;
+        Recvfrom(sockfd,mesg,MAXLINE,0,pcliaddr,&len);
+        /* 统计接收数量 */
+        count++;
+    }
+}
+static void recvfrom_int(int signo)
+{
+    printf("\n received %d dataprams \n",count);
+    exit(0);
+}
+```
+UDP套接字的接收缓冲区一般FreeBSD下默认大小为42080字节，可以通过SO_RCVBF进行相关缓冲区大小的更改。
+
+### 8.14 UDP中的外出接口的确定
+
+connect()函数的一个副作用是可用来确定；特定目的地的外出接口(本地IP通过，从路由表搜索目的地址得到)
+
+相关操作如下：
+
+```c++
+int main(int argc, char **argv){
+	int					sockfd;
+	socklen_t			len;
+	struct sockaddr_in	cliaddr, servaddr;
+
+	if (argc != 2)
+		err_quit("usage: udpcli <IPaddress>");
+
+	sockfd = Socket(AF_INET, SOCK_DGRAM, 0);
+
+	bzero(&servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_port = htons(SERV_PORT);
+	Inet_pton(AF_INET, argv[1], &servaddr.sin_addr);
+    /* 进行连接操作 */
+	Connect(sockfd, (SA *) &servaddr, sizeof(servaddr));
+
+	len = sizeof(cliaddr);
+	Getsockname(sockfd, (SA *) &cliaddr, &len);
+	printf("local address %s\n", Sock_ntop((SA *) &cliaddr, len));
+
+	exit(0);
+}
+```
+调用connect并不给主机端发送任何消息，它完全是一个本地操作，只是保存对端的IP地址和端口号。
+
+也可以使用这条性质实现UDP的epoll并发框架：
+
+- [UDP下的epoll并发框架](https://blog.csdn.net/u010643777/article/details/72190891)
+- [UDP的epoll并发处理问题](https://blog.csdn.net/weixin_34315189/article/details/92919826)
+
+### 8.15 使用select函数的TCP和UDP回射服务器程序
+
+关键代码如下：
+
+```c++
+#include	"unp.h"
+int main(int argc, char **argv){
+    /* 定义监听，连接 */
+	int					listenfd, connfd, udpfd, nready, maxfdp1;
+	/* 定义mesg数组 */
+    char				mesg[MAXLINE];
+	pid_t				childpid;
+	fd_set				rset;
+	ssize_t				n;
+	/* 定义套接字长度 */
+    socklen_t           len;
+	const int           on = 1;
+	struct sockaddr_in	cliaddr, servaddr;
+	/* 定义子信号处理函数 */
+    void                sig_chld(int);
+
+	/* create listening TCP socket */
+	listenfd = Socket(AF_INET, SOCK_STREAM, 0);
+
+	bzero(&servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port        = htons(SERV_PORT);
+    /* 设置socket相关参数，防止该端口上已有连接存在*/
+	Setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	/* 连接socket和端口 */
+    Bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
+    /* 开始监听，转为被动 */
+	Listen(listenfd, LISTENQ);
+
+	/* create UDP socket */
+	/* 创建UDP scoket */
+    udpfd = Socket(AF_INET, SOCK_DGRAM, 0);
+
+	bzero(&servaddr, sizeof(servaddr));
+	servaddr.sin_family      = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port        = htons(SERV_PORT);
+
+	Bind(udpfd, (SA *) &servaddr, sizeof(servaddr));
+	/* end udpservselect01 */
+	/* include udpservselect02 */
+	/* 设置信号处理函数， */
+    Signal(SIGCHLD, sig_chld);	/* must call waitpid(), 因为TCP连接由子进程处理  */
+
+	FD_ZERO(&rset);
+	maxfdp1 = max(listenfd, udpfd) + 1;
+	for ( ; ; ) {
+		FD_SET(listenfd, &rset);
+		FD_SET(udpfd, &rset);
+        /* 监听网络监听；主要是使用TCP */
+		if ( (nready = select(maxfdp1, &rset, NULL, NULL, NULL)) < 0) {
+			if (errno == EINTR)
+				continue;		/* back to for() */
+			else
+                err_sys("select error");
+        }
+
+		if (FD_ISSET(listenfd, &rset)) {
+			len = sizeof(cliaddr);
+            /* 接收访问数据 */
+			connfd = Accept(listenfd, (SA *) &cliaddr, &len);
+	
+			if ( (childpid = Fork()) == 0) {	/* child process */
+				Close(listenfd);	/* close listening socket */
+				str_echo(connfd);	/* process the request */
+				exit(0);
+			}
+			Close(connfd);			/* parent closes connected socket */
+		}
+        /* 如果一个UDP套接字可读，那么已有一个数据报到达。使用recvfrom进行读取 */
+		if (FD_ISSET(udpfd, &rset)) {
+			len = sizeof(cliaddr);
+			n = Recvfrom(udpfd, mesg, MAXLINE, 0, (SA *) &cliaddr, &len);
+			Sendto(udpfd, mesg, n, 0, (SA *) &cliaddr, len);
+		}
+	}
+}
+/* end udpservselect02 */
+
+```
+
+## 第 9 章 基本SCTP套接字编程
+
+略
+
+## 第 10 章 SCTP客户/服务器程序例子
+
+略
+
+### 第 11 章 名字与地址转换(DNS)
+
+域名系统(Domain Name System, DNS):主要用于主机名字和IP地址之间的映射
