@@ -885,7 +885,7 @@ struct linger {
   - 获取和设置TCP连接的最大分节大小(MSS);返回值是TCP可以发送给对端的最大数据量；通常是由对端使用SYN分节通告的MSS
 - `TCP_NODELAY`
   - 禁止TCP的Nagle算法(减少局域网上小分组(小于MSS的任何分组)的数目);默认情况下，该选项关闭
-![禁止前后变化](../img/2019-12-01-16-50-13.png)
+![禁止前后变化](https://wangpengcheng.github.io/img/2019-12-01-16-50-13.png)
 
 ### 7.10 SCTP套接字选项
 
@@ -895,7 +895,7 @@ struct linger {
 
 执行各种描述符控制操作。
 
-![相关操作小节](../img/2019-12-01-16-53-04.png)
+![相关操作小节](https://wangpengcheng.github.io/img/2019-12-01-16-53-04.png)
 
 函数使用：`int fcntl(int fd, int cmd, .../* int arg */);`
 
@@ -927,7 +927,7 @@ if(fcntl(fd, F_SETFL, flags) <0 ){
 
 UDP常见的应用程序：DNS(域名系统)；NFS(网络文件系统)和SNMP(简单网络管理协议)
 
-![UDP相关操作](../img/2019-12-01-18-17-30.png)
+![UDP相关操作](https://wangpengcheng.github.io/img/2019-12-01-18-17-30.png)
 
 UDP的关键函数
 
@@ -952,7 +952,7 @@ ssize_t sendto(int sockfd,const void *buff,size_t nbytes,int flags,const struct 
 
 主要流程如下：
 
-![UDP简单的回射客户端/服务器](../img/2019-12-01-18-31-25.png)
+![UDP简单的回射客户端/服务器](https://wangpengcheng.github.io/img/2019-12-01-18-31-25.png)
 
 `UDP`服务端是一个典型的迭代器模型，大多数TCP服务器是并发的。对于本套接字，`UDP`层中隐含有排队发送，每个`UDP`套接字都有一个接收缓冲区，实行FIFO机制。主要服务器端代码如下：
 
@@ -1048,9 +1048,9 @@ void dg_cli(FILE * fp,int sockfd, const SA * servaddr, socklen_t servlen){
 
 ### 8.10 UDP 程序例子小节
 
-![客户端角度总结UDP客户/服务器](../img/2019-12-01-18-57-51.png)
+![客户端角度总结UDP客户/服务器](https://wangpengcheng.github.io/img/2019-12-01-18-57-51.png)
 
-![服务器的UDP](../img/2019-12-01-19-21-07.png)
+![服务器的UDP](https://wangpengcheng.github.io/img/2019-12-01-19-21-07.png)
 
 ### 8.11 UDP的connect函数
 
@@ -1060,9 +1060,9 @@ void dg_cli(FILE * fp,int sockfd, const SA * servaddr, socklen_t servlen){
     - 异步错误将返回给进程；未连接UDP套接字不会接收任何异步错误。
 
 
-![TCP和UDP的套接字](../img/2019-12-01-19-27-50.png)
+![TCP和UDP的套接字](https://wangpengcheng.github.io/img/2019-12-01-19-27-50.png)
 
-![已连接的UDP的套接字](../img/2019-12-01-19-30-35.png)
+![已连接的UDP的套接字](https://wangpengcheng.github.io/img/2019-12-01-19-30-35.png)
 
 **UDP客户进程或者服务器，只有在使用自己的UDP套接字与确定的唯一对端进行通信时，才能调用connect（通常是UDP客户端）；简而言之使用connect之后输出端基本就被确定下来，因此只适用于客户端**
 
@@ -1277,15 +1277,3 @@ int main(int argc, char **argv){
 /* end udpservselect02 */
 
 ```
-
-## 第 9 章 基本SCTP套接字编程
-
-略
-
-## 第 10 章 SCTP客户/服务器程序例子
-
-略
-
-### 第 11 章 名字与地址转换(DNS)
-
-域名系统(Domain Name System, DNS):主要用于主机名字和IP地址之间的映射
