@@ -303,6 +303,115 @@ int getaddrinfo(const char * hostname,const char * service,const struct addrinfo
 - service:服务名或者十进制端口号数串
 - hints:期望返回的信息类型的暗示，可以为空指针，也可以指向某个addrinfo结构指针。
 - result:返回结果；由result参数指向的变量已被填入一个指针，它指向的是由其中的ai_next成员串接起来的addrinfo结构链表(多个addrinfo结构返回时，这些结构的先后顺序没有保证 )。
-  - 可导致返回多个`addrinfo`
+  - 可导致返回多个`addrinfo`结构的情况有两个：
+    - 如果与`hostname`参数关联的地址有多个，那么适用于所请求地址族(可通过hints结构的 ai_family成员设置)的每个地址都返回一个对应的结构
+    - 如果`service`参数指定的服务支持多个套接字类型，那么每个套接字类型都可能返回一个对应的结构，具体取决与 `hints`结构的`ai_socktype`成员。 （注意，`getaddrinfo`的多数实现认为只能按照由`ai_socktype`成员请求的套接字类型端口号数串到端口的转换，如果没有指定这个成员，那就返回一个错误）
+addrinfo的定义如下：
+
+```c
+struct addrinfo{
+	int ai_flags; //AI_PASSIVE,AI_CANONNAME
+	int ai_family; //AF_XXX
+	int ai_socktype; //SOCK_XXX
+	int ai_protocol; //0 or IPPROTO_XXX for IPV4 and IPV6
+	socklen_t ai_addrlen; //length of ai_addr
+	char * ai_canonname; //ptr to canonical name for host
+	struct sockaddr * ai_addr; //ptr to socket address structure
+	struct addrinfo * ai_next; //ptr to next structure in linked list
+}
+```
+`addrinfo`结构中调用者(hints)可以设置的成员有, (如果hints参数是一个空指针，该函数就假设 ai_flags, ai_socktype, ai_protocol 的值均为0，ai_family的值为AF_UNSPEC。)
+调用者hints可以设置的成员包括：
+
+|调用者(`hints`)|可以设置的成员|
+|:---|:---|
+|`ai_flags`|零个或多个在一起的AI_XXX值.|
+|`ai_family`|某个AF_XXX|
+|`ai_socktype`|某个SOCK_XXX值|
+|`ai_protocol`|某个写控制协议|
+
+
+|ai_flags可能值|含义|
+|:---|:---|
+|`AI_PASSIVE`|套接字将用于被动打开。|
+|`AI_CANONNAME`|告知 getaddrinfo 函数返回主机的规范名字。(canon,规范)|
+|`AI_NUMERICHOST`|防止任何类型的名字到地址映射， hostname参数必须为一个地址串|
+|`AI_NUMERICSERV`|防止任何类型的名字到服务的映射,service 参数必须是一个十进制端口号数串。|
+|`AI_V4MAPPED`|如果同时指定 ai_family 成员的值为 AF_INET6,那么如果没有可用的AAAA记录，就返回与A记录对应的IPV4映射的IPV6地址。|
+|`AI_ALL`|如果同时指定 AI_V4MAPPED 标志，那么除了返回与AAAA记录对应的IPV6地址外，还返回与A记录对应的IPV4映射的IPV6地址。|
+|`AI_ADDRCONFIG`|按照所在主机的配置选择返回地址类型，也就是只查找与所在主机回馈接口以外的网络接口配置的IP地址版本一致的地址。|
+
+一些常见的输入 (**如清楚知道自己需要的套接字类型，应该在`hints`中设置`ai_socktype`成员,避免返回多个结构，甚至出现错误的`ai_socktype`值**):
+
+- 指定`hostname`和`service`。这是TCP或UDP客户进程调用getaddrinfo的常规输入。
+- 对于`TCP`客户在一个循环中针对每个返回的IP地址，调用`socket`和`connect`，直到有一个连接成功，或者所有地址尝试完毕为止。
+- 对于`UDP`客户由`getaddrinfo`填入的套接字地址结构用于` sendto` 或 `connect`。
+- 只指定`service`而不指定`hostname`，同时在hints结构中指定 `AI_PASSIVE`标志。这是典型的服务器进程.
+  - 返回的套接字地址结构中应含有一个值为 `INADDR_ANY(IPV4)`或`IN6ADDR_ANY_INIT(IPV6)`。
+  - TCP 服务器随后调用 `socket`、`bind`、`listen`、`accept`。
+  - UDP服务器将调用 `socket`、`bind`、`recvfrom`。
+
+简单的使用示例如下：
+
+```c
+struct addrinfo hints,*res;
+/* 重置结构 */
+bzero(&hints,sizeof(hints));
+hints.ai_flags=AI_CANONNAME;
+hints.ai_family=AF_INET;
+/* 获取host和server的ip地址 */
+getaddinfo("freebad4","domain",&hints,&res);
+
+```
+
+上面主机freebsd4的规范名字是freebad4.unpbook.com；并且它在DNS中有2个IPv4地址；则返回结果如下：
+
+![](../img/2019-12-03-21-08-52.png)
+
+### 11.7 gai_strerror函数
+
+`getaddrinfo`返回非0值表示错误,而`gai_strerror`可以通过此非0值返回一个指向对应的出错信息串的指针。函数的基本使用如下：
+
+```c
+#include <netdb.h>
+const char * gai_strerror(int error);
+// 返回：指向错误描述消息字符串的指针
+```
+getaddrinfo返回的非0错误长值：
+
+|常数|说明|
+|:---|:---|
+|`EAI_AGAIN`|名字解析中临时失败|
+|`EAI_BADFLAGS`|ai_flags的值无效|
+|`EAI_FAIL`|名字解析中不可恢复地失败|
+|`EAI_FAMILY`|不支持 ai_family|
+|`EAI_MEMORY`|内存分配失败|
+|`EAI_NONAME`|hostname或service未提供，或者不可知|
+|`EAI_OVERFLOW`|用户参数缓冲区溢出（仅限 getnameinfo 函数）|
+|`EAI_SERVICE`|不支持 ai_socktype 类型的service|
+|`EAI_SOCKTYPE`|不支持 ai_socktype|
+|`EAI_SYSTEM`|在errno变量中有系统错误返回|
+
+### 11.8 freeaddrinfo函数
+
+getaddrinfo返回的所有存储空间都是动态获取的。需要使用freeaddrinfo进行调用返还给系统。函数定义如下：
+
+```c
+#include <netdb.h>
+void freeaddrinfo(struct addrinfo *ai);
+// ai 参数应指向由 getaddrinfo 返回的第一个 addrinfo 结构。
+```
+
+### 11.9 getaddrinfo函数IPv6
+
+POSIX 规范定义了 getaddrinfo 函数以及该函数为IPV4或IPV6返回的信息。
+
+注意以下几点：
+
+- `getadrinfo`在处理两个不同的输入：
+  - 一个是套接字地址结构类型，调用者期待返回的地址结构符合这个类型；
+  - 另一个是资源记录类型，在DNS或者其它数据库中执行的查找符合这个类型.
+- 由调用者在`hints`结构中提供的地址族指定调用者期待返回的套接字地址结构的类型
+
 
 
