@@ -366,7 +366,7 @@ getaddinfo("freebad4","domain",&hints,&res);
 
 上面主机freebsd4的规范名字是freebad4.unpbook.com；并且它在DNS中有2个IPv4地址；则返回结果如下：
 
-![](../img/2019-12-03-21-08-52.png)
+![](https://wangpengcheng.github.io/img/2019-12-03-21-08-52.png)
 
 ### 11.7 gai_strerror函数
 
@@ -412,6 +412,144 @@ POSIX 规范定义了 getaddrinfo 函数以及该函数为IPV4或IPV6返回的�
   - 一个是套接字地址结构类型，调用者期待返回的地址结构符合这个类型；
   - 另一个是资源记录类型，在DNS或者其它数据库中执行的查找符合这个类型.
 - 由调用者在`hints`结构中提供的地址族指定调用者期待返回的套接字地址结构的类型
+- `POSIX`声称如果调用者指定`AF_UNSPEC`,那么`getaddrinfo`函数返回的是适合于指定主机名和服务名且适合任意协议族的地址.
+- `POSIX`的这个声明也意味着如果设置了`AI_PASSIVE`标志但是没有指定主机名，那么IPV6通配地址(IN6ADDR_ANY_INIT或0::0)应该作为`sockaddr_in6`结构返回，同样IPV4通配地址 (INADDR_ANY 或 0.0.0.0)应该作为sockaddr_in结构返回。
+- 在`hints`结构的`ai_family`成员中指定的地址族以及在`ai_flag`s成员中指定的`AI_V4MAPPED`和`AI_ALL`等标志决定了在DNS中查找的资源记录类型。
+- 主机名参数还可以是IPV6的十六进制数串或IPV4的点分十进制数串。这个数串的有效性取决于调用者指定的地址族
 
+POSIX 规范定义了 getaddrinfo 函数以及该函数为IPV4或IPV6返回的信息。在下表汇总这些返回值之前，我们注意以下几点：
+
+- getaddrinfo 在处理两个不同的输入：一个是套接字地址结构类型，调用者期待返回的地址结构符合这个类型；另一个是资源记录类型，在DNS或其他数据库中执行的查找符合这个类型。
+- 由调用者在hints结构中提供的地址族指定调用者期待返回的套接字地址结构的类型
+- POSIX声称如果调用者指定AF_UNSPEC,那么 getaddrinfo 函数返回的是适合于指定主机名和服务名且适合任意协议族的地址
+- POSIX的这个声明也意味着如果设置了 `AI_PASSIVE` 标志但是没有指定主机名，那么 IPV6 通配地址（`IN6ADDR_ANY_INIT`或0::0）应该作为 `sockaddr_in6` 结构返回，同样 IPV4 通配地址 (`INADDR_ANY` 或 0.0.0.0)应该作为 `sockaddr_in` 结构返回
+- 在`hints`结构的 `ai_family` 成员中指定的地址族以及在`ai_flags`成员中指定的 `AI_V4MAPPED` 和 `AI_ALL` 等标志决定了在 DNS中查找的资源记录类型
+- 主机名参数还可以是IPV6的十六进制数串或IPV4的点分十进制数串。这个数串的有效性取决于调用者指定的地址族
+
+----
+
+<table>
+<tbody>
+<tr>
+<td>&nbsp;调用者指定的主机名</td>
+<td>&nbsp;调用者指定的地址族</td>
+<td>&nbsp;主机名字符串包含</td>
+<td>&nbsp;结果</td>
+<td>行为&nbsp;</td>
+</tr>
+<tr>
+<td rowspan="11">非空主机名字符串：主动或被动&nbsp;</td>
+<td rowspan="3">AF_UNSPEC&nbsp;</td>
+<td>&nbsp;主机名</td>
+<td>以 sockaddr_in6{} 返回所有 AAAA 记录，以 sockaddr_in{} 返回所有A记录</td>
+<td>AAAA记录搜索加上A记录搜索&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;十六进制数串</td>
+<td>&nbsp;一个sockaddr_in6{}</td>
+<td>&nbsp;inet_pton(AF_INET6)</td>
+</tr>
+<tr>
+<td>&nbsp;点分十进制数串</td>
+<td>&nbsp;一个sockaddr_in{}</td>
+<td>&nbsp;inet_pton(AF_INET)&nbsp;</td>
+</tr>
+<tr>
+<td rowspan="5">AF_INET6&nbsp;</td>
+<td rowspan="3">&nbsp;主机名</td>
+<td>以 sockaddr_in6{} 返回所有 AAAA 记录</td>
+<td>&nbsp;AAAA记录搜索</td>
+</tr>
+<tr>
+<td>&nbsp;在 ai_flags 含 AI_V4MAPPED前提下：若存在AAAA记录则以 sockaddr_in6{} 返回所有 AAAA 记录；否则以 sockaddr_in6{}作为IPV4映射的IPV6地址返回所有A记录</td>
+<td>AAAA记录搜索，若无结果则A记录搜索&nbsp;&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;在 ai_flags 含&nbsp;AI_V4MAPPED和 AI_ALL前提下：以 sockaddr_in6{} 返回所有 AAAA 记录，并且以 sockaddr_in6{}作为IPV4映射的IPV6地址返回所有A记录</td>
+<td>AAAA记录搜索加上A记录搜索&nbsp;&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;十六进制数串</td>
+<td>&nbsp;一个sockaddr_in6{}</td>
+<td>&nbsp;inet_pton(AF_INET6)</td>
+</tr>
+<tr>
+<td>&nbsp;点分十进制数串</td>
+<td>&nbsp;作为主机名查找</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td rowspan="3">&nbsp;AF_INET</td>
+<td>&nbsp;主机名</td>
+<td>&nbsp;以 sockaddr_in{} 返回所有A记录</td>
+<td>&nbsp;A记录搜索</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;十六进制数串</td>
+<td>&nbsp;&nbsp;作为主机名查找</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp;点分十进制数串</td>
+<td>&nbsp;一个sockaddr_in{}</td>
+<td>&nbsp;inet_pton(AF_INET)&nbsp;</td>
+</tr>
+<tr>
+<td rowspan="3">空主机名字符串：被动&nbsp;</td>
+<td>&nbsp;AF_UNSPEC</td>
+<td>
+<p>&nbsp;隐含0::0</p>
+<p>隐含0.0.0.0</p>
+</td>
+<td>&nbsp;一个sockaddr_in6{}和 一个sockaddr_in{}</td>
+<td>
+<p>&nbsp;inet_pton(AF_INET6)</p>
+<p>&nbsp;inet_pton(AF_INET)&nbsp;</p>
+</td>
+</tr>
+<tr>
+<td>&nbsp;AF_INET6</td>
+<td>&nbsp;隐含0::0</td>
+<td>&nbsp;&nbsp;一个sockaddr_in6{}</td>
+<td>&nbsp;inet_pton(AF_INET6)</td>
+</tr>
+<tr>
+<td>&nbsp;AF_INET</td>
+<td>隐含0.0.0.0&nbsp;</td>
+<td>&nbsp;&nbsp;一个sockaddr_in{}</td>
+<td>&nbsp;inet_pton(AF_INET)</td>
+</tr>
+<tr>
+<td rowspan="3">空主机名字符串：主动&nbsp;&nbsp;</td>
+<td>&nbsp;AF_UNSPEC</td>
+<td>
+<p>隐含0::1</p>
+<p>隐含127.0.0.1&nbsp;</p>
+</td>
+<td>一个sockaddr_in6{}和 一个sockaddr_in{}&nbsp;</td>
+<td>
+<p>&nbsp;inet_pton(AF_INET6)</p>
+<p>&nbsp;inet_pton(AF_INET)&nbsp;</p>
+</td>
+</tr>
+<tr>
+<td>&nbsp;AF_INET6</td>
+<td>&nbsp;隐含0::1</td>
+<td>&nbsp;&nbsp;一个sockaddr_in6{}</td>
+<td>&nbsp;inet_pton(AF_INET6)</td>
+</tr>
+<tr>
+<td>&nbsp;AF_INET</td>
+<td>&nbsp;隐含127.0.0.1</td>
+<td>&nbsp;&nbsp;一个sockaddr_in{}</td>
+<td>&nbsp;inet_pton(AF_INET)</td>
+</tr>
+</tbody>
+</table>
+
+----
+
+
+### 11.10 getaddrinfo函数，例子
 
 
