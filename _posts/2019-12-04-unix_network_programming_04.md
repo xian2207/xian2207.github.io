@@ -848,3 +848,207 @@ recvmsg 和 sendmsg 是 5 组读写函数中最通用的。它有其余读写函
 C 标准 I/O 可以用在套接字上，但是并不推荐使用。
 
 T/TCP 是对 TCP 的简单增强版本，能够在两台主机最近通信的前提下避免三路握手，使得对端更快的做出应答。从编程角度看，客户端通过调用 sendto 而不是通常使用的 connect write shutdown 调用序列发挥 T/TCP 的优势
+
+## 第 15 章 Unix域协议(命名套接字)
+_参考链接：_
+
+- [UNIX域协议（命名套接字）](https://www.cnblogs.com/xcywt/p/8185597.html)
+- [LINUX学习:UNIX域协议](https://www.cnblogs.com/DLzhang/p/4303018.html)
+
+它其实是单个主机上执行客户端/服务器通信的一种方法。不过可以在不同主机上执行客户/服务器通信所用的API。可以视为IPC方法之一。
+
+套接字：
+- 字节流套接字(类似于TCP)
+- 数据报套接字(类似于UDP)
+
+UNIX域协议特点:
+
+1. UNIX域套接字域TCP套接字相比，在同一台主机的传输速度前者是后者的两倍。UNIX域套接字仅仅复制数据，并不执行协议处理，不需要添加或删除网络报头，无需计算校验和，不产生顺序号，也不需要发送确认报文
+2. UNIX域套接字可以在同一台主机上各进程之间传递文件描述符
+3. UNIX域套接字域传统套接字的区别是用路径名表示协议族的描述
+
+其地址结构如下：
+
+```c
+#define UNIX_PATH_MAX  108
+
+struct sockaddr_un{
+    sa_family_t sun_family;       /*  AF_UNIX*/
+    char           sun_path[UNIX_PATH_MAX];     /*pathname*/
+}
+```
+详细使用方法见之前的笔记：[Linux 程序设计 阅读笔记(五)](https://wangpengcheng.github.io/2019/09/18/beginning_linux_programming_05/)
+
+
+使用实例，编程套路跟TCP很像。
+
+Server：
+- 先创建套接字 -> 绑定地址 -> 监听 -> accept 客户端连接 -> 连接成功开始通信 -> 关闭套接字
+Client：
+- 先创建套接字 -> 连接server -> 开始通信 -> 关闭套接字。
+
+这里实现一个简单的回射服务器。
+启动服务器，等待客户端连接，连接上之后，客户端通过标准输入接收数据发送给服务器。服务器接收数据以后，再把数据发送回客户端。
+下面上代码：
+
+
+**server：**
+```c++
+
+#include<stdio.h>
+
+#include<unistd.h>
+
+#include<string.h>
+
+#include<stdlib.h>
+
+#include<errno.h>
+
+#include <sys/types.h>          /* See NOTES */
+
+#include <sys/socket.h>
+
+#include <sys/un.h>
+
+//#include<netinet/in.h>
+
+#define ERR_EXIT(m) \
+    do \
+    { \
+        perror(m); \
+        exit(EXIT_FAILURE); \
+    } while(0)
+#define UNIXSOCKETNAME "test_socket"
+/* 输出读取信息 */
+void echo_cli(int sock)
+{
+    char buf[1024] = {0};
+    int ret = 0;
+    while(1)
+    {
+        ret = read(sock, buf, sizeof(buf));
+        if(ret == 0)
+        {
+            printf("client %d close\n", sock);
+            break;
+        }
+        
+        write(sock, buf, strlen(buf));
+    }
+    close(sock);
+}
+int main()
+{
+    /* 创阿金套接字 */
+    int listenfd = socket(PF_UNIX, SOCK_STREAM, 0);
+    if(listenfd < 0)
+        ERR_EXIT("socket");
+     /* 注意unlink */
+    unlink(UNIXSOCKETNAME);
+    /* 服务器地址，实际是进程路径 */
+    struct sockaddr_un servaddr; /* 头文件是这个 #include <sys/un.h> */
+    memset(&servaddr, 0, sizeof(servaddr));
+    servaddr.sun_family = AF_UNIX;/* 注意这里的协族 */
+    strcpy(servaddr.sun_path, UNIXSOCKETNAME);
+    /* 注意这里连接的是一个显式的路径名 */
+    if(bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
+        ERR_EXIT("bind");
+    if(listen(listenfd, SOMAXCONN) < 0)
+        ERR_EXIT("listen");
+    int conn = 0;
+    pid_t pid;
+    while(1)
+    {
+        conn = accept(listenfd, NULL, NULL);
+        if(conn == -1)
+        {
+            if(errno == EINTR)
+                continue;
+            ERR_EXIT("accept");
+        }
+        printf("Has new client connected, conn = %d\n", conn);
+        pid = fork();
+        if(pid < 0)
+            ERR_EXIT("fork");
+        else if(pid == 0)
+        {
+            echo_cli(conn);
+            exit(1);
+        }
+        else
+            close(conn);
+    }
+    return 0;
+}
+
+```
+
+**client：**
+
+```c
+#include<stdio.h>
+#include<unistd.h>
+#include<string.h>
+#include<stdlib.h>
+#include<errno.h>
+#include <sys/types.h>          /* See NOTES */
+#include <sys/socket.h>
+#include <sys/un.h>
+//#include<netinet/in.h>
+#define UNIXSOCKETNAME "test_socket"
+#define ERR_EXIT(m) \
+    do \
+    { \
+        perror(m); \
+        exit(EXIT_FAILURE); \
+    } while(0)
+void echo_cli(int sock)
+{
+    char buf1[1024] = {0};
+    char buf2[1024] = {0};
+    int ret = 0;
+    while(fgets(buf1, sizeof(buf1), stdin) != NULL)
+    {
+        write(sock, buf1, strlen(buf1));
+        ret = read(sock, buf2, sizeof(buf2));
+        if(ret == 0)
+        {
+            printf("server %d close\n", sock);
+            break;
+        }
+        printf("%s", buf2);
+        memset(buf1, 0, sizeof(buf1));
+        memset(buf2, 0, sizeof(buf2));
+    }
+    close(sock);
+}
+int main()
+{
+    int sock = socket(PF_UNIX, SOCK_STREAM, 0);
+    if(sock < 0)
+        ERR_EXIT("socket");
+    struct sockaddr_un servaddr;
+    memset(&servaddr, 0, sizeof(servaddr));
+    servaddr.sun_family = AF_UNIX;
+    strcpy(servaddr.sun_path, UNIXSOCKETNAME);
+    if(connect(sock, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
+        ERR_EXIT("connect");
+    echo_cli(sock);
+    return 0;
+}
+
+```
+
+注意：
+1. 启动server后，bind后会在对应目录创建一个文件（权限是0777&~umask）。这文件的类型是s。表示是套接口文件。可以通过ls -al查看。
+
+`srwxrwxr-x  1 xcy xcy     0  1月  3 10:29 test_socket`
+
+2. 若套接口文件存在，则bind会出错。为此可以先把该文件删掉。（server中的unlink就干这个的）
+3. 创建的套接口文件最好为绝对路径。建议指定在/tmp目录下。比如把上面的目录改成/tmp/test_socket。
+4. UNIX域流式套接字connect发现监听队列满时，会立刻返回一个ECONNREFUSED，这和TCP不同，如果监听队列满了，会忽略到来的SYN，这会导致对方重传SYN
+
+
+
+### 第 16 章 非阻塞式I/O
