@@ -1053,3 +1053,175 @@ int main()
 
 ### 第 16 章 非阻塞式I/O
 
+套接字的默认状态是阻塞的。非阻塞的套接字，如果输入不能被满足(对于TCP至少有一个字节的数据可读，对于UDP有一个完整的数据报可读)，则立即返回一个`EWOULDBLOCK`错误。如果输出的缓冲区没有空间，也会发出错误，而不是阻塞的阻塞等待。**因此非阻塞的关键在对于对于无数据可读时的等待策略。**
+
+**UDP套接字不存在正真的发送缓冲区。内核只是复制应用进程数据，并把它沿协议栈向下传送**
+
+TCP的connect总会阻塞进程一个RTT时间。
+
+### 16.2 非阻塞读和写：str_cli函数
+
+对于非阻塞的读和写，使用两个缓冲区来进行，读写速度的非对称管理:客户端标准输入到发送缓冲区，服务器接收到标准输出的数据。
+
+标准输入到输出
+
+![标准输入到输出](../img/2019-12-06-10-47-20.png)
+
+toiptr和tooptr中间的是缓冲区域。移动来，进行动态变化。
+
+接收到标准输入
+
+![接收到标准输入](../img/2019-12-06-15-11-00.png)
+
+下面是一个str_cli缓冲区阅读函数：
+
+```c++
+#include "unp.h"
+
+void str_cli(FILE *fp,int sockfd)
+{
+    int maxfdp1,val,stdineof;
+    ssize_t n,nwritten;
+    fd_set rset,wset;
+    char to[MAXLINE],fr[MAXLINE];
+    char *toiptr,*tooptr,*friptr,*froptr;
+    val=Fcntl(sockfd,F_GETFL,0);
+    Fcntl(sockfd,F_SETFL,val|O_NONBLOCK);
+    /* 初始化缓冲区指针 */
+    toiptr=tooptr=to;
+    friptr=froptr=fr;
+    stdineof=0;
+    maxfdp1=max(max(STDIN_FILEND,STDOUT_FILENO),sockfd)+1;
+    for(;;){
+        FD_ZERO(&rset);
+        FD_ZERO(&wset);
+        if(stdineof(==0)&&toiptr<&to[MAXLINE]){
+            FD_SET(STDIN_FILENO,&rset);/* read from stdin */
+        }
+        if(Friptr<&fr[MAXLINE]){
+            /* read from socket */
+            FD_SET(sockfd,&rset);
+        }
+        if(tooptr!=toiptr){
+            /* data to write to socket */
+            FD_SET(sockfd,&wset);
+        }
+        if(froptr!=friptr){
+            /* data to write stdout */
+            FD_SET(STDOUT_FILENO,&wset);
+        }
+        Select(maxfdp1,&rset,&wset,NULL,NULL);
+        /* 处理标准可读入 */
+        if(FD_ISSET(STDIN_FILENO,&rset)){
+            if((n=read(STDIN_FILENO,toiptr,&to[MAXLINE]-toiptr))<0){
+                if(errno!=EWOULDBLOCK){
+                    err_sys("read error on stdin");
+                }
+            }else if(n==0){
+                fprintf(stderr,"%s:EOF on stdin \n",gf_time());
+                stdineof=1;
+                if(tooptr==toiptr){
+                    /* 标准输入缓冲为空，关闭sockfd */
+                    Shutdown(sockfd,SHUT_WR);
+                }
+            }else {
+                fprintf(stderr,"%s:read %d bytes from stdin \n",gf_time(),n);
+                toiptr+=n;
+                /* 尝试socket读写 */
+                FD_SET(sockfd,&wset);
+            }
+        }
+        if(FD_ISSET(sockfd,&rset)){
+            if((n=read(sockfd,friptr,&fr[MAXLINE]-friptr))<0){
+                if(errno!=EWOULDBLOCK){
+                    err_sys("read error on socket");
+                }
+            }else if(n==0){
+                fprintf(stderr,"%s:EOF on socket \n",gf_time());
+                if(stdineof){
+                    return ;
+                }else{
+                    err_quit("str_cli:server terminated prematurely");
+                }
+            }else{
+                fprintf(stderr,"%s:read %d bytes from socket \n",gf_time(),n);
+                friptr+=n;
+                FD_SET(STDOUT_FILENO,&wset);
+            }
+        }
+        if(FD_ISSET(STDIN_FILENO,&wset)&&((n=friptr-froptr)>0)){
+            if((nwritten=write(STDOUT_FILENO,froptr,n))<0){
+                if(errno!=EWOULDBLOCK){
+                    err_sys("write error to stdout");
+                }
+            }else{
+                fprintf(stderr,"%s:wrote %d bytes to stdout \n",gf_time(),nwritten);
+                froptr+=nwritten;
+                if(froptr==friptr){
+                    /* 重置缓冲区指针 */
+                    froptr=friptr=fr;
+                }
+            }
+        }
+        if(FD_ISSET(sockfd,&wset)&&((n=toiptr-tooptr)>0)){
+            if((nwritten=write(sockfd,tooptr,n))<0){
+                if(errno!=EWOULDBLOCK){
+                    err_sys("write error to stdout");
+                }
+            }else{
+                fprintf(stderr,"%s:wrote %d bytes to socket \n",gf_time(),nwritten);
+                tooptr+=nwritten;
+                if(tooptr==toiptr){
+                    toiptr=tooptr=to;
+                    if(stdineof){
+                        Shutdown(sockfd,SHUT_WR);
+                    }
+                }
+            }
+        }
+
+    }
+
+}
+
+```
+非阻塞流程如下：
+
+![非阻塞式I/O例子的时间线](../img/2019-12-06-15-52-58.png)
+
+还有简单版本的使用子进程进行处理：
+
+```c++
+#include "unp.h"
+
+void str_cli(FILE* fp,int sockfd)
+{
+    pid_t pid;
+    char sendline[MAXLINE],recvline[MAXLINE];
+    if((pid=Fork())==0){
+        while(Readline(sockfd,recvline,MAXLINE)>0){
+            Fputs(recvline,stdout);
+        }
+        /* 杀死父进程 */
+        kill(getppid(),SIGTERM);
+        exit(0);
+    }
+    /* 父进程的标准输入 */
+    while(Fgets(sendline,MAXLINE,fp)!=NULL){
+        Writen(sockfd,sendline,strlen(sendline));
+    }
+    Shutdown(sockfd,SHUT_WR);
+    pause();
+    return;
+}
+```
+![](../img/2019-12-06-15-59-32.png)
+
+### 16.3 非阻塞connect
+
+主要还是需要处理上建立合理的链接。检测到连接立即返回。不存在错误，就使用select执行I/O多路复用。
+
+### 16.6 非阻塞accept
+
+当一个已完成的连接准备好被accept时，select将作为可描述符返回该连接的监听套接字。因此对于select没有必要将套接字设置为非阻塞。
+
