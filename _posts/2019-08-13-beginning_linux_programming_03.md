@@ -43,7 +43,9 @@ curses中输出字符的过程如下：
 ```c++
 
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <curses.h>
 
 int main()
@@ -128,6 +130,7 @@ curses函数库提供了一些用于刷新屏幕的基本函数，它们是：
 
 ```c++
 #include <curses.h>
+
 int mvwin(WINDOW *window_to_move,int new_y,int new_x);
 int wrefresh(WINDOW *window_ptr);
 int wclear(WINDOW *window_ptr)
@@ -143,7 +146,9 @@ int scroll(WINDOW *window_ptr);
 /*  As usual let's get our definitions sorted first.  */
 
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <curses.h>
 
 int main()
@@ -271,12 +276,14 @@ refresh the screen, the window pointed to by new_window_ptr is obscured.  */
 
 ```c
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <curses.h>
 
 #define LOCAL_ESCAPE_KEY    27
 
-int main() 
+int main()
 {
     int key;
 
@@ -343,6 +350,8 @@ int main()
 
 ```c++
 #include <curses.h>
+
+
 bool has_colors(void);
 int start_color(void);
 
@@ -371,8 +380,11 @@ int init_color(short color_number,short red,short green,short blue);
 ```c
 
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <stdio.h>
+
 #include <curses.h>
 
 int main()
@@ -404,7 +416,7 @@ int main()
     clear();
     //输出文字
 
-    mvprintw(5, 5, "There are %d COLORS, and %d COLOR_PAIRS available", 
+    mvprintw(5, 5, "There are %d COLORS, and %d COLOR_PAIRS available",
              COLORS, COLOR_PAIRS);
     //进行刷新
 
@@ -473,10 +485,12 @@ pad的简单示例：
 
 ```c
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <curses.h>
 
-int main() 
+int main()
 {
     WINDOW *pad_ptr;
     int x, y;
@@ -556,10 +570,13 @@ Linux可以允许输出空指针，但是不允许空指针写入内存。
 
 下面是一个简单的读写锁示例
 
-```c
+```c++
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <stdio.h>
+
 #include <fcntl.h>
 
 const char *test_file = "/tmp/test_lock";
@@ -628,6 +645,7 @@ int main() {
 
 ```c
 #include <unistd.h>
+
 int lockf(int filds,int function ,off_t size_to_lock);
 ```
 function参数取值如下：
@@ -703,6 +721,7 @@ int dbm_nextkey(DBM *database_descriptor);
 
 ```c
 #include <stdlib.h>
+
 #include <stdio.h>
 
 #include "mysql.h"
@@ -758,7 +777,7 @@ int main(int argc, char *argv[]) {
 make 选项参数：
 
 - -k:make发生错误时仍然继续执行。
-- -n:马克输出将要执行的操作而不进行执行。
+- -n:即刻输出将要执行的操作而不进行执行。
 - -f:使用那个文件作为makefile文件。
 
 具体参看makefile相关文章
@@ -822,6 +841,7 @@ make 选项参数：
 
 ```c++
 #include <assert.h>
+
 void assert(int expression);
 ```
 **注意：assert中的宏受NDEBUG的影响，存在这个宏定义时会关闭断言功能**
@@ -896,6 +916,7 @@ int execve(const char *path,char *const argv[],char *const envp[]);
 
 ```c
 #include <sys/type.h>
+
 #include <unistd.h>
 
 pid_t fork(void);
@@ -907,8 +928,11 @@ pid_t fork(void);
 ```c
 
 #include <sys/types.h>
+
 #include <unistd.h>
+
 #include <stdio.h>
+
 #include <stdlib.h>
 
 int main()
@@ -959,6 +983,7 @@ This is the child
 
 ```c
 #include <sys/types.h>
+
 #include <sys/wait.h>
 
 pid_t wait(int *stat_loc);
@@ -1014,7 +1039,9 @@ void (*signal(int sig, void((*func)(int))))(int);
 
 ```c
 #include <sys/types.h>
+
 #include <signal.h>
+
 int kill(pid_t pid,int sig);
 
 //使用闹钟设置指定时间后运行
@@ -1031,6 +1058,7 @@ kill函数将参数sig给定的信号发送给由参数pid给出的进程号所�
 
 ```c
 #include <unistd.h>
+
 int pause(void);
 ```
 
@@ -1038,6 +1066,7 @@ int pause(void);
 
 ```c
 #include <signal.h>
+
 int sigaction(int sig,const struct sigaction *act,struct sigaction *oact);
 ```
 sigaction结构定义在接收到参数sig指定的信号后应该采取的行动。该结构至少应该包括以下几个成员：
