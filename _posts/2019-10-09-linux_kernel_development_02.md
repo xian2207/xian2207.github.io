@@ -189,7 +189,7 @@ struct fox{
 ```c
 #define container_of(ptr,type,member) ({        \
     const typeof(((type*)0)->member) *_mptr=(ptr); \  //这里是一个强制的地址偏移的类型转换
-    (type*)((char *)__mptr-offsetof(type,member)); \ 查找对应结构的父类型结构体
+    (type*)((char *)__mptr-offsetof(type,member)); \ //查找对应结构的父类型结构体
 })
 ```
 
@@ -236,6 +236,7 @@ static struct inotify_watch *inode_find_handle(struct inode *inode,struct inotif
     return NULL;
 }
 ```
+
 - `list_for_each_entry_reverse(pos,head,member)`:反向遍历链表。
 - `list_for_each_entry_safe(pos,next,head,member)`:遍历的同时删除，标准操作中是只允许修改，不能删除否则会掉链。这里启动next指针将下一项存入表中。使得当前表项能够安全删除。
 - `list_for_each_entry_safe_reverse(pos,next,head,member)`:反向遍历并安全删除。
@@ -248,7 +249,8 @@ _参考链接：_ [读Linux内核kfifo](https://blog.csdn.net/linux_Allen/articl
 
 - enqueue(入队列):
 - dequeue(出队操作):
-- 
+
+
 内核kfifo简约高效，匠心独运，有一下特点：
 - 保证缓冲区大小为2的次幂，不是的向上取整为2的次幂。
 - 使用无符号整数保存输入(in)和输出(out)的位置，在输入输出时不对in和out的值进行模运算，而让其自然溢出，并能够保证in-out的结果为缓冲区中已存放的数据长度。
@@ -1019,7 +1021,7 @@ module_exit(work_exit);
 - tasklet:多线索化考虑得并不充分。如驱动程序。
 - 工作队列：将任务推后到进程上下文中完成。
 
-![下半部分的比较](../img/2019-10-24-20-13-15.png)
+![下半部分的比较](https://wanpengcheng.github.io/img/2019-10-24-20-13-15.png)
 
 ### 8.6 在下半部分之间加锁
 
@@ -1033,7 +1035,7 @@ tasklet自己负责执行的序列化保障；两个相同类型的tasklet不允
 
 为了保护共享数据的安全，一般是先得到一个锁再禁止下半部分(所有软中断和所有的tasklet)的处理。使用如下的函数来实现
 
-![下半部分机制控制函数清单](../img/2019-10-24-20-25-50.png)
+![下半部分机制控制函数清单](https://wanpengcheng.github.io/img/2019-10-24-20-25-50.png)
 
 函数通过为每个进程维护一个`preempt_count`为每个进程维护一个计数器。当计数器变为0时，下半部分才能够被处理。函数的核心处理流程如下：
 

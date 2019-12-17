@@ -304,6 +304,7 @@ struct task_struct *kthread_run(int(*threadfn)(void *data),void data,const char 
 新创建的进程不会主动运行。需要使用kthread_run()函数来让进程运行起来。kthread_run()是以宏实现的具体实现代码如下：
 
 ```c
+
 #define kthread_run(threadfn,data,namefmt,...)                      \
 {                                                                   \
     struct task_struct *k;                                          \
@@ -344,7 +345,8 @@ struct task_struct *kthread_run(int(*threadfn)(void *data),void data,const char 
 
 父进程在子进程之前退出，会给子进程在当前线程组内找一个线程作为父亲，如果不行，就让init做他们的父进程。函数调用顺序如下:do_exit()->exit_notify()->forget_original_parent()->find_new_reaper();`find_new_reaper()`函数执行过程如下：
 
-```c
+```c++
+
 static struct task_struct *find_new_reaper(struct task_struct *father)
 {
     struct pid_namespace *pid_ns=task_active_pid_ns(father);
@@ -381,7 +383,7 @@ static struct task_struct *find_new_reaper(struct task_struct *father)
     return pid_ns->child_reaper;
 }
 ```
-
+主要是通过对各个进程的遍历，查找可以作为父进程的指针
 在找到养父进程之后，就可以遍历所有子进程并为他们设置新的父进程：
 
 ```c
@@ -735,16 +737,27 @@ Linux调度程序提供强制的处理器绑定机制。它允许用户强制指
 
 ```c
 #include<stdlib.h>
+
 #include<stdio.h>
+
 #include<sys/types.h>
+
 #include<sys/sysinfo.h>
+
 #include<unistd.h>
+
 #define __USE_GNU
+
 #include<sched.h>
+
 #include<ctype.h>
+
 #include<string.h>
+
 #include<pthread.h>
+
 #define THREAD_MAX_NUM 100  //1个CPU内的最多进程数
+
 int num=0;  //cpu中核数
 
 void* threadFun(void* arg)  //arg  传递线程标号（自己定义）

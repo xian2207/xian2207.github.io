@@ -164,7 +164,7 @@ _参考链接：_ [Reactor模式](https://www.jianshu.com/p/eef7ebe28673)
 
 reactor设计模式是event-driven architecture的一种实现方式，处理多个客户端并发的向服务端请求服务的场景。每种服务在服务端可能由多个方法组成。reactor会解耦并发请求的服务并分发给对应的事件处理器来处理。目前，许多流行的开源框架都用到了reactor模式，如：netty、node.js等，包括java的nio。
 
-![](https://upload-images.jianshu.io/upload_images/10345180-fdaf4d307916cd8f.png?imageMogr2/auto-orient/strip|imageView2/2/w/640/format/webp)
+![车市](https://upload-images.jianshu.io/upload_images/10345180-fdaf4d307916cd8f.png?imageMogr2/auto-orient/strip|imageView2/2/w/640/format/webp)
 
 主要成员角色有：
 - Handle：事件的发源地，表明网络链接的状态和事件信号。Linux中一般为网络文件描述符。
@@ -235,17 +235,20 @@ InnoDB的MVCC采用系统版本号（此处是两个版本号，一个是删除�
 
 ## 4 简述第一～三范式
 _参考链接：_ [第一范式，第二范式，第三范式，BCNF范式理解](https://blog.csdn.net/u013164931/article/details/79692402)
-第一范式：列的属性均为原子属性，列不可再分
-第二范式：第二范式建立在第一范式的基础上，非主属性完全依赖于码(可能包含多个属性)--消除部分依赖。
-第三范式：满足第二范式的条件下不存在传递函数依赖。各个属性之间完全独立，不存除主键外的在部分依赖的情况。
-BCNF范式：BCNF是3NF的改进形式；满足条件如下:
-1. 所有非主属性对每一个码都是完全函数依赖。
-2. 所有的主属性对每一个不包含它的码,也是完全函数依赖。
-3. 没有任何属性完全函数依赖于非码的任何一组属性。
+
+- 第一范式：列的属性均为原子属性，列不可再分
+- 第二范式：第二范式建立在第一范式的基础上，非主属性完全依赖于码(可能包含多个属性)--消除部分依赖。
+- 第三范式：满足第二范式的条件下不存在传递函数依赖。各个属性之间完全独立，不存除主键外的在部分依赖的情况。
+- BCNF范式：BCNF是3NF的改进形式；满足条件如下:
+  1. 所有非主属性对每一个码都是完全函数依赖。
+  2. 所有的主属性对每一个不包含它的码,也是完全函数依赖。
+  3. 没有任何属性完全函数依赖于非码的任何一组属性。
 
 
 
 # 网络编程
+## 1. 简述TCP的三次握手
+_参考链接：_ [面试官，不要再问我三次握手和四次挥手](https://zhuanlan.zhihu.com/p/85557012)
 
 TCP数据报中的关键标志位
 在TCP层，有个FLAGS字段，这个字段有以下几个标识：SYN, FIN, ACK, PSH, RST, URG.
@@ -254,15 +257,15 @@ TCP数据报中的关键标志位
 
 它们的含义是：
 
-SYN表示建立连接，
+- SYN表示建立连接，
 
-FIN表示关闭连接，
+- FIN表示关闭连接，
 
-ACK表示响应，
+- ACK表示响应，
 
-PSH表示有 DATA数据传输，
+- PSH表示有 DATA数据传输，
 
-RST表示连接重置。
+- RST表示连接重置。
 
 其中，ACK是可能与SYN，FIN等同时使用的，比如SYN和ACK可能同时为1，它表示的就是建立连接之后的响应，
 
@@ -286,7 +289,15 @@ TCP(Transmission Control Protocol)传输控制协议
 
 TCP是主机对主机层的传输控制协议，提供可靠的连接服务，采用三次握手确认建立一个连接：
 
-位码即tcp标志位，有6种标示：SYN(synchronous建立联机) ACK(acknowledgement 确认) PSH(push传送) FIN(finish结束) RST(reset重置) URG(urgent紧急)Sequence number(顺序号码) Acknowledge number(确认号码)
+位码即tcp标志位，有6种标示：
+- SYN(synchronous建立联机)
+- ACK(acknowledgement 确认)
+- PSH(push传送)
+- FIN(finish结束)
+- RST(reset重置) 
+- URG(urgent紧急)
+- Sequence number(顺序号码) 
+- Acknowledge number(确认号码)
 
 第一次握手：主机A发送位码为syn＝1，随机产生seq number=1234567的数据包到服务器，主机B由SYN=1知道，A要求建立联机；
 
