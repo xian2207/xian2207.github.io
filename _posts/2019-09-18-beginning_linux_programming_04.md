@@ -52,11 +52,15 @@ int pthread_join(pthread_t th,void **thread_return);
 
 下面是一个简单的pthread使用示例：
 
-```c
+```c++
 #include <stdio.h>
+
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <string.h>
+
 #include <pthread.h>
 
 void *thread_function(void *arg);
@@ -97,10 +101,13 @@ void *thread_function(void *arg) {
 
 下面来编写一个程序让两个同时进行
 
-```c
+```c++
 #include <stdio.h>
+
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <pthread.h>
 
 void *thread_function(void *arg);
@@ -166,8 +173,9 @@ void *thread_function(void *arg) {
 
 信号量函数的名字都以`sem_`开头，而不想大多数线程函数那样以pthread_开头。线程中使用的基本信号量函数有4个，它们都非常简单
 
-```c
+```c++
 #include <semaphore.h>
+
 //初始化sem指向的信号量对象，设置共享量和初始值
 
 int sem_init(sem_t *sem,int pshared,unsigned int value);
@@ -183,18 +191,24 @@ int sem_destroy(sem_t *sem);
 ```
 
 信号量的简单使用
-```c
+```c++
 #include <stdio.h>
+
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <string.h>
+
 #include <pthread.h>
+
 #include <semaphore.h>
 
 void *thread_function(void *arg);
 sem_t bin_sem;
 
 #define WORK_SIZE 1024
+
 char work_area[WORK_SIZE];
 
 int main() {
@@ -270,15 +284,21 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex);
 
 下面是使用的简单示例：
 
-```c
+```c++
 #include <stdio.h>
+
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <string.h>
+
 #include <pthread.h>
+
 #include <semaphore.h>
 
 void *thread_function(void *arg);
+
 pthread_mutex_t work_mutex; /* protects both work_area and time_to_exit */
 
 #define WORK_SIZE 1024
@@ -318,7 +338,7 @@ int main() {
 
         while(1) {
             pthread_mutex_lock(&work_mutex);
-            if (work_area[0] != '\0') {//读到末尾直接解锁
+            if (work_area[0]!='\0') {/*读到末尾直接解锁*/
                 pthread_mutex_unlock(&work_mutex);
                 sleep(1);
             }
@@ -328,9 +348,11 @@ int main() {
         }
     }
     //解锁线程
+
     pthread_mutex_unlock(&work_mutex);
     printf("\nWaiting for thread to finish...\n");
     //等待子线程结束
+
     res = pthread_join(a_thread, &thread_result);
     if (res != 0) {
         perror("Thread join failed");
@@ -380,6 +402,7 @@ _参考链接：_ [POSIX thread (pthread) libraries](https://www.cs.cmu.edu/afs/
 
 ```c
 #include <pthread.h>
+
 //初始化属性
 
 int pthread_attr_init(pthread_attr_t *attr);
@@ -405,15 +428,21 @@ int pthread_attr_getstacksize(const pthread_attr_t *attr,int *scope);
 
 下面是一个简单的使用示例
 
-```c
+```c++
 #include <stdio.h>
+
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <string.h>
+
 #include <pthread.h>
+
 #include <semaphore.h>
 
 void *thread_function(void *arg);
+
 pthread_mutex_t work_mutex; /* protects both work_area and time_to_exit */
 
 #define WORK_SIZE 1024
@@ -488,7 +517,7 @@ void *thread_function(void *arg) {
 
 使用示例如下：
 
-```c
+```c++
 #include <stdio.h>
 
 #include <unistd.h>
@@ -580,10 +609,13 @@ int pthread_setcanceltype(int type,int *oldtype);
 ```
 
 下面是一个简答的使用示例;
-```c
+```c++
 #include <stdio.h>
+
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <pthread.h>
 
 void *thread_function(void *arg);
@@ -636,10 +668,13 @@ void *thread_function(void *arg) {
 ```
 ### 12.8 多线程运行实例
 
-```c
-include <stdio.h>
+```c++
+#include <stdio.h>
+
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <pthread.h>
 
 #define NUM_THREADS 6
@@ -713,8 +748,9 @@ shell负责安排两个命令的标准输入和标准输出
 
 进程之间的数据传递方法就是使用popen和pclose函数。使用原型如下所示：
 
-```c
+```c++
 #include <stdio.h>
+
 FILE *popen(const char* command,const char *open_mode);
 int pclose(FILE *stream_to_close);
 ```
@@ -723,7 +759,7 @@ popen函数是将一个程序命令来作为一个新进程来启动。可以传
 
 程序结束时使用`pclose`函数关闭与之关联的文件流。`pclose`调用只在`popen`启动的进程结束之后才返回。下面是一个简单的实验程序
 
-```c
+```c++
 #include <unistd.h>
 
 #include <stdlib.h>
@@ -738,6 +774,8 @@ int main()
     char buffer[BUFSIZE+1];
     int chars_read;
     memset(buffer,'\0',sizeof(buffer));
+    //创建管道文件
+
     read_fp=popen("uname -a","r");
     if(read_fp!=NULL){
         //读取管道输出的结果
@@ -747,6 +785,7 @@ int main()
             printf("Output was: -\n%s\n",buffer);
         }
         //关闭管道
+
         pclose(read_fp);
         exit(EXIT_SUCCESS);
     }
@@ -758,13 +797,14 @@ int main()
 
 ```shell
 Output was:-
-Linux wangpengcheng-Inspiron-3650 4.15.0-50-generic #54~16.04.1-Ubuntu SMP Wed May 8 15:55:19 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
+Linux wangpengcheng-Inspiron-3650 4.15.0-50-generic 
+#54~16.04.1-Ubuntu SMP Wed May 8 15:55:19 UTC 2019 x86_64 x86_64 x86_64 GNU/Linux
 
 ```
 
 管道的写入如下所示
 
-```c
+```c++
 #include <unistd.h>
 
 #include <stdlib.h>
@@ -799,7 +839,8 @@ int main()
 
 当数据过大时可以使用buffer来设置块的大小，按照块来进行读取。关键代码如下
 
-```
+```c++
+
 if(read_fp!=NULL){
     char_read=fread(buffer,sizeof(char),BUFSIZ,read_fp);
     while(chars_read>0){
@@ -922,7 +963,7 @@ int pipe(int file_descriptor[2]);
 
 使用示例：
 
-```c
+```c++
 #include <unistd.h>
 
 #include <stdlib.h>
@@ -940,8 +981,11 @@ int main()
     pid_t fork_result;
 
     memset(buffer, '\0', sizeof(buffer));
+    //创建pipe成功
 
     if (pipe(file_pipes) == 0) {
+        //创建子进程
+
         fork_result = fork();
         if (fork_result == -1) {
             fprintf(stderr, "Fork failure");
@@ -986,7 +1030,7 @@ Read 3 bytes: 123
 
 **pipe3:**
 
-```c
+```c++
 #include <unistd.h>
 
 #include <stdlib.h>
@@ -1005,7 +1049,8 @@ int main()
     //分配内存
 
     memset(buffer,'\0',sizeof(buffer));
-    //
+    //创建管道
+
     if(pipe(file_pipes)==0){
         fork_result=fork();
         if(fork_result==(pid_t)-1){
@@ -1030,7 +1075,7 @@ int main()
 
 pip4代码如下所示：
 
-```c
+```c++
 // The 'consumer' program, pipe4.c, that reads the data is much simpler.
 
 #include <unistd.h>
@@ -1064,7 +1109,7 @@ int main(int argc, char *argv[])
 
 #### 13.5.1 管道关闭后的读操作
 
-没有数据可以读取时，管道read通常会阻塞。对一个已关闭写数据的管道做read调用将返回0(无效是返回-1)而不是阻塞。当快鱼fork对管道进行调用时，会有两个而不同的文件描述符用于向管道写数据。在子进程中。只有把父子进程中的针对管道的写文件描述符都关闭，管道才会被认为是关闭了。调用read()才会失败。
+没有数据可以读取时，管道read通常会阻塞。对一个已关闭写数据的管道做read调用将返回0(无效是返回-1)而不是阻塞。当fork对管道进行调用时，会有两个而不同的文件描述符用于向管道写数据。在子进程中。只有把父子进程中的针对管道的写文件描述符都关闭，管道才会被认为是关闭了。调用read()才会失败。
 
 #### 13.5.2 把管道用作标准输入和标准输出
 
@@ -1193,18 +1238,24 @@ mknod主要用来创建多种类型的特殊文件。
 下面是使用FIFO的生产者、消费者示例
 
 
-```c
+```c++
 //生产者
 
 // Let's start with the header files, a #define and the check that the correct number
 // of command-line arguments have been supplied.
 
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <stdio.h>
+
 #include <string.h>
+
 #include <fcntl.h>
+
 #include <sys/types.h>
+
 #include <sys/stat.h>
 
 #define FIFO_NAME "/tmp/my_fifo"
@@ -1258,20 +1309,29 @@ int main(int argc, char *argv[])
 
 消费者程序
 
-```c
+```c++
 //消费者程序
 
 #include <unistd.h>
+
 #include <stdlib.h>
+
 #include <stdio.h>
+
 #include <string.h>
+
 #include <fcntl.h>
+
 #include <limits.h>
+
 #include <sys/types.h>
+
 #include <sys/stat.h>
 
 #define FIFO_NAME "/tmp/my_fifo"
+
 #define BUFFER_SIZE PIPE_BUF
+
 #define TEN_MEG (1024 * 1024 * 10)
 
 int main()
@@ -1303,10 +1363,10 @@ int main()
             }
             bytes_sent += res;
         }
-        (void)close(pipe_fd); 
+        (void)close(pipe_fd);
     }
     else {
-        exit(EXIT_FAILURE);        
+        exit(EXIT_FAILURE);
     }
 
     printf("Process %d finished\n", getpid());
@@ -1317,9 +1377,9 @@ int main()
 #### 13.6.2 高级主题：使用FIFO的客户段/服务器应用程序
 
 一个客户端服务器的例子：
-客户端头文件
+客户端头文件：client.h
 
-```c
+```c++
 #include <unistd.h>
 
 #include <stdlib.h>
@@ -1337,24 +1397,28 @@ int main()
 #include <sys/stat.h>
 
 #define SERVER_FIFO_NAME "/tmp/serv_fifo"
+
 #define CLIENT_FIFO_NAME "/tmp/cli_%d_fifo"
 
 #define BUFFER_SIZE 20
+
 //定义传输的数据结构
 
 struct data_to_pass_st {
     //客户端id
-    
+
     pid_t  client_pid;
     //传输的信息
-    
+
     char   some_data[BUFFER_SIZE - 1];
 };
 ```
+
 client.cpp
 
-```c
+```c++
 #include "client.h"
+
 #include <ctype.h>
 
 int main()
@@ -1374,10 +1438,10 @@ int main()
     }
 
     my_data.client_pid = getpid();
-    //穿件命名管道信息
+    //创建命名管道信息
 
     sprintf(client_fifo, CLIENT_FIFO_NAME, my_data.client_pid);
-    
+
     if (mkfifo(client_fifo, 0777) == -1) {
         fprintf(stderr, "Sorry, can't make %s\n", client_fifo);
         exit(EXIT_FAILURE);
@@ -1386,9 +1450,11 @@ int main()
     //循环5次，每次循环中，客户将数据发送给服务器，然后打开客户FIFO(只读)并读回数据。最后关闭服务器FIFO并将客户端从文件系统中删除
 
     for(times_to_send = 0; times_to_send < 5; times_to_send++) {
-        sprintf(my_data.some_data, "Hello from %d"，my_data.client_pid); 
+        sprintf(my_data.some_data, "Hello from %d"，my_data.client_pid);
         printf("%d sent %s, ", my_data.client_pid, my_data.some_data);
         write(server_fifo_fd, &my_data, sizeof(my_data));
+        //打开client相关文件；描述符
+
         client_fifo_fd = open(client_fifo, O_RDONLY);
         if (client_fifo_fd != -1) {
             //读取数据并输出相关信息
@@ -1399,21 +1465,21 @@ int main()
             close(client_fifo_fd);
         }
     }
+    //关闭服务器连接
+
     close(server_fifo_fd);
     unlink(client_fifo);
     exit(EXIT_SUCCESS);
 }
-
-
-
 ```
 
 下面是服务器端的相关代码：
 
-```c
+```c++
 //server.
 
 #include "client.h"
+
 #include <ctype.h>
 
 int main()
@@ -1599,7 +1665,7 @@ command参数值如下：
 
 下面是信号量的一个简单使用
 
-```c
+```c++
 #include <unistd.h>
 
 #include <stdlib.h>
@@ -1640,7 +1706,7 @@ int main(int argc,char *argv[])
     sem_id=semget((key_t)1234,0666|IPC_CREAT);
     //如果程序第一此被调用，带有一个参数argc>1
 
-     printf("pid:%d,sem_id%d \n",getpid(),sem_id);fflush(stdout);
+    printf("pid:%d,sem_id%d \n",getpid(),sem_id);fflush(stdout);
     if(argc>1){
         //成功初始化信号量
 
@@ -1710,7 +1776,7 @@ static int del_semvalue(void)
         fprintf(stderr,"Failed to delete semaphore\n");
     }
 }
-//对信号量做减一操作
+//对信号量做-1操作
 
 static int semaphore_p(void)
 {
@@ -1747,9 +1813,9 @@ static int semaphore_v(void)
 
 _参考链接：_ 
 - [进程间通信之-共享内存Shared Memory--linux内核剖析（十一）](https://blog.csdn.net/gatieme/article/details/51005811)
-- []()
+- [linux 共享内存、互斥锁介绍](https://blog.csdn.net/lizhengze1117/article/details/89450495)
 
-共享内存允许两个相关的进程访问同一个逻辑内存。共享内存四在两个正在运行的进程之间传递数据的一种非常有效的方式。
+共享内存允许两个相关的进程访问**同一个逻辑内存**。共享内存是在两个正在运行的进程之间传递数据的一种非常有效的方式。
 
 共享内存是由IPC为进程创建的一个特殊的地址范围，它将出现在该进程的地址空间中。使用起来好像就是自己分配的一样。但是并未提供同步机制。共享内存的访问同步控制必须由程序员自己来负责
 
@@ -1817,7 +1883,7 @@ struct shared_use_st{
 ```
 **shm1.c消费者程序**
 
-```c
+```c++
 #include <unistd.h>
 
 #include <stdlib.h>
@@ -1894,7 +1960,7 @@ int main()
 
 向消费者程序输入数据，与shml.c很相似。主要代码如下：
 
-```c
+```c++
 #include <unistd.h>
 
 #include <stdlib.h>
@@ -1939,7 +2005,7 @@ int main()
     shared_stuff = (struct shared_use_st *)shared_memory;
     while(running) {
         while(shared_stuff->written_by_you == 1) {
-            sleep(1);            
+            sleep(1);
             printf("waiting for client...\n");
         }
         //等待输入
@@ -1989,7 +2055,7 @@ int msgsnd(int msqid,const void *msg_ptr,size_t mag_sz,int magflg);
 
 #### 14.3.1 msgget函数
 
-利用键值来命名某个特定的消息队列。特殊键值IPC_PRIVATE用于创建私有队列，应该只能被当前进程访问。但是在实际的操作系统中存在许多不同的状况。由IPC_CREAT定义的一个特殊位必须和权限标志按位或才能创建一个新的消息队列。
+利用键值来命名某个特定的消息队列。特殊键值`IPC_PRIVATE`用于创建私有队列，应该只能被当前进程访问。但是在实际的操作系统中存在许多不同的状况。由`IPC_CREAT`定义的一个特殊位必须和权限标志按位或才能创建一个新的消息队列。
 
 #### 14.3.2 msgsnd函数
 
@@ -2002,7 +2068,7 @@ struct my_message{
 ```
 函数参数`msg_ptr`是一个指向准备发送消息的指针，消息必须像刚才说的呢样以一个长整型成员变量开始。`msg_sz`和`msg_ptr`指向的消息的长度，不能包括长整型消息类型成员变量的长度。
 
-在msgflg中设置了IPC_NOWAIT标志，函数将立刻返回，不发送消息就返回-1.如果立即放松标志被秦楚，则发送进程将挂起以等待队列中腾出可用空间。
+在`msgflg`中设置了`IPC_NOWAIT`标志，函数将立刻返回，不发送消息就返回-1.如果立即放松标志被秦楚，则发送进程将挂起以等待队列中腾出可用空间。
 
 #### 14.3.3 msgrcv函数
 
@@ -2040,7 +2106,7 @@ command可用参数值如下
 
 **接受者msg1.c**
 
-```c
+```c++
 /* Here's the receiver program. */
 
 #include <stdlib.h>
@@ -2109,7 +2175,7 @@ int main()
 
 **生产者msg2.c**
 
-```c
+```c++
 
 /* The sender program is very similar to msg1.c. In the main set up, delete the
  msg_to_receive declaration and replace it with buffer[BUFSIZ], remove the message
@@ -2117,9 +2183,13 @@ int main()
  We now have a call to msgsnd to send the entered text to the queue. */
 
 #include <stdlib.h>
+
 #include <stdio.h>
+
 #include <string.h>
+
 #include <errno.h>
+
 #include <unistd.h>
 
 #include <sys/msg.h>

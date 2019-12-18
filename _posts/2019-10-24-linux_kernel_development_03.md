@@ -30,7 +30,7 @@ tags:
   - 互斥量，类似与信号量，但只支持同时只有一个并发体进入临界区；
   - 读写锁，支持读并发，写写/读写间互斥，读会延迟写，对读友好，适用读侧重场合；
   - 顺序锁，支持读并发，写写/读写间互斥，写会延迟读，对写友好，适用写侧重场合；<br>
-锁技术虽然能有效地提供并行执行下的竞态保护，但锁的并行可扩展性很差，无法充分发挥多核的性能优势。锁的粒度太粗会限制扩展性，粒度太细会导致巨大的系统开销，而且设计难度大，容易造成死锁。除了并发可扩展性差和死锁外，锁还会引入很多其他问题，如锁惊群、活锁、饥饿、不公平锁、优先级反转等。不过也有一些技术手段或指导原则能解决或减轻这些问题的风险。
+锁技术虽然能有效地提供并行执行下的竞态保护，但锁的并行可扩展性很差，无法充分发挥多核的性能优势。锁的粒度太粗会限制扩展性，粒度太细会导致巨大的系统开销，而且设计难度大，容易造成死锁。除了并发可扩展性差和死锁外，锁还会引入很多其他问题，如[锁惊群](https://blog.csdn.net/aazhzhu/article/details/89967346)、活锁、饥饿、不公平锁、优先级反转等。不过也有一些技术手段或指导原则能解决或减轻这些问题的风险。
   - 按统一的顺序使用锁（锁的层次），解决死锁问题；
   - 指数后退，解决活锁/饥饿问题；
   - 范围锁（树状锁），解决锁惊群问题；
@@ -567,19 +567,19 @@ struct timespec{
 }
 ```
 
-xtime.tv_sec以秒为氮气，存放着UTC以来经过的所有时间。其读写需要xtime_lock锁，它不是普通自旋锁而是一个seqlock锁。使用下面的代码进行时间的读取
+xtime.tv_sec以秒为单位，存放着UTC以来经过的所有时间。其读写需要xtime_lock锁，它不是普通自旋锁而是一个seqlock锁。使用下面的代码进行时间的读取
 
 ```c
 unsigned long seq;
 do{
-  unsigned long lost;
-  seq=read_seqbegin(&xtime_lock);
-  usec=timer->get_offset();
-  lost=jiffies-wall_jiffies;
-  if(lost)
-    usec+=lost*(1000000/HZ);
-  sec=xtime.tv_sec;
-  usec+=(xtime.tv_nsec/1000);
+    unsigned long lost;
+    seq=read_seqbegin(&xtime_lock);
+    usec=timer->get_offset();
+    lost=jiffies-wall_jiffies;
+    if(lost)
+      usec+=lost*(1000000/HZ);
+    sec=xtime.tv_sec;
+    usec+=(xtime.tv_nsec/1000);
 }while(read_seqretry(&xtime_lock,seq));
 ```
 

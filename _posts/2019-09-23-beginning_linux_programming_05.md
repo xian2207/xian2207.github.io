@@ -48,7 +48,7 @@ socket是管道概念的一个廓镇。使用与管道类似的方法来使用�
 
 下面是一个简单的本地客户端
 
-```c
+```c++
 /*  Make the necessary includes and set up the variables.  */
 
 #include <sys/types.h>
@@ -107,7 +107,7 @@ int main()
 
 **server1.c服务器创建**
 
-```c
+```c++
 /*  Make the necessary includes and set up the variables.  */
 
 #include <sys/types.h>
@@ -181,7 +181,7 @@ char from server = B
 
 socket的主要属性如下：
 
-1. 域(domain):指定socket通信中使用的网络介质。常见的套接字域是`AF_INET`，表示Internet网络协议。其底层的协议--网际协议(IP)只有一个地址族。常用服务端口号通常小于1024,有:打印机缓冲队列进程(515)、rlogin(513)、ftp(21)和httpd(80)等。小鱼1024的端口都是为系统服务保留的。并且所有服务的进程必须具有超级用户权限。在netdb.h中定义了一个常量`IPPORT_RESERVED`，代表保留端口号的最大值。也可以使用`AF_UNIX`表示UNIX文件系统域
+1. 域(domain):指定socket通信中使用的网络介质。常见的套接字域是`AF_INET`，表示Internet网络协议。其底层的协议--网际协议(IP)只有一个地址族。常用服务端口号通常小于1024,有:打印机缓冲队列进程(515)、rlogin(513)、ftp(21)和httpd(80)等。小于1024的端口都是为系统服务保留的。并且所有服务的进程必须具有超级用户权限。在netdb.h中定义了一个常量`IPPORT_RESERVED`，代表保留端口号的最大值。也可以使用`AF_UNIX`表示UNIX文件系统域
 2. 类型(type):因为Internet网中提供了两种不同的通信机制:流(stream)和数据报(datagram)，因此这里也提供了两种截然不同的套接字类型。
    1. 流套接字:提供一个有序、可靠、双向字节流的连接。发送出去的数据可以确保不会丢失、复制或者乱序到达。错误不会被显示。主要由`SOCK_STREAM`指定，在AF_INET域中，通过TCP/IP连接实现。
    2. 数据报套接字：由`SOCK_DGRAM`指定，不建立和维持一个连接。数据报长度有限制，数据报作为一个单独的网络消息被传输。存在错误。主要由UDP/IP连接实现的。但是开销小。不需要维持网络连接。速度较快。
@@ -321,7 +321,7 @@ socket指定的套接字是通过socket调用获得的一个有效的文件描�
 
 下面是一个修改过的客户端程序client2.c，它通过回路网络连接到一个网络套接字。这个程序有一个硬件相关的细微错误，我们将在本章的后面再讨论它
 
-```c
+```c++
 #include <sys/types.h>
 
 #include <sys/socket.h>
@@ -359,7 +359,7 @@ int main()
 
 服务器端(server2.c)需要添加的设置如下：
 
-```c
+```c++
 #include <sys/types.h>
 
 #include <sys/socket.h>
@@ -376,7 +376,7 @@ int main()
 
 int main()
 {
-  int server_sockfd,client+sockfd;
+  int server_sockfd,client_sockfd;
   int server_len,client_len;
   struct sockaddr_in server_address;
   struct sockaddr_in client_address;
@@ -409,11 +409,11 @@ int main()
 
 ```c
 #include <netdb.h>
-//查询host地址
+/* 查询host地址 */
 
 struct hostent *gethostbyaddr(const void *addr,size_t len,int type);
 struct hostent *gethostbyname(const char *name);
-/*查询端口号相关信息*/
+/* 查询端口号相关信息 */
 
 struct servent *getservbyname(const char *name,const char *proto);
 struct servent *getservbyport(int port,const char *proto);
@@ -453,14 +453,19 @@ int gethostname(char *name,int namelength);
 
 下面使用getname.c来获取一台主机的信息
 
-```c
+```c++
 /*  As usual, make the appropriate includes and declare the variables.  */
 
 #include <netinet/in.h>
+
 #include <arpa/inet.h>
+
 #include <unistd.h>
+
 #include <netdb.h>
+
 #include <stdio.h>
+
 #include <stdlib.h>
 
 int main(int argc, char *argv[])
@@ -522,7 +527,7 @@ int main(int argc, char *argv[])
 
 下面是连接到标准服务，查看服务器的当前日期和时间
 
-```c
+```c++
 
 /* 准备必要的头文件 */
 
@@ -640,7 +645,7 @@ void FD_SET(int fd,fd_set *fdset);
 void FD_ISSET(int fd,fd_set *fdset);
 ```
 
-select函数可以设置一个超值来防止无限期的阻塞。这个超时值由一个timeval结构给出。这个结构定义在头文件`sys/time.h`中，它由以下几个成员组成:
+select函数可以设置一个超时来防止无限期的阻塞。这个超时值由一个timeval结构给出。这个结构定义在头文件`sys/time.h`中，它由以下几个成员组成:
 
 ```c
 struct timeval{
@@ -662,15 +667,15 @@ int select(int nfds,fd_set *readfds,fd_set *writefds, fd_set *errorfds,struct ti
 nfds指定需要测试的文件描述符数目，测试的描述符范围从0到nfds-1。3个描述符集合都可以被设置为空指针，这表示不执行相应的测试。
 
 select函数会在以下情况时返回:
-- readfds集合中有描述符可读
-- writefds集合中有描述符可写
-- errorfds集合中有描述符遇到错误条件
+- `readfds`：集合中有描述符可读
+- `writefds`：集合中有描述符可写
+- `errorfds`：集合中有描述符遇到错误条件
 
 如果以上三种条件都没有发生，select将在timeout指定的超时时间经过后返回。如果timeout参数是一个空指针并且套接字上也没有任何活动，这个调用将一直阻塞下去。
 
 下面是一个简单的select调用实验：
 
-```c
+```c++
 /* 开始和必要的头文件 */
 
 #include <sys/types.h>
@@ -742,7 +747,7 @@ int main()
 
 下面是一个简单的使用示例：
 
-```c
+```c++
 /*  For our final example, server5.c, 
     we include the sys/time.h and sys/ioctl.h headers in place of signal.h
     in our last program and declare some extra variables to deal with select.  */
@@ -775,7 +780,7 @@ int main()
     /* 为服务器创建一个socket描述符 */
 
     server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    //
+    /* 设置socket属性 */
     server_address.sin_family = AF_INET;
     server_address.sin_addr.s_addr = htonl(INADDR_ANY);
     server_address.sin_port = htons(9734);
@@ -802,7 +807,7 @@ int main()
         printf("server waiting\n");
         /* 注意这里timeout参数传递的是一个空指针，因此select调用将不会发生超时状况 */
 
-        result = select(FD_SETSIZE, &testfds, (fd_set *)0, 
+        result = select(FD_SETSIZE, &testfds, (fd_set *)0,
             (fd_set *)0, (struct timeval *) 0);
 
         if(result < 1) {
@@ -819,7 +824,7 @@ int main()
 
                 if(fd == server_sockfd) {
                     client_len = sizeof(client_address);
-                    client_sockfd = accept(server_sockfd, 
+                    client_sockfd = accept(server_sockfd,
                         (struct sockaddr *)&client_address, &client_len);
                     FD_SET(client_sockfd, &readfds);
                     printf("adding client on fd %d\n", client_sockfd);
@@ -857,7 +862,7 @@ int main()
 
 UDP使用的是不稳定链接，因此不需要进行过多的更改和连接状态的确定。UDP在局域网中非常可靠。一样使用套接字和close系统调用，但是需要使用**sendto和recvfrom**来代替原来使用在套接字上的read和write调用。下面是一个修改过的getdate.c版本
 
-```c
+```c++
 #include <sys/socket.h>
 
 #include <netinet/in.h>

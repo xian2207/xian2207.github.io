@@ -15,7 +15,10 @@ tags:
 
 # C++并发编程阅读笔记
 
-_参考链接：_ [C++ 并发编程中文版](https://chenxiaowei.gitbooks.io/cpp_concurrency_in_action/)；[第二版在线地址](https://legacy.gitbook.com/book/chenxiaowei/c-concurrency-in-action-second-edition-2019)
+_参考链接：_ 
+
+- [C++ 并发编程中文版](https://chenxiaowei.gitbooks.io/cpp_concurrency_in_action/)；
+- [第二版在线地址](https://legacy.gitbook.com/book/chenxiaowei/c-concurrency-in-action-second-edition-2019)
 
 ## 第1章 你好，C++的并发世界
 
@@ -48,7 +51,9 @@ _参考链接：_ [C++ 并发编程中文版](https://chenxiaowei.gitbooks.io/cp
 
 ```c++
 #include <iostream>
+
 #include <thread>
+
 void hello()
 {
     std::cout<<"Hello Concurrent World\n";
@@ -143,10 +148,10 @@ void oops()
     int some_local_state=0;
     func my_func(some_local_state);
     std::thread my_thread(my_func);
-    my_thread.detach();                                    
+    my_thread.detach();
     //  2.  不等待线程结束
 
-}                                                                              //  3.  新线程可能还在运行
+}                                                                    //  3.  新线程可能还在运行
 
 
 ```
@@ -154,27 +159,29 @@ void oops()
 对于上述的处理方法是将数据复制到线程中，使得线程函数的功能齐全。而非复制到共享数据中。此外,可以通过join()函数来确保线程在函数完成前结束。但是join()只是简单粗暴的等待线程完成或者不等待。等待线程完成的例子如下：
 
 ```c++
-struct  func;   //  定义在清单2.1中
-void    f()
-{
-        int some_local_state=0;
-        func my_func(some_local_state);
-        std::thread t(my_func);
-        //使用异常捕获，保证访问本地状态的线程退出后，函数才结束
+struct  func;   //定义在清单2.1中
 
-        try
-        {
-                do_something_in_current_thread();
-        }
-        catch(...)
-        {
-                t.join();       //  1
-                throw;
-        }
-        t.join();       //  2
+void f()
+{
+    int some_local_state=0;
+    func my_func(some_local_state);
+    std::thread t(my_func);
+    //使用异常捕获，保证访问本地状态的线程退出后，函数才结束
+
+    try
+    {
+        do_something_in_current_thread();
+    }catch(...)
+    {
+        t.join();       /* 等待线程结束 */
+        throw;
+    }
+    t.join();       /* 等待线程结束 */
+
 }
 
-//使用“资源获取即初始化方式”(RAII,Resource  Acquisition Is  Initialization)等待线程退出
+/*使用“资源获取即初始化方式”(RAII,Resource  Acquisition Is  Initialization)等待线程退出*/
+
 class thread_guard
 {
     std::thread& t;
@@ -195,10 +202,12 @@ public:
 
         }
     }
+    /* 禁止使用默认的拷贝构造函数 */
     thread_guard(thread_guard&)=delete;
-
+    /* 禁止使用赋值函数 */
     thread_guard& operator=(thread_guard const&)=delete
 };
+
 struct func;
 
 void f()
@@ -229,27 +238,25 @@ assert(!t.joinable());
 
 //多线程处理文档的示例：
 
-void    edit_document(std::string   const&  filename)
+void edit_document(std::string   const&  filename)
 {
-        open_document_and_display_gui(filename);
-        while(!done_editing())
+    open_document_and_display_gui(filename);
+    while(!done_editing())
+    {
+        user_command  cmd=get_user_input();
+        if(cmd.type==open_new_document)
         {
-                user_command  cmd=get_user_input();
-                if(cmd.type==open_new_document)
-                {
-                        std::string const   new_name=get_filename_from_user();
-                        //启动一个新线程开始显示和处理文档
+            std::string const   new_name=get_filename_from_user();
+            //启动一个新线程开始显示和处理文档
 
-                        std::thread t(edit_document,new_name);      //  1
-                        //分离线程
+            std::thread t(edit_document,new_name);
+            //分离线程
 
-                        t.detach();     
-                }
-                else
-                {
-                            process_user_input(cmd); 
-                }
+            t.detach();
+        }else{
+            process_user_input(cmd);
         }
+    }
 }
 
 ```
@@ -261,7 +268,7 @@ _参考链接：_ [C++11的6种内存序总结](https://blog.csdn.net/lvdan1/art
 线程调用的默认参数要拷贝到线程独立内存中，几十参数是引用的形式，也可以在新线程中进行访问。
 
 ```c++
-void f(int i, std::string const& s);
+void f(int i,std::string const& s);
 std::thread t(f,3,"hello");
 ```
 
@@ -269,20 +276,20 @@ std::thread t(f,3,"hello");
 
 ```c++
 
-void f(int   i,std::string   const&  s);
-void oops(int    some_param)
+void f(int i,std::string const&  s);
+void oops(int some_param)
 {
     //指针变量
 
     char buffer[1024];
     //指针变量指向输入参数
 
-    sprintf(buffer, "%i",some_param);
+    sprintf(buffer,"%i",some_param);
     //创建线程，输入指针函数
 
-    std::thread t(f,3,buffer); 
+    std::thread t(f,3,buffer);
+    /* 线程执行与主线程分离 */
     t.detach();
-
 }
 
 //在从char*到std::string类型转换的过程中，函数很有可能在转化成功之前崩溃；但是`std::thread`的构造函数会复制提供的变量，就只复制了没有转换成期望类型的字符串字面值，最终造成程序崩溃。
@@ -297,7 +304,7 @@ void not_oops(int some_param)
     sprintf(buffer,"%i",some_param);
     //使用显示转换避免指针悬垂
 
-    std::thread t(f,3,std::string(buffer)); 
+    std::thread t(f,3,std::string(buffer));
     t.detach();
 }
 
@@ -308,13 +315,13 @@ void not_oops(int some_param)
 - 可以使用`std::move`将一个参数，移动到线程中去。
 
 ```c++
-//输如参数是一个只允许一个使用的指针 
+//输如参数是一个只允许一个使用的指针
 
 void process_big_object(std::unique_ptr<big_object>);
 
 std::unique_ptr<big_object> p(new big_object);
 p->prepare_data(42);
-//使用move函数，将指针的所有权，交给线程内部的函数库
+//使用move函数，进行移动语义，右值引用；将指针的所有权，交给线程内部的函数库
 
 std::thread t(process_big_object,std::move(p));
 
@@ -349,19 +356,19 @@ t1=std::move(t3);
 建议的线程拷贝使用如下：
 
 ```c++
-class   scoped_thread
+class scoped_thread
 {
-        std::thread t;
+    std::thread t;
 public:
     //直接获取线程的句柄函数
 
-    explicit  scoped_thread(std::thread   t_):
+    explicit scoped_thread(std::thread t_):
                 t(std::move(t_))
     {
         //线程以及结束过一次就返回失败
 
         if(!t.joinable())
-            throw   std::logic_error(“No    thread”);
+            throw   std::logic_error(“No thread”);
     }
     //析构函数结束线程
 
@@ -386,19 +393,20 @@ void f()
     //执行程序
 
     do_something_in_current_thread();
-}                                                                                                           
-void do_work(unsigned    id);
+}
+
+void do_work(unsigned id);
 
 void f1()
 {
-    std::vector<std::thread>    threads;
+    std::vector<std::thread> threads;
     for(unsigned i=0; i<20; ++i)
         {
             //产生线程
 
             threads.push_back(std::thread(do_work,i));  
         }
-        //对每个线程调用join()
+        //对每个线程调用join()；注意这里的mem_fn直接获取对象的函数指针
 
         std::for_each(threads.begin(),threads.end(),std::mem_fn(&std::thread::join));  
 }
@@ -440,7 +448,7 @@ T parallel_accumulate(Iterator first,Iterator last,T init)
     }
     //最小线程数量
 
-    unsigned long const min_per_thread=25；
+    unsigned long const min_per_thread=25;
     //最大线程数量
 
     unsigned long const max_threads=(length+min_per_thread-1)/min_per_thread;
@@ -535,8 +543,11 @@ c++中通过使用`std::mutex`创建互斥量，通过调用成员函数`lock()/
 
 ```c++
 #include <list>
+
 #include <mutex>
+
 #include <algorithm>
+
 //创建全局的互斥保护变量
 
 std::list<int> some_list;  
@@ -577,7 +588,7 @@ bool list_contains(int value_to_find)
 ```c++
 class some_data
 {
-    int a；
+    int a;
     std::string b;
 public:
     void do_something();
@@ -686,9 +697,13 @@ public:
 
 ```c++
 #include <exception>
+
 #include <memory>
+
 #include <mutex>
+
 #include <stack>
+
 // 定义空栈函数
 
 struct empty_stack: std::exception
@@ -719,6 +734,8 @@ public:
 
         data=other.data;
     }
+    //禁用默认赋值
+
     threadsafe_stack& operator=(const threadsafe_stack&)=delete;
     //添加
 
@@ -794,6 +811,7 @@ void swap(some_big_object& lhs,some_big_object& rhs);
 class X {
 private:
     //目标对象
+
     some_big_object some_detail;
     std::mutex m;
 public:
@@ -1055,7 +1073,7 @@ void foo()
 
 ```
 
-c++ 提供了 `std::once_flag`  和  ` std::call_once`  来处理多线程的读写同步问题。比起锁住互斥量,并显式的检查指针,每个线程只需要使用`std::call_once`  ,在`std::call_once`的结束时,就能安全的知道指针已经被其他的线程初始化了。使用`std::call_once`比显式使用互斥量消耗的资源更少,特别是当初始化完成后。下面是一个使用示例：
+c++ 提供了 `std::once_flag`  和  `std::call_once` 来处理多线程的读写同步问题。比起锁住互斥量,并显式的检查指针,每个线程只需要使用`std::call_once`  ,在`std::call_once`的结束时,就能安全的知道指针已经被其他的线程初始化了。使用`std::call_once`比显式使用互斥量消耗的资源更少,特别是当初始化完成后。下面是一个使用示例：
 
 ```c++
 std::shared_ptr<some_resource>  resource_ptr;
@@ -1123,8 +1141,11 @@ public:
 ```c++
 
 #include <map>
+
 #include <string>
+
 #include <mutex>
+
 #include <boost/thread/shared_mutex.hpp>
 
 class dns_entry;

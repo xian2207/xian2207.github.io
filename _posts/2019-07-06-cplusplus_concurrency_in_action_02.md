@@ -627,11 +627,13 @@ int main()
 ```
 ### 4.3 限定等待时间
 
-之前的所有苏塞调用，将会阻塞一段不确定的时间，将线程挂起直到等待的事件发
+之前的所有阻塞调用，将会阻塞一段不确定的时间，将线程挂起直到等待的事件发
 生。可以使用`std::condition_variable`成员函数的`wait_for()`和`wait_until`进行相对时间和绝对时间的等待。
 
 #### 4.3.1 时钟
-_参考链接：_ [标准库头文件 <chrono>](https://zh.cppreference.com/w/cpp/header/chrono);
+_参考链接：_
+
+- [标准库头文件 <chrono>](https://zh.cppreference.com/w/cpp/header/chrono);
 
 注意：`std::chrono::system_clock`是不稳定的，`std::chrono::steady_clock`是稳定的。
 
@@ -657,10 +659,10 @@ if(f.wait_for(std::chrono::milliseconds(35))==std::future_status::ready)
 auto  start=std::chrono::high_resolution_clock::now();
 do_something();
 auto    stop=std::chrono::high_resolution_clock::now();
-std::cout<<”do_something()  took    “
+std::cout<<"do_something()  took"
         <<std::chrono::duration<double,std::chrono::seconds>(stop-
 start).count()
-        <<” seconds”<<std::endl;
+        <<" seconds"<<std::endl;
 
 ```
 
@@ -929,7 +931,7 @@ x=b.exchange(false,std::memory_order_acq_rel);
 
 每一个原子类型所能用的操作
 
-![原子类型可用操作](https://wangpengcheng.github.io/img/2019-07-11 10-49-24.png)
+![原子类型可用操作](https://wangpengcheng.github.io/img/2019-07-11-10-49-24.png)
 
 #### 5.2.7  原子操作的释放函数
 
@@ -1350,42 +1352,42 @@ void f()
 
 ```c++
 
-#include    <atomic>
+#include <atomic>
 
-#include    <thread>
+#include <thread>
 
-std::vector<int>    queue_data;
-std::atomic<int>    count;
-void    populate_queue()
+std::vector<int> queue_data;
+std::atomic<int> count;
+void populate_queue()
 {
-        unsigned    const   number_of_items=20;
-        queue_data.clear();
-        for(unsigned    i=0;i<number_of_items;++i)
-        {
-                queue_data.push_back(i);
-        }
+    unsigned const number_of_items=20;
+    queue_data.clear();
+    for(unsigned i=0;i<number_of_items;++i)
+    {
+        queue_data.push_back(i);
+    }
         //1 初始化存储
 
-        count.store(number_of_items,std::memory_order_release); 
+    count.store(number_of_items,std::memory_order_release); 
 }
-void    consume_queue_items()
+void consume_queue_items()
 {
-        while(true)
+    while(true)
+    {
+        int item_index;
+        //2 一个“读-改-写”操作
+
+        if((item_index=count.fetch_sub(1,std::memory_order_acquire))<=0)
         {
-            int item_index;
-            //2 一个“读-改-写”操作
+            //3 等待更多元素
 
-            if((item_index=count.fetch_sub(1,std::memory_order_acquire))<=0)
-                {
-                    //3 等待更多元素
-
-                    wait_for_more_items();      
-                        continue;
-                }
-                //4 安全读取queue_data
-
-                process(queue_data[item_index-1]);
+            wait_for_more_items();
+            continue;
         }
+        //4 安全读取queue_data
+
+        process(queue_data[item_index-1]);
+    }
 }
 int main()
 {

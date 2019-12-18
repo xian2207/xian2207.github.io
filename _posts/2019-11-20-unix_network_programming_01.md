@@ -207,6 +207,7 @@ OSI模型 open systems interconnection(全称：计算机通信开放系统互�
 - netstat
     - netstat -ni // 提供网络接口信息，-n输出数值地址而不是反向解析为名字
     - $ netstat -ni
+
 ```sh
     Kernel Interface table
 Iface   MTU Met   RX-OK RX-ERR RX-DRP RX-OVR    TX-OK TX-ERR TX-DRP TX-OVR Flg
@@ -215,7 +216,8 @@ lo        16436 0       138      0      0 0           138      0      0      0 L
 // lo 环回接口
 // eth0 以太网接口
 ```
-    -  netstat -nr // 展示路由表信息，另一种确定接口的方法
+-  netstat -nr // 展示路由表信息，另一种确定接口的方法
+
 ```sh
 内核 IP 路由表
 Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
@@ -224,10 +226,12 @@ Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
 192.168.31.0    0.0.0.0         255.255.255.0   U         0 0          0 eth0
 
 ```
+
 - ifconfig
     - ifconfig eth0 // 获得eth0以太网接口的详细信息
+
 ```sh
-$ ifconfig eth0
+ifconfig eth0
 
 eth0      Link encap:以太网  硬件地址 00:0c:29:55:a0:99
           inet 地址:192.168.31.205  广播:192.168.31.255  掩码:255.255.255.0
@@ -391,7 +395,7 @@ struct sockaddr_in {
 #### 3.2.2 Pv6套接字地址结构: `sockaddr_in6`
 
 ```c
-IPv6套接字地址结构：sockaddr_in6
+//IPv6套接字地址结构：sockaddr_in6
 #include <netinet/in.h>
 
 struct in6_addr {
@@ -941,8 +945,8 @@ again:
       - `accept`返回成功，就`fork`一个子进程
       - 在子进程中处理已建立连接的任务，父进程就继续等待下一个连接。
     - 子进程工作:
-      - 在子进程中需要关闭socket创建的描述符，父进程中关闭connect返回的描述符
-        - 因为fork创建进程时这两个描述符都会复制到子进程中，如果不关闭，在子进程退出时由于父进程还打开了connect描述符，将不会发送FIN字节，而且每一个连接都会消耗一个描述符资源永远不会释放。
+      - 在**子进程中需要关闭socket创建的描述符，父进程中关闭connect返回的描述符**
+        - 因为fork创建进程时这两个描述符都会复制到子进程中，如果不关闭，在子进程退出时由于父进程还打开了connect描述符，**将不会发送FIN字节**，而且每一个连接都**会消耗一个描述符资源永远不会释放**。
       - 在`str_echo`中，服务器从套接字中读取内容，若没有内容就阻塞，然后直接写回套接字。
 - 客户端：
   - 链接阶段：
