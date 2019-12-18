@@ -207,6 +207,7 @@ OSI模型 open systems interconnection(全称：计算机通信开放系统互�
 - netstat
     - netstat -ni // 提供网络接口信息，-n输出数值地址而不是反向解析为名字
     - $ netstat -ni
+
 ```sh
     Kernel Interface table
 Iface   MTU Met   RX-OK RX-ERR RX-DRP RX-OVR    TX-OK TX-ERR TX-DRP TX-OVR Flg
@@ -215,7 +216,8 @@ lo        16436 0       138      0      0 0           138      0      0      0 L
 // lo 环回接口
 // eth0 以太网接口
 ```
-    -  netstat -nr // 展示路由表信息，另一种确定接口的方法
+-  netstat -nr // 展示路由表信息，另一种确定接口的方法
+
 ```sh
 内核 IP 路由表
 Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
@@ -224,10 +226,12 @@ Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
 192.168.31.0    0.0.0.0         255.255.255.0   U         0 0          0 eth0
 
 ```
+
 - ifconfig
     - ifconfig eth0 // 获得eth0以太网接口的详细信息
+
 ```sh
-$ ifconfig eth0
+ifconfig eth0
 
 eth0      Link encap:以太网  硬件地址 00:0c:29:55:a0:99
           inet 地址:192.168.31.205  广播:192.168.31.255  掩码:255.255.255.0

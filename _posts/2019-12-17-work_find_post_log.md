@@ -17,5 +17,5 @@ tags:
 |百度|C++研发实习生|[牛客](https://www.nowcoder.com/discuss/354663)|2019-12-17-18:12|||||||
 |58同城|后台开发工程师|[牛客](https://www.nowcoder.com/discuss/355536?type=7&order=0&pos=11&page=1)|2019-12-17-18:12|||||||
 |爱奇艺|游戏-服务器开发实习生|[实习僧](https://www.shixiseng.com/intern/inn_qwqoudlpmudu?mxa=asdd.0eqlx1.4xnxf0.$3)|2019-12-17-18:52|||||||
-|百度|百度翻译后端开发工程师(实习生)|[实习僧](hhttps://www.shixiseng.com/intern/inn_tmwyzysm0enf?mxa=asdd.heox0p._.$1)|2019-12-17-19:07|||||||
+|百度|百度翻译后端开发工程师(实习生)|[实习僧](hhttps://www.shixiseng.com/intern/inn_tmwyzysm0enf?mxa=asdd.heox0p._.$1)|2019-12-17-19:07|2019-12-17-20:45||||||
 ||||||||||
