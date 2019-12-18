@@ -326,7 +326,7 @@ int mian(int argc, char **argv){
 `inted`首先将自己升格为`守护进程`，然后读入并处理配置文件(通常是`/etc/inetd.conf`)该文件每一行的字段如下：
 
 |字段|说明|
-|:---|：---|
+|:---|:---|
 |`service-name`|必须在`/etc/services`文件中定义|
 |`socket-type`|stream(对于TCP)活dgram(对于UDP)|
 |`protocal`|必须在`/etc/protocals`文件中定义:`TCP/UDP`|
