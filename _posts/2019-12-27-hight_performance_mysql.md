@@ -164,7 +164,9 @@ echo Exiting because $RUNFILE does not exist.
 
 ### 3.3.3 使用性能剖析
 
+使用`SHOW PROCESSLIST`不停捕获和输出
 
+# 第 4 章 Schema与数据类型优化
 
 
 
