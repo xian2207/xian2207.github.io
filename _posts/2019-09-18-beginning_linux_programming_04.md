@@ -1874,7 +1874,7 @@ buf是一个指针，它指向包含共享内存模式和访问权限的结构�
 //file shm_com.h
 
 #define TEXT_SZ 2048
-
+#define KEY 1234
 struct shared_use_st{
     int written_by_you;
     char some_text[TEXT_SZ];

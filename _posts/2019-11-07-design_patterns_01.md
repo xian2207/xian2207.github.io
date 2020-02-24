@@ -19,6 +19,7 @@ tags:
 _参考链接：_ 
 
 - [github地址](https://github.com/me115/design_patterns)
+- [23种设计模式C++实现](https://blog.csdn.net/Bing_Lee/article/details/87640606)
 - [图说设计模式](https://design-patterns.readthedocs.io/zh_CN/latest/)
 - [设计模式C++实现笔记](https://www.jianshu.com/c/c3f6140b8315)
 - [C++ 设计模式](https://blog.csdn.net/liang19890820/article/details/66974516)
@@ -108,7 +109,7 @@ COF-23设计模式分类
 ![设计模式](https://img-blog.csdn.net/2018051615452165?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1dpS2lfU3U=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
 
 # 看懂UML类图和时序图
- 
+
 ## 图说设计模式阅读笔记-创建型模式
 
 ## 简单工厂模式( Simple Factory Pattern )

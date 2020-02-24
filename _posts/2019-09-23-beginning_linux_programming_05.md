@@ -135,7 +135,7 @@ int main()
     //这里删除以前的套接字，为服务器创建一个未命名的套接字
 
     unlink("server_socket");
-
+	//注意这里是UNIX域套接字
     server_sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     //对套接字进行命名
 
@@ -240,7 +240,7 @@ struct sockaddr_in{
 ip地址结构定义如下:
 
 ```c
-typedef uint32_t in_addr_t;
+typedef uint32_t in_addr_t;/* 一个四字节的描述符 */
 struct in_addr
   {
     in_addr_t s_addr;
@@ -777,7 +777,7 @@ int main()
     int result;
     fd_set readfds, testfds;
 
-    /* 为服务器创建一个socket描述符 */
+    /* 为服务器创建一个TCP socket描述符 */
 
     server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
     /* 设置socket属性 */
@@ -791,7 +791,7 @@ int main()
 /*  创建一个连接队列，初始化readfds以处理来自server_sockfd的输入  */
 
     listen(server_sockfd, 5);
-
+/* 初始化set集合 */
     FD_ZERO(&readfds);
     FD_SET(server_sockfd, &readfds);
 
@@ -916,7 +916,7 @@ int main(int argc,char *argv[])
     address.sin_addr=*(struct in_addr*)*hostinfo->h_addr_list;
     len=sizeof(address);
     /* 进行消息发送 */
-    result=sendto(sockfd，buffer,1,0,(struct sockaddr*)&address,len);
+    result=sendto(sockfd,buffer,1,0,(struct sockaddr*)&address,len);
     /* 返回接收的最后位置 */
     result=recvfrom(sockfd,buffer,sizeof(buffer),0),(struct sockaddr*)&address,&len);
     buffer[result]='\0';
@@ -1015,11 +1015,11 @@ GTK+主要构件列表和API如下表：
 - GtkButton:按钮选项
 ![GtkButton](https://wangpengcheng.github.io/img/2019-09-27-21-22-20.png)  
     1. GtkToogleButton：
-    ![GtkToogleButton](https://wangpengcheng.github.io/img/2019-09-27-21-23-05png)
+      ![GtkToogleButton](https://wangpengcheng.github.io/img/2019-09-27-21-23-05png)
     2. GtkCheckButton:单选确认框
-    ![GtkCheckButton](https://wangpengcheng.github.io/img/2019-09-27-21-24-32.png) 
+      ![GtkCheckButton](https://wangpengcheng.github.io/img/2019-09-27-21-24-32.png) 
     3. GtkRadioButton:圆形按钮
-    ![GtkRadioButton](https://wangpengcheng.github.io/img/2019-09-27-21-25-38.png)
+      ![GtkRadioButton](https://wangpengcheng.github.io/img/2019-09-27-21-25-38.png)
 - GtkTreeView:树状结构;
     ![](https://wangpengcheng.github.io/img/2019-09-27-21-27-15.png)
     其主要组成部分如下：
@@ -1027,7 +1027,7 @@ GTK+主要构件列表和API如下表：
     - GtkTreeViewColumn:代表一个列表或树的列
     - GtkCellRenderer:控制绘图单元
     - GtkTreeModel:代表树和列表数据
-  
+
 ### 16.7 GNOME菜单
 就是Qt中的QMenu选项，主要结构和内容如下：
 

@@ -16,7 +16,7 @@ tags:
 
 ## 第1章 开始
 ### std::cin 中的循环流使用
-_参考链接：_[while(cin >> num)循环输入问题](https://bbs.csdn.net/topics/390809866)[C++ cin输入流 详细用法](https://blog.csdn.net/imkelt/article/details/51925479);
+_参考链接：_[while(cin >> num)循环输入问题](https://bbs.csdn.net/topics/390809866)[C++ cin输入流 详细用法](https://blog.csdn.net/imkelt/article/details/51925479);[C++怎么解决输入两行数据的](https://www.nowcoder.com/discuss/35189);[C++从键盘读入数组并存储](https://www.cnblogs.com/zhuruibi/p/9458107.html)
 
 C++ 中可以使用`while(std::cin >> value){//Code }`的方式来进行循环数据的读入，直到没有输出为止；示例代码如下：
 ```c++
@@ -69,8 +69,8 @@ C++中定义了算术类型(arithmetic type)和空类型(void)在内的基础数
 
 注意：
 
-* 关于不同类型，字节内存分配的问题，不同的操作系统存在不同的内存分配策略；因此不一定按照上面的进行分配；详细内容参看参考链接。
-* 对于C++中的字节对齐内容需要重点考虑([C++ 字节对齐的总结(原因和作用)](https://blog.csdn.net/sweetfather/article/details/78487563);[C/C++ 字节对齐](https://blog.csdn.net/chengonghao/article/details/51674166));
+* 关于不同类型，字节内存分配的问题，不同的操作系统存在不同的内存分配策略；因此不一定按照上面的进行分配(倍数规则和整圆规则)；详细内容参看参考链接。
+* 对于C++中的字节对齐内容需要重点考虑([C++ 字节对齐的总结(原因和作用)](https://blog.csdn.net/sweetfather/article/details/78487563);[C/C++ 字节对齐](https://blog.csdn.net/chengonghao/article/details/51674166);[从硬件到语言，详解C++的内存对齐（memory alignment）](https://www.cnblogs.com/zhao-zongsheng/p/9099603.html));
 * c++中除去布尔类型和扩展的字符类型之外，其它类型可以划分为带符号的(signed)和无符号的(unsigned)两种；无符号仅能表示大于0的值。器字节内存分配也有所不同；（[C/C++ unsigned 详细探讨](https://blog.csdn.net/zhenlin123/article/details/81062635)）;
 
 ### C++中的声明和定义

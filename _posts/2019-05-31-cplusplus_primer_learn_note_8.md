@@ -222,6 +222,8 @@ cout<<bulk.isbn();
 
 - 派生类的成员将隐藏同名的基类成员
 - 可用通过作用域运算符来使用一个呗隐藏的基类成员
+
+
 ```c++
 struct Derived:Base{
     int get_base_mem(){

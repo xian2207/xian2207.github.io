@@ -19,6 +19,7 @@ tags:
 _参考链接：_ 
 
 - [github地址](https://github.com/me115/design_patterns)
+- [23种设计模式C++实现](https://blog.csdn.net/Bing_Lee/article/details/87640606)
 - [图说设计模式](https://design-patterns.readthedocs.io/zh_CN/latest/)
 - [设计模式C++实现笔记](https://www.jianshu.com/c/c3f6140b8315)
 - [C++ 设计模式](https://blog.csdn.net/liang19890820/article/details/66974516)
@@ -1309,6 +1310,7 @@ First interview -> Second interview
 - 可实现一种反向控制结构，通过子类覆盖父类的钩子方法来决定某一特定步骤是否需要执行。
 - 在模板方法模式中，可以通过子类来覆盖父类的基本方法，不同的子类可以提供基本方法的不同实现，更换和增加新的子类很方便，符合单一职责原则和开闭原则。
   
+
 缺点：
 
 - 需要为每一个基本方法的不同实现提供一个子类，如果父类中可变的基本方法太多，将会导致类的个数增加，系统更加庞大，设计也更加抽象，此时，可结合桥接模式来进行设计。
