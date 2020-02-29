@@ -227,8 +227,10 @@ Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
 
 ```
 
+
 - ifconfig
-    - ifconfig eth0 // 获得eth0以太网接口的详细信息
+    - ifconfig eth0 // 获得eth0以太网接口的详细信
+
 
 ```sh
 ifconfig eth0
@@ -244,8 +246,10 @@ eth0      Link encap:以太网  硬件地址 00:0c:29:55:a0:99
           中断:19 基本地址:0x2000
 // MULTICAST 标志通常指明该接口所在主机支持多播。
 ```
+
 - ping // 测试ip地址是否联通当前以太网络
-```
+
+```sh
 $ ping -b 192.168.31.255
 
 PING 192.168.31.255 (192.168.31.255) 56(84) bytes of data.
@@ -255,6 +259,7 @@ PING 192.168.31.255 (192.168.31.255) 56(84) bytes of data.
 ```
 
 注意：64位体系结构的趋势原因之一是：在每个进程内部可以由此使用更长的编址长度(即64位指针)，从而可以寻址更大的内存空间(超过2^32字节)。
+
 
 
 ## 传输层：TCP、UDP和SCTP
