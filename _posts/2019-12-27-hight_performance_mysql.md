@@ -16,7 +16,7 @@ tags:
 
 # 第 1 章 MySQL架构与历史
 
-![](../img/2019-12-28-13-27-37.png)
+![](https://wangpengcheng.github.io/img/2019-12-28-13-27-37.png)
 
 ### 1.2.2 锁的粒度
 
@@ -31,7 +31,7 @@ tags:
 
 ### 1.3.1 隔离级别
 
-![](../img/2019-12-28-14-13-07.png)
+![](https://wangpengcheng.github.io/img/2019-12-28-14-13-07.png)
 
 InnoDB的处理死锁的方法是，将持有最少行级排他锁的事物进行回滚。
 
@@ -198,7 +198,7 @@ Schema：数据库中的组织结构，schemas andschemata都可以作为复数�
 - B-Tree 索引：它是大多是引擎支持的索引。NDB集群存储引擎内部实际使用了T-Tree结构存储(BTREE);InnoDB则使用的是B+Tree.
     - B-Tree([B-Tree和B+Tree](https://blog.csdn.net/qq_36204764/article/details/99291423);[BTree和B+Tree详解](https://blog.csdn.net/Hubery_James/article/details/80565137)) MyISAM使用前缀压缩计数使得索引更小；Innodb按照原数据格式进行存储。MyISAM索引通过数据的物理位置引用被索引的行，而InnoDB则根据主键引用被索引的行。
     下面是Innodb中的索引工作原理和方式：
-    ![Innodb索引](../img/2020-02-09-14-02-20.png)
+    ![Innodb索引](https://wangpengcheng.github.io/img/2020-02-09-14-02-20.png)
     - 假设有如下数据表：
 
 ```sql
@@ -211,7 +211,7 @@ CREATE TABLE(
 );
 ```
 其索引结构如下(注意这里是以第一列为优先，前面相同再比较后面):
-![索引结构](../img/2020-02-09-14-08-20.png)
+![索引结构](https://wangpengcheng.github.io/img/2020-02-09-14-08-20.png)
 
 B-Tree索引适用于全键值、键值范围或者键前缀查找，其中键前缀查找只适用于根据最左前缀的查找。对下列类型的查询有效：
 1. 全值匹配
@@ -305,7 +305,7 @@ _参考链接：_ [聚簇索引与非聚簇索引（也叫二级索引）](https
 
 当表有聚簇索引时，它的数据行实际上存放在索引的叶子页，数据行和相邻的键值紧凑地存储在一起。一个表只能有一个聚簇索引(覆盖索引可以模拟多个聚簇索引的情况)。其存放如下图：
 
-![](../img/2020-02-10-14-45-02.png)
+![](https://wangpengcheng.github.io/img/2020-02-10-14-45-02.png)
 
 InnoDB使用主键作为聚簇索引，没有就选择唯一的非空索引代替，聚集的数据优点如下：
 
@@ -330,7 +330,7 @@ MyISAM基本是完全独立的两个索引，InnoDB是先到1再到2。
 
 InnoDB的内部主键分布如下:
 
-![](../img/2020-02-11-10-49-58.png)
+![](https://wangpengcheng.github.io/img/2020-02-11-10-49-58.png)
 
 聚簇索引的每一个叶子节点都包含了主键、事务ID、用于事务和MVCC的回滚指针以及所有的剩余列。二级索引中存储的是key值而不是行数据指针。
 
@@ -548,7 +548,7 @@ SELECT * FROM post WHERE post.id IN (123,456,9098,8904);
 
 MySQL的一般查询流程如下：
 
-![](../img/2020-02-11-22-49-58.png)
+![](https://wangpengcheng.github.io/img/2020-02-11-22-49-58.png)
 
 ### 6.4.1 MySQL 客户端/服务器通信协议
 
@@ -602,13 +602,13 @@ MYSQL能处理的优化类型有:
 
 任何一次查询都可能是关联;MySQL使用循环嵌套关联，先查一个，获取内容；再按行进行关键迭代查询；直到结束。
 
-![嵌套样式](../img/2020-02-11-23-49-58.png)
+![嵌套样式](https://wangpengcheng.github.io/img/2020-02-11-23-49-58.png)
 
 #### 6.4.3.2 执行计划
 
 MySQL使用指令树，而不是生成查询字节码来执行查询。
 
-![](../img/2020-02-11-23-44-58.png)
+![](https://wangpengcheng.github.io/img/2020-02-11-23-44-58.png)
 
 #### 6.4.3.3 关联查询优化器
 
@@ -768,8 +768,8 @@ SET @last_week:=CURRENT_DATE-INTERVAL 1 WEEK;
 SELECT ... WHERE col <= @last_week;
 ```
 
-![](../img/2020-02-12-23-49-58.png)
-![](../img/2020-02-12-22-49-58.png)
+![](https://wangpengcheng.github.io/img/2020-02-12-23-49-58.png)
+![](https://wangpengcheng.github.io/img/2020-02-12-22-49-58.png)
 
 
 优化都是:不做，少做，快速地做
@@ -778,3 +778,53 @@ SELECT ... WHERE col <= @last_week;
 
 
 
+# MySQL 常用函数
+
+## 字符串处理函数
+
+![](https://wangpengcheng.github.io/img/2020-03-07-21-15-35.PNG)
+![](https://wangpengcheng.github.io/img/2020-03-07-21-17-35.PNG)
+
+## 日期处理函数
+
+![](https://wangpengcheng.github.io/img/2020-03-07-21-18-35.PNG)
+
+## 数值处理函数
+
+![](https://wangpengcheng.github.io/img/2020-03-07-21-20-35.PNG)
+
+## 聚集函数(运行在组上的函数)
+
+![](https://wangpengcheng.github.io/img/2020-03-0721-21-42.PNG)
+
+聚集函数除去重复值时，使用`DISTINCT`
+
+## mysql的相关执行顺序问题
+
+_参考连接：_ [连接（join）group by、order by、where的执行顺序](https://blog.csdn.net/mine_song/article/details/70185744)
+
+```sql
+
+FROM
+ON
+JOIN
+WHERE
+GROUP BY
+WITH CUBE 或 WITH ROLLUP
+HAVING
+SELECT
+DISTINCT
+ORDER BY
+TOP 
+```
+
+## GROUP BY 使用注意事项
+
+![](https://wangpengcheng.github.io/img/2020-03-07-21-26-34.PNG)
+
+## SELECT 子句顺序
+
+![](https://wangpengcheng.github.io/img/2020-03-07-21-31-34.PNG)
+![](https://wangpengcheng.github.io/img/2020-03-07-21-32-34.PNG)
+
+## 
