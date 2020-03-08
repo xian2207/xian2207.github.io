@@ -324,7 +324,7 @@ InnoDB使用主键作为聚簇索引，没有就选择唯一的非空索引代�
 
 对于二级索引不同搜索引擎的索引结构和分布如下:
 
-![搜索分布](https://upload-images.jianshu.io/upload_images/10154499-5772dddedb909374.PNG?imageMogr2/auto-orient/strip|imageView2/2/w/633/format/webp)
+![搜索分布](https://upload-images.jianshu.io/upload_images/10154499-5772dddedb909374.png?imageMogr2/auto-orient/strip|imageView2/2/w/633/format/webp)
 
 MyISAM基本是完全独立的两个索引，InnoDB是先到1再到2。
 
@@ -782,20 +782,20 @@ SELECT ... WHERE col <= @last_week;
 
 ## 字符串处理函数
 
-![](https://wangpengcheng.github.io/img/2020-03-07-21-15-35.PNG)
-![](https://wangpengcheng.github.io/img/2020-03-07-21-17-35.PNG)
+![](https://wangpengcheng.github.io/img/2020-03-07-21-15-35.png)
+![](https://wangpengcheng.github.io/img/2020-03-07-21-17-35.png)
 
 ## 日期处理函数
 
-![](https://wangpengcheng.github.io/img/2020-03-07-21-18-35.PNG)
+![](https://wangpengcheng.github.io/img/2020-03-07-21-18-35.png)
 
 ## 数值处理函数
 
-![](https://wangpengcheng.github.io/img/2020-03-07-21-20-35.PNG)
+![](https://wangpengcheng.github.io/img/2020-03-07-21-20-35.png)
 
 ## 聚集函数(运行在组上的函数)
 
-![](https://wangpengcheng.github.io/img/2020-03-0721-21-42.PNG)
+![](https://wangpengcheng.github.io/img/2020-03-0721-21-42.png)
 
 聚集函数除去重复值时，使用`DISTINCT`
 
@@ -820,11 +820,11 @@ TOP
 
 ## GROUP BY 使用注意事项
 
-![](https://wangpengcheng.github.io/img/2020-03-07-21-26-34.PNG)
+![](https://wangpengcheng.github.io/img/2020-03-07-21-26-34.png)
 
 ## SELECT 子句顺序
 
-![](https://wangpengcheng.github.io/img/2020-03-07-21-31-34.PNG)
-![](https://wangpengcheng.github.io/img/2020-03-07-21-32-34.PNG)
+![](https://wangpengcheng.github.io/img/2020-03-07-21-31-34.png)
+![](https://wangpengcheng.github.io/img/2020-03-07-21-32-34.png)
 
 ## 
