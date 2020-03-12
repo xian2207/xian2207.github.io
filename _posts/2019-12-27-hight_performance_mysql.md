@@ -89,9 +89,11 @@ MyISAM可以对表进行压缩。压缩表是不能进行修改的(除非先将�
 全文索引，建议优先考虑InnoDB加上Sphinx组合；MyISAM和ARchive存储引擎对开销低，插入速度非常快
 
 对于更换引擎可以使用`ALTER TABLE`语句更换数据引擎。如下：
+
 ```sql
 ALTER TABLE mytable ENGINE=InnoDB;
 ```
+
 使用mysqldump工具将数据导出到文件
 
 使用CREATE创建新表，再将旧表的数据导入新表之中
@@ -149,6 +151,7 @@ while test -e $RUNFILE; do
 done
 echo Exiting because $RUNFILE does not exist.
 ```
+
 ## 3.3 剖析MySQL查询
 
 慢查询日志开销最低，精度最高的测量查询时间的工具--`pt-query-digest`([MySQL慢查询分析工具pt-query-digest详解](https://blog.csdn.net/xiaoweite1/article/details/80299754))。
@@ -210,10 +213,12 @@ CREATE TABLE(
     KEY(last_name,first_name,dob)
 );
 ```
+
 其索引结构如下(注意这里是以第一列为优先，前面相同再比较后面):
 ![索引结构](https://wangpengcheng.github.io/img/2020-02-09-14-08-20.png)
 
 B-Tree索引适用于全键值、键值范围或者键前缀查找，其中键前缀查找只适用于根据最左前缀的查找。对下列类型的查询有效：
+
 1. 全值匹配
 2. 匹配左前缀
 3. 匹配列前缀
@@ -263,6 +268,7 @@ SELECT actor_id FROM sakila.actor WHERE actor_id+1=5;
 对于长字符串，可以设置索引的部分字符，这样可以大大节约索引空间，从而提高索引效率。
 
 NySQL中使用LEFT进行前缀的提取和获取。通常需要计算完整列的选择性，并使前缀的选择性接近于完整列的选择性。计算过程如下：
+
 ```sql
 # 计算一般情况下的命中率
 SELECT COUNT(DISTINCT city)/COUNT(*) FROM sakila.city_demo;
@@ -275,6 +281,7 @@ COUNT(DISTINCT LEFT(city,6))/COUNT(*) AS sel3,
 COUNT(DISTINCT LEFT(city,7))/COUNT(*) AS sel3,
 FROM sakila.city_demo;
 ```
+
 有时也需要考虑平均情况下的合适前缀索引长度；
 
 接下来就按照指定长度创建前缀索引
@@ -282,6 +289,7 @@ FROM sakila.city_demo;
 ```sql
 ALTER TABLE sakila.city_demo ADD KEY (city(7));
 ```
+
 它能够使索引更小更快，但是没有办法使用ORDER BY和GROUP BY。
 
 ### 5.3.3 多列索引
@@ -373,6 +381,7 @@ EXPLAIN SELECT * FROM products JOIN (
     WHERE actor='SEAN CARREY' AND title LIKE '%APOLLO%'
 ) AS t1 ON (t1.prod_id=products.prod_id) \G
 ```
+
 这种方式称为关联延迟
 
 ### 5.3.7 使用索引扫描来做排序
@@ -388,6 +397,7 @@ EXPLAIN SELECT * FROM products JOIN (
 关联查询多张表时，只有ORDER BY 子句引用的字段全部为第一个表时，才能使用索引做排序。ORDER BY子句和查找型查询的限制是一样的--满足索引的左前缀的要求。
 
 因为索引的本质还是一个B-Tree因此，当查询条件的第一个是一个常量时，可以使用索引中的第二列索引作为排序条件。因为这样B-Tree只查询一次。例如：
+
 ```sql
 EXPLAIN SELECT rental_id,staff_id FROM sakila.rental WHERE rental_date='2005-05-25' ORDER BY inventory_id,customer_id \G 
 ```
@@ -405,6 +415,7 @@ MySQL允许相同列的重复索引；优化器在优化时也需要逐个地进
 如果创建了索引(A,B)；再创建了索引(A);则A为冗余索引。
 
 对于多个列的查询，可以适当的进行索引的扩展，用来提升查询的性能；例如：
+
 ```sql
 # 原始查询只统计行数，为覆盖索引，性能较高
 SELECT COUNT(*) FROM userinfo WHERE state_id=5;
@@ -441,6 +452,7 @@ ALRER TABLE userinfo DROP KEY state_id, ADD KEY state_id_2 (state_id,city,addres
 ### 5.4.2 避免多个范围条件
 
 假设使用如下的查询语句:
+
 ```sql
 WHERE eye_color IN('brown','blue','hazel')
 AND hair_color IN('black','red','blonde','brown')
@@ -448,6 +460,7 @@ AND sex IN('M','F')
 AND last_online > DATE_SUB(NOW(),INTERVAL 7 DAY)
 AND age BETWEEN 18 AND 25
 ```
+
 将多个列设置为索引将其转换为条件的索引。
 
 ### 5.4.3 优化排序
@@ -478,6 +491,7 @@ MyISAM表，三类碎片化都可能发生，但是InnoDB不会出现短小的�
     - 总是取出全部列
     - 重复查询相同的数据：例如再用户评论中--不断地重复执行相同的查询
     - 多表关联时返回全部列表:例如
+
 ```sql
 # 返回三个表的全部数据列
 SELECT * FROM sakila.actor 
@@ -488,6 +502,7 @@ WHERE sakila.film.title= 'ACademy Dinosaur';
 
 SELECT sakila.actor.* FROM sakila.actor
 ``` 
+
 2. MySQL服务器层是否在分析大量超过需要的数据行
 
 
@@ -511,6 +526,7 @@ SELECT sakila.actor.* FROM sakila.actor
 
 - 使用多个简单查询代替一个复杂查询
 - 切分查询:将大查询切分成小查询，例如再进行DELETE时，使用多个小查询，避免一次锁住过多的数据、占满整个事务日志。例如
+
 ```sql
 # 原始查询
 DELETE FROM messages WHERE created < DATE_SUB(NOW(),INTERVAL 3 MONTH)
@@ -523,6 +539,7 @@ do {
 }while rows_affected > 0
 
 ```
+
 - 分解关联查询:对每一个表进行一次单表查询，然后将结果再应用程序中进行关联。例如：
 
 ```sql
@@ -536,6 +553,7 @@ SELECT * FROM tag WHERE tag='mysql';
 SELECT * FROM tag_post WHERE tag_id=1234;
 SELECT * FROM post WHERE post.id IN (123,456,9098,8904);
 ```
+
 优点如下：
 1. 让缓存的效率更高。已经缓存的内容，就不必再继续读取，可以直接跳过
 2. 查询分解后，执行单个查询可以减少锁的竞争
@@ -573,11 +591,12 @@ MySQL的缓存查询时一个对大小写敏感的哈希查找实现的。即使
 
 - 语法解析器和预处理:通过关键字将SQL语句进行解析，并生成一颗对应的"解析树"，再使用语法规则验证和解析查询。检查语句是否合法
 - 查询优化器:尝试预测执行的成本，并选择其中成本最小的一个。最小单位时随机读取一个4K数据页的成本。可以通过查询当前会话的'Last_query_cost'计算查询成本;例如:
+
 ```sql
 SELECT SQL_NO_CACHE COUNT(*) FROM sakila.film_actor;
 SHOW STATUS LIKE 'last_query_cost'
-
 ```
+
 输出：1040.599000;表示需要做1040个数据页的随机查找才能完成上述操作。
 
 由于统计信息不准确、基于成本模型而非时间最优、不考虑其他的并发执行、不会考虑模型外的操作成本、无法估算所有成本等原因；其选择错误。
@@ -651,6 +670,7 @@ MySQL无法将限制条件从外层"下推"到内层。使得限制条件无法�
 使用UNION时，应该尽量先对部分结果进行筛选，最后再进行结果集合的合并。
 
 例如：
+
 ```sql
 # 这条查询，会将两个集合查找20条记录进行，添加到临时表中；再筛选20条
 (SELECT first_name,last_name FROM sakila.actor ORDER BY last_name) UNION ALL (SELECT first_name,last_name FROM sakila.customer ORDER BY last_name) LIMIT 20;
@@ -658,6 +678,7 @@ MySQL无法将限制条件从外层"下推"到内层。使得限制条件无法�
 
 (SELECT first_name,last_name FROM sakila.actor ORDER BY last_name LIMIT 20) UNION ALL (SELECT first_name,last_name FROM sakila.customer ORDER BY last_name LIMIT 20) LIMIT 20;
 ```
+
 ### 6.5.3 索引合并优化
 
 使用多个索引合并和交叉过滤的方式来定位需要查找的行。
@@ -695,6 +716,7 @@ WHERE firts_name='PENLOPE' LIMIT 1;
 ### 6.5.9 再同一个表上查询和更新
 
 MySQL不允许对同一张表同时进行查询和更新。但是可以通过使用临时表，来绕过上面的限制；例如:
+
 ```sql
 # 下面的语句会出现错误
 UPDATE tbl AS outer_tbl
