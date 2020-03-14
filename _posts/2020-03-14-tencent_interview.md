@@ -11,6 +11,7 @@ tags:
     - 网络编程
 ---
 
+
 # 3月14号腾讯一面面经
 
 > 2020-03-14 10:47:53
@@ -128,15 +129,13 @@ SSLStrip攻击也需要将攻击者设置为中间人，之后将HTTPS访问替�
 ## CA证书的具体内容看过吗？
 答:没有不知道
 
-**答案**
+**参考答案**
 
 _参考链接:_ 
 
 - [数字证书及CA详解](https://blog.csdn.net/lk2684753/article/details/100160856)
 - [细说 CA 和证书](https://blog.csdn.net/yetugeng/article/details/89066626)
-
-
-
+- 
 
 ## 说一下http常见的系列状态码
 答:1xx,2xx,3xx,4xx,5xx ...
@@ -148,12 +147,57 @@ _参考链接:_
 
 
 ## Linux中进程间通信的方式有哪些?
+答:FIFO、管道、信号量、套接字、共享内存(没有说消息队列)
 
+**参考答案**
+[进程间通信的方式](https://wangpengcheng.github.io/2019/12/17/baidu_interview_prepare/#44-%E8%BF%9B%E7%A8%8B%E9%97%B4%E9%80%9A%E4%BF%A1%E7%9A%84%E6%96%B9%E5%BC%8F)
 
 ## 3. Get和POST的区别
 答:Get不允许携带body主要字段；POST可以
 
+**参考答案**
+
+_参考链接:_
+
+- [Get与Post的区别？（面试官最想听到的答案）](https://blog.csdn.net/ever_siyan/article/details/87935455)
+- [面试中get和post的区别](https://blog.csdn.net/m_nanle_xiaobudiu/article/details/81063997)
+
+get和post的区别主要有以下几方面：
+- url可见性:get，参数url可见;post，url参数不可见
+- 数据传输上:get，通过拼接url进行传递参数;post，通过body体传输参数
+- 缓存性:get请求是可以缓存的;post请求不可以缓存
+- 后退页面的反应:get请求页面后退时，不产生影响;post请求页面后退时，会重新提交请求
+- 传输数据的大小:get一般传输数据大小不超过2k-4k（根据浏览器不同，限制不一样，但相差不大）;post请求传输数据的大小根据php.ini 配置文件设定，也可以无限大。
+- 安全性:这个也是最不好分析的，原则上post肯定要比get安全，毕竟传输参数时url不可见，但也挡不住部分人闲的没事在那抓包玩。安全性个人觉得是没多大区别的，防君子不防小人就是这个道理。对传递的参数进行加密，其实都一样。
+
+1. GET在浏览器回退时是无害的，而POST会再次提交请求。
+2. GET产生的URL地址可以被Bookmark，而POST不可以。
+3. GET请求会被浏览器主动cache，而POST不会，除非手动设置。
+4. GET请求只能进行url编码，而POST支持多种编码方式。
+5. GET请求参数会被完整保留在浏览器历史记录里，而POST中的参数不会被保留。
+6. GET请求在URL中传送的参数是有长度限制的，而POST么有。
+7. 对参数的数据类型，GET只接受ASCII字符，而POST没有限制。
+8. GET比POST更不安全，因为参数直接暴露在URL上，所以不能用来传递敏感信息。
+9. GET参数通过URL传递，POST放在Request body中。
+
+（大多数）浏览器通常都会限制url长度在2K个字节，而（大多数）服务器最多处理64K大小的url
+
 ## 4. 为什么说post比Get更加安全
+答:因为允许使用body可以自定义字段和读写方式(其实有问题；还要考虑到浏览器的记录);
+
+**参考答案**
+
+_参考链接:_
+
+- [POST 方法比 GET 方法更安全吗? 为什么?](https://www.zhihu.com/question/54076547)
+- [post为什么比get更安全](https://wenku.baidu.com/view/91f054c5fad6195f312ba6da.html)
+
+主要核心:get 请求的url是在服务器上有日志记录，在浏览器也能查到历史记录，但是post请求的参数都在body里面，服务器日志记录不到，浏览器历史也记录不到
+
+1. get是把参数数据队列加到提交表单的action属性所指的url中，值和表单中的各个字段一一对应，在URL中可以看到。post则是通过HTTPpost机制，将表单内各个字段与其内容放置在HTML header 内一起传送到ACTION属性所指的URL地址，用户看不到这个地址
+2. 对于get方式，服务器端用Request.QueryString获取变量的值，对于post方式，服务器端用Request.Form获取提交的数据;两种方式的参数都可以用Request来获得。
+3. get传送的数据量较小，不能大于2KB。post传送的数据量较大，一般被默认为不受限制。
+4. 在不显示后端的ajax来讲,post和get的安全性是一样的
 
 ## 5. 数据库用过吗？
 答:上过老师的课，没怎么用过
@@ -161,8 +205,17 @@ _参考链接:_
 ## 6. 数据库的索引结构
 答:B+树，并且叶子节点相互链接；方便进行范围查找
 
+**参考链接**
+- [索引及其实现结构](https://blog.csdn.net/Justing_LY/article/details/87977208)
+- [一步步分析为什么B+树适合作为索引的结构 以及索引原理 (阿里面试)](https://www.cnblogs.com/aspirant/p/9214485.html)
+
+Mysql索引主要有两种结构：B+Tree索引和Hash索引
+
 ## 7. 什么情况下需要建立索引
 答:经常查找和检索的时候
+
+**参考**
+[索引相关](https://wangpengcheng.github.io/2019/12/17/baidu_interview_prepare/#621-%E7%B4%A2%E5%BC%95%E7%9B%B8%E5%85%B3)
 
 ## 8. 一个订单表，订单，时间，状态是否适合建立索引
 答:索引建立使用B+树，索引关键字应当尽量避免重复。时间是可以的。但是状态属于枚举类型。不适合作为索引
@@ -170,10 +223,242 @@ _参考链接:_
 ## 9. 联合索引
 答:(听成聚簇索引去了);答了聚簇索引的东西。联合索引key是两个值的联合值，遵循最左原则，左边相同是关键字相同。不同时，再分关键字。
 
+**参考答案**
+
+_参考链接:_
+- [联合索引](https://www.cnblogs.com/nickup/p/9825091.html)
+- [多个单列索引和联合索引的区别详解](https://blog.csdn.net/Abysscarry/article/details/80792876)
+- [mysql联合 索引(复合索引)的探讨](https://blog.csdn.net/bigtree_3721/article/details/87478706)
+
+联合索引又叫复合索引。对于复合索引：Mysql从左到右的使用索引中的字段，一个查询可以只使用索引中的一部份，但只能是最左侧部分。例如索引是key index （a,b,c）。 可以支持a | 　　a,b| a,b,c 3种组合进行查找，但不支持 b,c进行查找 .当最左侧字段是常量引用时，索引就十分有效。
+两个或更多个列上的索引被称作复合索引。
+
+所以说创建复合索引时，应该仔细考虑列的顺序。对索引中的所有列执行搜索或仅对前几列执行搜索时，复合索引非常有用；仅对后面的任意列执行搜索时，复合索引则没有用处。
+
+
 ## 10 SQL注入
 答:不知道
 
+_参考链接:_
+
+- [SQL注入知识点总结（面试版）](https://www.jianshu.com/p/73b19cf15e26)
+- [面试问题如何防止sql注入](https://blog.csdn.net/hxpjava1/article/details/81011334)
+- [面试官问你 SQL 注入攻击了吗？](https://www.cnblogs.com/mthp/articles/10668547.html)
+- [面试相关：mybatis是如何防止SQL注入的](https://blog.csdn.net/lijinqing39/article/details/102934745)
+
+注入的本质，是把用户输入数据作为代码执行。有两个关键条件：第一个是用户能控制输入；第二是原本程序要执行的代码，拼接了用户输入的数据，把数据当代码执行了。
+
+SQL注入原因：
+- ①不当的类型处理；
+- ②不安全的数据库配置；
+- ③不合理的查询集处理；
+- ④不当的错误处理；
+- ⑤转义字符处理不合适；
+- ⑥多个提交处理不当。
+
+解决办法:
+
+1. （简单又有效的方法）PreparedStatement
+
+采用预编译语句集，它内置了处理SQL注入的能力，只要使用它的setXXX方法传值即可。
+
+使用好处：
+
+(1).代码的可读性和可维护性.
+
+(2).PreparedStatement尽最大可能提高性能.
+
+(3).最重要的一点是极大地提高了安全性.
+
+原理：
+
+sql注入只对sql语句的准备(编译)过程有破坏作用
+而PreparedStatement已经准备好了,执行阶段只是把输入串作为数据处理,而不再对sql语句进行解析,准备,因此也就避免了sql注入问题.
+
+ 
+
+2. 使用正则表达式过滤传入的参数
+
+要引入的包：
+
+```java
+import java.util.regex.*;
+
+//正则表达式：
+
+private String CHECKSQL = “^(.+)\\sand\\s(.+)|(.+)\\sor(.+)\\s$”;
+
+//判断是否匹配：
+
+Pattern.matches(CHECKSQL,targerStr);
+
+//下面是具体的正则表达式：
+
+//检测SQL meta-characters的正则表达式 ：
+
+/(\%27)|(\’)|(\-\-)|(\%23)|(#)/ix
+
+//修正检测SQL meta-characters的正则表达式 ：
+
+/((\%3D)|(=))[^\n]*((\%27)|(\’)|(\-\-)|(\%3B)|(:))/i
+
+//典型的SQL 注入攻击的正则表达式 ：
+
+/\w*((\%27)|(\’))((\%6F)|o|(\%4F))((\%72)|r|(\%52))/ix
+
+
+//检测SQL注入，UNION查询关键字的正则表达式 ：
+
+/((\%27)|(\’))union/ix(\%27)|(\’)
+
+//检测MS SQL Server SQL注入攻击的正则表达式：
+
+/exec(\s|\+)+(s|x)p\w+/ix
+
+//等等
+```
+ 
+
+3. 字符串过滤
+
+比较通用的一个方法：
+
+（||之间的参数可以根据自己程序的需要添加）
+
+```java
+public static boolean sql_inj(String str)
+{
+
+    String inj_str = "'|and|exec|insert|select|delete|update|
+
+    count|*|%|chr|mid|master|truncate|char|declare|;|or|-|+|,";
+
+    String inj_stra[] = split(inj_str,"|");
+
+    for(int i=0 ; i &lt; inj_stra.length ; i++ )
+
+    {
+
+    if (str.indexOf(inj_stra[i])&gt;=0)
+
+    {
+
+        return true;
+
+    }
+
+    }
+
+        return false;
+
+}
+```
+
+4. jsp中调用该函数检查是否包函非法字符防止SQL从URL注入;sql_inj.java代码：
+
+ 
+```java
+package sql_inj;
+
+import java.net.*;
+
+import java.io.*;
+
+import java.sql.*;
+
+import java.text.*;
+
+import java.lang.String;
+
+public class sql_inj{
+
+public static boolean sql_inj(String str)
+
+{
+
+String inj_str = "'|and|exec|insert|select|delete|update|
+
+count|*|%|chr|mid|master|truncate|char|declare|;|or|-|+|,";
+
+//这里的东西还可以自己添加
+
+String[] inj_stra=inj_str.split("\\|");
+
+for (int i=0 ; i &lt; inj_stra.length ; i++ )
+
+{
+
+if (str.indexOf(inj_stra[i])&gt;=0)
+
+{
+
+return true;
+
+}
+
+}
+
+return false;
+
+}
+
+}
+
+ ```
+
+5. JSP页面判断代码：
+使用javascript在客户端进行不安全字符屏蔽
+
+功能介绍：检查是否含有”‘”,”\\”,”/”
+
+参数说明：要检查的字符串
+
+返回值：0：是1：不是
+
+函数名是
+```javascript
+function check(a)
+
+{
+
+return 1;
+
+fibdn = new Array (”‘” ,”\\”,”/”);
+
+i=fibdn.length;
+
+j=a.length;
+
+for (ii=0; ii＜i; ii++)
+
+{ for (jj=0; jj＜j; jj++)
+
+{ temp1=a.charAt(jj);
+
+temp2=fibdn[ii];
+
+if (tem’; p1==temp2)
+
+{ return 0; }
+
+}
+
+}
+
+return 1;
+
+}
+```
 ## 11 算法题:
+
 11.1 两数之和
 
+
+
 11.2 能否将时间复杂度更改为O(n)
+
+_参考链接:_ 
+
+- [leetcode两数之和](https://leetcode-cn.com/problems/two-sum/solution/liang-shu-zhi-he-by-leetcode-2/)
+
+
