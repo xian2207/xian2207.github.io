@@ -137,6 +137,23 @@ _参考链接:_
 - [细说 CA 和证书](https://blog.csdn.net/yetugeng/article/details/89066626)
 - 
 
+主要内容:
+
+- 版本号
+- 序列号
+- 签名算法
+- 颁发者
+- 有效日期
+- 主体:证书拥有者的标识信息
+- 主体的公钥信息
+    - 公钥算法
+    - 主体公钥
+- 颁发者唯一号
+- 主体唯一号
+- 扩展
+
+
+
 ## 说一下http常见的系列状态码
 答:1xx,2xx,3xx,4xx,5xx ...
 
@@ -431,7 +448,7 @@ j=a.length;
 
 for (ii=0; ii＜i; ii++)
 
-{ for (jj=0; jj＜j; jj++)
+{ for (jj=0; jj<j; jj++)
 
 { temp1=a.charAt(jj);
 

@@ -35,11 +35,12 @@ H265和H264使用
 
 2. 说一下C++中锁的种类
 
-a. 互斥锁（Mutex):std::mutex some_mutex;只有一个线程可以获得锁；使用std::lock_guard<std::mutex>或者std::lock<std::mutex>
-b. 条件锁:std::condition_variable;只和std::mutex一起工作;data_cond.notify_one();和data_cond.wait(lk,{[]return !data_queue.empty();});进行条件判断和继续
-c. 自旋锁:C++中没有自旋锁；可以自己实现
-d. 读写锁:
-e. 递归锁std::recursive_mutex；线程占有 recursive_mutex 时，若其他所有线程试图要求 recursive_mutex 的所有权，则它们将阻塞（对于调用 lock ）或收到 false 返回值（对于调用 try_lock ）。所谓递归锁，就是在同一线程上该锁是可重入的，对于不同线程则相当于普通的互斥锁。
+- a. 互斥锁（Mutex):std::mutex some_mutex;只有一个线程可以获得锁；使用std::lock_guard<std::mutex>或者std::lock<std::mutex>
+- b. 条件锁:std::condition_variable;只和std::mutex一起工作;data_cond.notify_one();和data_cond.wait(lk,{[]return !data_queue.empty();});进行条件判断和继续
+- c. 自旋锁:C++中没有自旋锁；可以自己实现
+- d. 读写锁:
+- e. 递归锁std::recursive_mutex；线程占有 recursive_mutex 时，若其他所有线程试图要求 recursive_mutex 的所有权，则它们将阻塞（对于调用 lock ）或收到 false 返回值（对于调用 try_lock ）。所谓递归锁，就是在同一线程上该锁是可重入的，对于不同线程则相当于普通的互斥锁。
+
 
 3. C++中的6中内存序：
 
@@ -62,11 +63,13 @@ std::launch::async, 创建线程异步
 std::launch::deferred: 不创建线程
 feature.get(): 等待并取值
 feature.wait(): 等待
+
 promise:
 std::promise 类模板，我们能够在某个线程中给它赋值，然后我们可以在其他线程中把这个值取出来用;
 通过promise保存一个值，在将来某时刻我们通过把一个future绑定到这个promise上来得到这个绑定的值。
 promise.set_value(): 设置值
 promise.get_future(): 将promise和feature相关联, 以供异步调用
+
 packaged_task
 std::packaged_task是个模板类，它的模板参数是各种可调用对象；
 通过std::packaged_task来把各种可调用对象包装起来，方便将来作为线程入口函数来调用。
