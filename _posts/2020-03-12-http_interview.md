@@ -284,3 +284,20 @@ SOAP Web服务只使用响应代码200("OK")和500("Internal Server Error")。�
 证书验证是采用非对称加密实现，但是传输过程是采用对称加密，而其中对称加密算法中重要的随机数是由本地生成并且存储于本地的，HTTPS 如何保证随机数不会被窃取？
 
 其实 HTTPS 并不包含对随机数的安全保证，HTTPS 保证的只是传输过程安全，而随机数存储于本地，本地的安全属于另一安全范畴，应对的措施有安装杀毒软件、反木马、浏览器升级修复漏洞等。
+
+
+
+## 13 cookie与session区别
+
+- [cookie 和session 的区别详解](https://www.cnblogs.com/shiyangxt/articles/1305506.html)
+
+cookie机制。正统的cookie分发是通过扩展HTTP协议来实现的，服务器通过在HTTP的响应头中加上一行特殊的指示以提示浏览器按照指示生成相应的cookie。然而纯粹的客户端脚本如JavaScript或者VBScript也可以生成cookie。而cookie的使用是由浏览器按照一定的原则在后台自动发送给服务器的。浏览器检查所有存储的cookie，如果某个cookie所声明的作用范围大于等于将要请求的资源所在的位置，则把该cookie附在请求资源的HTTP请求头上发送给服务器。
+
+session机制是一种服务器端的机制，服务器使用一种类似于散列表的结构（也可能就是使用散列表）来保存信息。
+
+- cookie 和session 的区别：
+	- cookie数据存放在客户的浏览器上，session数据放在服务器上。
+	- cookie不是很安全，别人可以分析存放在本地的COOKIE并进行COOKIE欺骗;考虑到安全应当使用session。
+	- session会在一定时间内保存在服务器上。当访问增多，会比较占用你服务器的性能;考虑到减轻服务器性能方面，应当使用COOKIE。
+	- 单个cookie保存的数据不能超过4K，很多浏览器都限制一个站点最多保存20个cookie。
+	- 登陆信息等重要信息存放为SESSION;其他信息如果需要保留，可以放在COOKIE中。
