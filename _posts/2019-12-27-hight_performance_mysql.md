@@ -433,7 +433,7 @@ ALRER TABLE userinfo DROP KEY state_id, ADD KEY state_id_2 (state_id,city,addres
 
 ### 5.3.11 索引和锁
 
-索引可以减少行的访问，简洁减少锁的使用。**但是有的时候，会将关键的索引数据行锁定，造成其它食物无法进行，需要注意**
+索引可以减少行的访问，简洁减少锁的使用。**但是有的时候，会将关键的索引数据行锁定，造成其它事务(事务是指是程序中一系列严密的逻辑操作，而且所有操作必须全部成功完成，否则在每个操作中所作的所有更改都会被撤消。)无法进行，需要注意**
 
 **InnoDB**在二级索引上使用共享(读)锁，但访问主键索引需要排他(写)锁。消除了使用覆盖索引的可能性，使得SELECT FOR UODATE 比LOCK IN SHARE MODE 或非锁定查询要慢很多。
 
@@ -501,7 +501,7 @@ WHERE sakila.film.title= 'ACademy Dinosaur';
 # 改进后的写法如下
 
 SELECT sakila.actor.* FROM sakila.actor
-``` 
+```
 
 2. MySQL服务器层是否在分析大量超过需要的数据行
 

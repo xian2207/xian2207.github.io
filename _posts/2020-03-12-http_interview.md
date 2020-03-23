@@ -109,7 +109,7 @@ HTTP 标准端口是80 ，而 HTTPS 的标准端口是443
 
 
 - **响应首部字段（响应报文会使用的首部字段）**
-    - Accept-Ranges：可接受的字节范围
+    - Accept-Ranges：可接受的字节范围;主要在断点续传中使用
     - Location：令客户端重新定向到的URI
     - Server：HTTP服务器的安装信息
 
