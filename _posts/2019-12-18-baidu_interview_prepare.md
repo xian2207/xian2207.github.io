@@ -2661,6 +2661,11 @@ RPC协议假定某些传输协议的存在，如TCP或UDP，为通信程序之�
 
 
 
+## 5.50 TCP，UDP应用场景，即要求速度，又要求可靠性怎么办？
+
+- [几种基于udp的可靠网络协议介绍和比较](https://blog.csdn.net/lengye7/article/details/80660544)
+- [如何实现UDP的可靠传输](https://blog.csdn.net/AaronHyk/article/details/81505562)
+
 # 6 数据库
 
 ## 6.1 `MySQL`的端口号是多少，如何修改这个端口号
@@ -3047,6 +3052,17 @@ RPC协议假定某些传输协议的存在，如TCP或UDP，为通信程序之�
 
 
 ## 6.27 说一下缓存、消息队列、
+
+
+
+## 6.28 Mysql B+树中每个节点大小是多少（16KB）?为什么是16KB？
+
+- [InnoDB中的数据存储](https://www.cnblogs.com/fanBlog/p/11394035.html)
+- [MySQL Innodb 数据页结构分析](https://www.cnblogs.com/bdsir/p/8745553.html)
+
+- **InnoDB存储引擎也有自己的最小储存单元——页（Page），一个页的大小是16K**；在MySQL中我们的InnoDB页的大小默认是16k，当然也可以通过参数设置：`SHOW VARIABLES LIKE 'innodb_page_size`;
+
+- innodb一页16K，每个数据页中有两个虚拟的行记录，用来限定记录的边界,一条最小的记录占用一个字节，20大概是一个页最少需要的标记该页信息的常量吧，所以16*1024/1*2-20...估计是我意淫的结果
 
 
 # 7. 数据结构
