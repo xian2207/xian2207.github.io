@@ -351,9 +351,12 @@ TRACE：回显服务器收到的请求，主要用于测试或诊断。
 
 答:
 
-- 网络通信模块，参考了muduo 开源库，使用Reactor模型，自己实现了一个简单的网络通信。使用事件循环机制，每个线程创建一个event loop，channel指定监听的socket文件描述符和监听的事件。线程池初始化之后，每个线程都开始不停的自旋；并执行函数队列中的函数。
-- 主线程event loop 中会有一个 poller，channel,来进行epoll的监听。poller将event loop中的中的channel中的监听队列事件，加入到epoll中，再使用epoll_wait等待监听队列。
-- 其中Accepter才是真正监听的队列，只有它使用epoll绑定了listen，转换了被动监听函数。所监听的事件为可读和可写。当接收到一个连接时， 创建一个TCPconnet类，每个connet绑定了读取和写入的回调函数，。回调函数时在Tcpsever中创建的。再从Event loop线程池中选择一个线程，将TCP的connectEstablished和conn进行绑定,调用runInLoop，并更新channel中的回调函数，将channel添加到主线程的监听集合中，channel会有 一个指针指向连接的Tcpconncet,每个loop循环调用epoll_wait,当事件触发时，就将epoll wait中返回的事件集合转化为channel并，查找是否是属于当前线程的channel，是就更新当前的活动事件，查找对应的函数，并执行执行回调函数。，是直接调用绑定的函数，不是就不管；将函数添加到event loop的执行队列。在event loop的下一次循环中执行。每个TCPconnect中设置了读写buffer，进行写入，防止数据量巨大时，因不能进行读写而中断。
+- 网络通信模块，参考了muduo 开源库，使用Reactor模型，自己实现了一个简单的网络通信。使用事件循环机制，每个线程创建一个event loop和channel指定监听的socket文件描述符和监听的事件。线程池初始化之后，每个线程都开始不停的自旋；并执行函数队列中的函数。
+- 主线程event loop 中会有一个 poller，channel,来进行epoll的监听。poller将event loop中的中的channel中的监听队列事件，并，对于每次的新连接都，产生一个socket fd和channel的map，方便epoll_wait时，进行快速的查找。加入到epoll中，再使用epoll_wait等待监听队列，每次检测到读写。
+- 其中Accepter才是真正监听的队列，只有它使用epoll绑定了listen，转换了被动监听函数。所监听的事件为可读和可写。当接收到一个连接时， 创建一个TCPconnet类，每个connet绑定了读取和写入的回调函数。回调函数时在Tcpsever中创建的。再从Event loop线程池中选择一个线程，将TCP的connectEstablished和conn进行绑定,调用runInLoop，并更新channel中的回调函数，将channel添加到主线程的监听集合中，channel会有 一个指针指向连接的Tcpconncet,每个loop循环调用epoll_wait,当事件触发时，就将epoll wait中返回的事件集合转化为channel并，查找是否是属于当前线程的channel，是就更新当前的活动事件，查找对应的函数，并执行执行回调函数。，是直接调用绑定的函数，不是就不管；将函数添加到event loop的执行队列。在event loop的下一次循环中执行。每个TCPconnect中设置了读写buffer，进行写入，防止数据量巨大时，因不能进行读写而中断。
+- 每个TCP连接建立时，会在epoll中存在记录，即fd和channel。每个线程拥有自己的channel。循环调用poll。检测自己的channel是否被激活，如果激活了就执行回调函数，注意每个channel中包含tcpconnect 指针，因此可以检索到fd。
+- loop由thread创建，一个thread，一个loop 。channel由loop创建。每个TCPconnect创建时，会设置可读写事件，并调用channel_->enableReading();然后顺序调用loop_->updateChannel(channel_);，poller_->updateChannel(channel_);将channel注册监听的事件并将其添加到channel队列中；更新index;
+- 关键类:event loop,thread, channel,acceptor,poller；sever；poller为acceptor提供多路复用封装。TCP sever主线程执行acceptor函数，创建TCPconnect； channel连接TCPconnect和poller。将监听事件和写入poller。event loop 与thread结合，产生线程和循环主体。并且在循环主体中创建channel。为TCPconnect提供事件监听的channel支持。
 
 ## 20. HTTP时怎么设计的:
 
