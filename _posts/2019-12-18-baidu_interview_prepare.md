@@ -1,5 +1,5 @@
 ---
-layout:     post
+查找/分配一个物理页layout:     post
 title:      百度后台电话面准备
 subtitle:   2020寒假实习
 date:       2019-12-17
@@ -709,6 +709,69 @@ static auto static_lambda = []()
   - 构造函数是为了构造对象的，所以在调用构造函数时候必然知道是哪个对象调用了构造函数，所以构造函数不能为虚函数。
 -  类的静态成员函数不能是虚函数
   - 类的静态成员函数是该类共用的，与该类的对象无关，静态函数里没有this指针，所以不能为虚函数。
+
+## 1.37  说一个malloc底层和memset；
+
+- [malloc底层实现及原理](https://www.cnblogs.com/zpcoding/p/10808969.html)
+
+- [malloc()和free()的原理及实现](https://www.cnblogs.com/zzdbullet/p/9635318.html)
+
+- 结论：
+
+  - 当开辟的空间小于 128K 时，调用 brk（）函数，malloc 的底层实现是系统调用函数 brk（），其主要移动指针 _enddata(此时的 _enddata 指的是 Linux 地址空间中堆段的末尾地址，不是数据段的末尾地址)
+  - 当开辟的空间大于 128K 时，mmap（）系统调用函数来在虚拟地址空间中（堆和栈中间，称为“文件映射区域”的地方）找一块空间来开辟。
+  - **brk分配的内存需要等到高地址内存释放以后才能释放（例如，在B释放之前，A是不可能释放的，因为只有一个_edata 指针，这就是内存碎片产生的原因，什么时候紧缩看下面），而mmap分配的内存可以单独释放。因此对于大内存需要使用mmap防止产生更多的内存碎片**
+
+- 系统调用过程
+
+  - 检查要访问的虚拟地址是否合法：
+
+    - 在linux系统下面一个程序的堆的管理是通过内存块进行管理的，也就是将堆分成了很多大小不一的内存块。
+
+      ```c
+      /**内存控制块数据结构，用于管理所有的内存块
+      * is_available: 标志着该块是否可用。1表示可用，0表示不可用
+      * size: 该块的大小
+      **/
+      struct mem_control_block {
+          int is_available;
+          int size;
+      };
+      ```
+
+    - 
+
+  - 查找/分配一个物理页
+
+  - 填充物理页内容（读取磁盘，或者直接置0，或者什么都不做）
+
+  - 建立映射关系（虚拟地址到物理地址的映射关系）
+
+  - 重复执行发生缺页中断的那条指令
+
+  - 注意：如果第3步，需要读取磁盘，那么这次缺页就是 majfit(major fault：大错误),否则就是 minflt(minor fault：小错误)
+
+  - 下面是分别执行`A=malloc(30K)`，`B=malloc(40K)`，`C=malloc(200K)`，`D=malloc(100K)`；
+
+  - ![](https://img2018.cnblogs.com/blog/1370746/201905/1370746-20190504161429805-1373672610.png)
+
+- free:
+
+  - 进程调用free(C)以后，C对应的虚拟内存和物理内存一起释放.
+  - 进程调用free(B)以后，如图7所示;**B对应的虚拟内存和物理内存都没有释放，因为只有一个_edata指针，如果往回推，那么D这块内存怎么办呢**？**当然，B这块内存，是可以重用的，如果这个时候再来一个40K的请求，那么malloc很可能就把B这块内存返回回去了**
+  - 进程调用free(D)以后，如图8所示：**B和D连接起来，变成一块140K的空闲内存**
+  - 默认情况下：**当最高地址空间的空闲内存超过128K（可由M_TRIM_THRESHOLD选项调节）时，执行内存紧缩操作（trim）。**在上一个步骤free的时候，发现最高地址空闲内存超过128K，于是内存紧缩，变成图9所示
+  - ![](https://img2018.cnblogs.com/blog/1370746/201905/1370746-20190504165035018-711100229.png)
+
+- [C++的memset的使用原理以及几种基础用法](https://blog.csdn.net/CSUstudent007/article/details/80334031?depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-1&utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-1)
+
+- 因为memset是按照字节进行操作的。因此注意设置的值需要从重复的char转换为int。
+
+- 注意：memcopy和memmove 需要考虑内存重叠，发现重叠时，需要从尾部到头部进行拷贝。
+
+## 1.38 Player a;Player b = a;Player c; c = a;区别
+
+初始化的`=`调用的是默认拷贝构造函数，初始化后的`=`调用的是重载的`=`符号函数。
 
 # 2. C++ STL
 
@@ -2019,8 +2082,6 @@ cat info.log | grep ‘1711178968'  >> temp.log
 
 
 ## 5.6 RIP 路由协议
-
-1286774403@qq.com
 
 - 网络中的每一个路由器都要维护从它自己到其他每一个目标网络的距离记录；
 - 距离也称为跳数，规定从一路由器到直接连接的网络跳数为`1`，而每经过一个路由器，则距离加`1`；
