@@ -737,6 +737,218 @@ int main(int argc ,char* argv[]){
     
     cout<<DFS(tree,root)<<endl;
     return 0;
-    
 }
+```
+
+# 阿里菜鸟一面
+
+> 2020-04-10 15:30
+
+## 1. 算法题，马走棋盘
+
+- [马走棋盘算法](https://blog.csdn.net/dowithsmiles/article/details/8553948)
+
+```c++
+/*
+主要思路：使用数组作为数据存储结构，
+第一个到达的肯定是步数最少的。
+*/
+#include <iostream>
+#include <queue>
+#include <stack>
+ 
+using namespace std;
+ 
+#define N 8
+ 
+struct Position
+{
+	int x;
+	int y;
+};
+ 
+int PositionToIndex(const Position& pos)
+{
+	return pos.x * N + pos.y;
+}
+ 
+Position IndexToPosition(int index)
+{
+	Position pos = { index / N, index % N };
+	return pos;
+}
+ 
+bool IsValid(const Position& pos)
+{
+	return (pos.x >= 0 && pos.x < N && pos.y >= 0 && pos.y < N);
+}
+ 
+int main(int argc, char* argv[])
+{
+	// 将棋盘延展成一维数组，序号表示当前格子，对应的值表示上一步的格子序号
+	int* array = new int[N*N];
+	for (int i = 0; i < N*N; i++)
+	{
+		array[i] = -1;
+	}
+ 
+	// 指定起始和结束位置
+	Position start, end;
+	start.x = 3;
+	start.y = 4;
+	end.x = N - 1;
+	end.y = N - 1;
+ 
+	bool finished = false;
+ 
+	// 用栈存储每一步的序列位置，之后可反转输出
+	stack<int> finishSteps;
+ 
+	// 利用队列实现广度优先搜索
+	queue<Position> steps;
+	steps.push(start);
+ 
+	// 由于是第一步，约定值为-2，表示没有上一步
+	array[PositionToIndex(start)] = -2;
+ 
+	// 队列里的数据存储当前能走到的格子，若已为空表示已走完所有的格式，或所能走完的格子
+	while (!steps.empty())
+	{
+		// 取出当前的格子，计算下一步，并将当前格子移出队列
+		Position curPos = steps.front();
+		int curIndex = PositionToIndex(curPos);
+		steps.pop();
+ 
+		// 已走到指定终点
+		if (curPos.x == end.x && curPos.y == end.y)
+		{
+			finishSteps.push(PositionToIndex(end));	// 当前一步入栈
+			int lastStep = curIndex;
+ 
+			while (true)
+			{
+				// 一直找上一步，找到起始点为止
+				lastStep = array[lastStep];
+				if (lastStep == -2)
+				{
+					finished = true;
+					break;
+				}
+				else
+				{
+					finishSteps.push(lastStep);
+				}
+			}
+			break;
+		}
+ 
+		// 下一步有8个可走的情况，超出边界，或已探索到的忽略
+		Position pos1 = { curPos.x + 1, curPos.y - 2 };
+		if (IsValid(pos1))
+		{
+			int index1 = PositionToIndex(pos1);
+			if (array[index1] == -1)
+			{
+				steps.push(pos1);
+				array[index1] = curIndex;
+			}
+		}
+ 
+		Position pos2 = { curPos.x + 2, curPos.y - 1 };
+		if (IsValid(pos2))
+		{
+			int index2 = PositionToIndex(pos2);
+			if (array[index2] == -1)
+			{
+				steps.push(pos2);
+				array[index2] = curIndex;
+			}
+		}
+ 
+		Position pos3 = { curPos.x + 2, curPos.y + 1 };
+		if (IsValid(pos3))
+		{
+			int index3 = PositionToIndex(pos3);
+			if (array[index3] == -1)
+			{
+				steps.push(pos3);
+				array[index3] = curIndex;
+			}
+		}
+ 
+		Position pos4 = { curPos.x + 1, curPos.y - 2 };
+		if (IsValid(pos4))
+		{
+			int index4 = PositionToIndex(pos4);
+			if (array[index4] == -1)
+			{
+				steps.push(pos4);
+				array[index4] = curIndex;
+			}
+		}
+ 
+		Position pos5 = { curPos.x - 1, curPos.y + 2 };
+		if (IsValid(pos5))
+		{
+			int index5 = PositionToIndex(pos5);
+			if (array[index5] == -1)
+			{
+				steps.push(pos5);
+				array[index5] = curIndex;
+			}
+		}
+ 
+		Position pos6 = { curPos.x - 2, curPos.y + 1 };
+		if (IsValid(pos6))
+		{
+			int index6 = PositionToIndex(pos6);
+			if (array[index6] == -1)
+			{
+				steps.push(pos6);
+				array[index6] = curIndex;
+			}
+		}
+ 
+		Position pos7 = { curPos.x - 2, curPos.y - 1 };
+		if (IsValid(pos7))
+		{
+			int index7 = PositionToIndex(pos7);
+			if (array[index7] == -1)
+			{
+				steps.push(pos7);
+				array[index7] = curIndex;
+			}
+		}
+ 
+		Position pos8 = { curPos.x - 1, curPos.y - 2 };
+		if (IsValid(pos8))
+		{
+			int index8 = PositionToIndex(pos8);
+			if (array[index8] == -1)
+			{
+				steps.push(pos8);
+				array[index8] = curIndex;
+			}
+		}
+	}
+ 
+	// 完成，打印
+	if (finished)
+	{
+		while (!finishSteps.empty())
+		{
+			Position pos = IndexToPosition(finishSteps.top());
+			cout << "(" << pos.x << ", " << pos.y << "), ";
+			finishSteps.pop();
+		}
+		cout << endl;
+	}
+ 
+	delete[] array;
+	system("pause");
+ 
+	return 0;
+}
+ 
+
 ```
