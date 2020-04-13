@@ -773,6 +773,31 @@ static auto static_lambda = []()
 
 初始化的`=`调用的是默认拷贝构造函数，初始化后的`=`调用的是重载的`=`符号函数。
 
+## 1.39 说一下C++中的this指针
+
+- [C++中this指针的用法详解](https://www.cnblogs.com/zhengfa-af/p/8082959.html)
+
+- 一个对象的this指针并不是对象本身的一部分，不会影响sizeof(对象)的结果。this作用域是在类内部，当在类的非静态成员函数中访问类的非静态成员的时候，编译器会自动将对象本身的地址作为一个隐含参数传递给函数。也就是说，即使你没有写上this指针，编译器在编译的时候也是加上this的，它作为非静态成员函数的隐含形参，对各成员的访问均通过this进行。　　例如，调用date.SetMonth(9) <===> SetMonth(&date, 9)，this帮助完成了这一转换 .
+- 调用成员函数时，常常使用ecx寄存器传递this参数。
+- **this****在成员函数的开始前构造，在成员函数的结束后清除。**
+- **几个this指针的易混问题**
+  - **A. this****指针是什么时候创建的？**
+    - this在成员函数的开始执行前构造，在成员的执行结束后清除。
+    - 但是如果class或者struct里面没有方法的话，它们是没有构造函数的，只能当做C的struct使用。采用 TYPE xx的方式定义的话，在栈里分配内存，这时候this指针的值就是这块内存的地址。采用new的方式创建对象的话，在堆里分配内存，new操作符通过eax返回分配的地址，然后设置给指针变量。之后去调用构造函数（如果有构造函数的话），这时将这个内存块的地址传给ecx，之后构造函数里面怎么处理请看上面的回答。
+  - **B. this****指针存放在何处？堆、栈、全局变量，还是其他？**
+    - this指针会因编译器不同而有不同的放置位置。可能是栈，也可能是寄存器，甚至全局变量。在汇编级别里面，一个值只会以3种形式出现：立即数、寄存器值和内存变量值。不是存放在寄存器就是存放在内存中，它们并不是和高级语言变量对应的。
+  - **C. this****指针是如何传递类中的函数的？**绑定？还是在函数参数的首参数就是this指针？那么，this指针又是如何找到“类实例后函数的”？
+    - 大多数编译器通过ecx寄存器传递this指针。事实上，这也是一个潜规则。一般来说，不同编译器都会遵从一致的传参规则，否则不同编译器产生的obj就无法匹配了。
+    - 在call之前，编译器会把对应的对象地址放到eax中。this是通过函数参数的首参来传递的。this指针在调用之前生成，至于“类实例后函数”，没有这个说法。类在实例化时，只分配类中的变量空间，并没有为函数分配空间。自从类的函数定义完成后，它就在那儿，不会跑的。
+  - **D. this****指针是如何访问类中的变量的？**
+    - 如果不是类，而是结构体的话，那么，如何通过结构指针来访问结构中的变量呢？如果你明白这一点的话，就很容易理解这个问题了。
+    - 在**C++中** **,****类和结构是只有一个区别的：类的成员默认是**private**，而结构是**public**。
+    - **this****是类的指针，如果换成结构，那**this**就是结构的指针了。
+  - **E.** **我们只有获得一个对象后，才能通过对象使用this**指针。如果我们知道一个对象this指针的位置，可以直接使用吗？
+    - this指针只有在成员函数中才有定义。因此，你获得一个对象后，也不能通过对象使用this指针。所以，我们无法知道一个对象的this指针的位置（只有在成员函数里才有this指针的位置）。当然，在成员函数里，你是可以知道this指针的位置的（可以通过&this获得），也可以直接使用它。
+  - **F. 每个类编译后，是否创建一个类中函数表保存函数指针，以便用来调用函数？**
+    - 普通的类函数（不论是成员函数，还是静态函数）都不会创建一个函数表来保存函数指针。只有虚函数才会被放到函数表中。但是，即使是虚函数，如果编译器能明确知道调用的是哪个函数，编译器就不会通过函数表中的指针来间接调用，而是会直接调用该函数。
+
 # 2. C++ STL
 
 ## 2.1 `map`和`set`有什么区别，分别又是怎么实现的？
@@ -981,6 +1006,20 @@ static auto static_lambda = []()
 ![设计模式](https://img-blog.csdn.net/2018051615452165?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L1dpS2lfU3U=/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
 
 
+
+## 3.5 说一下Reactor和Preactor模式
+
+- [IO复用（Reactor模式和Preactor模式）](https://blog.csdn.net/libaineu2004/article/details/77452704?depth_1-utm_source=distribute.pc_relevant.none-task-blog-OPENSEARCH-1&utm_source=distribute.pc_relevant.none-task-blog-OPENSEARCH-1)
+- [如何深刻理解Reactor和Proacto](https://www.zhihu.com/question/26943938)
+
+Reactor和preactor都是IO多路复用模式，一般地,I/O多路复用机制都依赖于一个事件多路分离器(Event Demultiplexer)。分离器对象可将来自事件源的I/O事件分离出来，并分发到对应的read/write事件处理器(Event Handler)。开发人员预先注册需要处理的事件及其事件处理器（或回调函数）。
+
+Reactor模式采用同步IO，而Proactor采用异步IO，事先写入处理方式直接进行操作就可以了。因此Reactor和Proactor模式的主要区别就是真正的读取和写入操作是有谁来完成的，Reactor中需要应用程序自己读取或者写入数据，而Proactor模式中，应用程序不需要进行实际的读写过程，它只需要从缓存区读取或者写入即可，操作系统会读取缓存区或者写入缓存区到真正的IO设备
+
+- Reactor模式：使用同步IO模型，即业务线程处理数据需要主动等待或询问，主要特点是利用epoll监听listen描述符是否有相应，及时将客户连接信息放于一个队列，epoll和队列都是在主进程/线程中，由子进程/线程来接管各个描述符，对描述符进行下一步操作，包括connect和数据读写。主程读写就绪事件。
+  - ![](http://images2015.cnblogs.com/blog/943117/201605/943117-20160512230858562-1336019094.png)
+- Preactor模式：Preactor模式完全将IO处理和业务分离，使用异步IO模型，即内核完成数据处理后主动通知给应用处理，主进程/线程不仅要完成listen任务，还需要完成内核数据缓冲区的映射，直接将数据buff传递给业务线程，业务线程只需要处理业务逻辑即可。
+  - ![](http://images2015.cnblogs.com/blog/943117/201605/943117-20160512230902249-663518390.png)
 
 # 4 操作系统
 
@@ -2726,7 +2765,22 @@ RPC协议假定某些传输协议的存在，如TCP或UDP，为通信程序之�
 
 - [几种基于udp的可靠网络协议介绍和比较](https://blog.csdn.net/lengye7/article/details/80660544)
 - [如何实现UDP的可靠传输](https://blog.csdn.net/AaronHyk/article/details/81505562)
-- 
+
+
+
+## 5.51 TCP和UDP，IP的大小以及关键字段结构
+
+- [IP头、TCP头、UDP头详解以及定义](https://blog.csdn.net/mrwangwang/article/details/8537775)
+- [ip头、tcp头、udp头详解及定义，结合Wireshark抓包看实际情况](https://www.cnblogs.com/shenpengyan/p/5912567.html)
+- [IP头、TCP头、UDP头详解](https://www.jianshu.com/p/10e34f5bf414)
+- **IP头结构的定义**
+  - ![](https://upload-images.jianshu.io/upload_images/2552519-a1f4d3ae05bec660.jpg?imageMogr2/auto-orient/strip|imageView2/2/w/537/format/webp)
+- **TCP头部结构**
+  - ![](https://upload-images.jianshu.io/upload_images/2552519-f8ec9ee3d353e028.jpg?imageMogr2/auto-orient/strip|imageView2/2/w/534/format/webp)
+- **UDP头部结构**
+  - ![](https://upload-images.jianshu.io/upload_images/2552519-00fa31eeffe8ddc4.jpg?imageMogr2/auto-orient/strip|imageView2/2/w/536/format/webp)
+- 常用套接字以及端口号:
+  - ![](https://upload-images.jianshu.io/upload_images/2552519-fce79d0b50bb10dc.jpg)
 
 # 6 数据库
 

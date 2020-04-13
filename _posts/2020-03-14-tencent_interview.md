@@ -479,3 +479,264 @@ _参考链接:_
 - [leetcode两数之和](https://leetcode-cn.com/problems/two-sum/solution/liang-shu-zhi-he-by-leetcode-2/)
 
 
+# 4月9日腾讯IEG面经
+
+> 2020-04-09 15:30:56
+
+## 2.1 说一下你的项目
+
+## 2.1 项目中使用了多线程；它们之间的通信方式有哪些？(只说了自己项目中用到了锁，因该说全的)
+- 临界区：使用内存屏障和锁创建临界区
+- 互斥量：锁；``
+- 信号量;`sem_wait(sem_t *sem)/sem_post(sem_t *sem)`
+- 条件变量:`pthread_cond_init`;`pthread_cond_signal`;`pthread_cond_wait`
+
+## 2.2 进程间的通信方式
+- 管道
+- 命名管道
+- 消息队列
+- 信号/信号量
+- 共享内存
+- 套接字
+
+## 2.3 C++ 类里面的内存结构；虚指针位置在变量开始吗？
+- ![](https://p-blog.csdn.net/images/p_blog_csdn_net/starlee/178527/o_VirtualTable.JPG)
+- [浅析C++中虚函数的调用及对象的内部布局](https://blog.csdn.net/starlee/article/details/2089358)
+- [浅析C++中的this指针](https://blog.csdn.net/starlee/article/details/2062586)
+- c++中除了虚指针和成员变量，函数并不在类的内存中。并且虚指针在头部。也就是成员变量之上。
+
+## 2.4 malloc的系统调用(没有答出来)
+应该是小于128KB使用brk，大于128KB使用mmap直接映射。(详见百度面试准备1.37)
+
+## 2.5 Linux的虚拟内存
+- 原因
+- 特点
+- 代价
+- Linux中的段页式的管理方式
+- 虚拟内存置换的方式
+
+## 2.6 TCP和UDP首部的大小和关键字段
+
+TCP大小是20字节，UDP大小是8字节；详细内容见：5.51 TCP和UDP，IP的大小以及关键字段结构。
+
+## 2.7 玩过游戏吗？
+玩过QQ飞车
+## 2.8 QQ飞车移动之间传输数据应该怎么传输
+只传输关键节点，比如相对的x,y,z坐标。
+
+## 2.9 传输应该使用TCP还是UDP；为什么，该怎么设计？
+对于实时性要求比较高；应该使用UDP，说了一下TCP和UDP的区别，为了保证传输的稳定性UDP应该如何改进，但是为了保证其有序性，应该使用序号和确认号。对于确认重传和滑动窗口可以使用多次发送相同帧，用带宽换准确度。唯一比较麻烦的是拥塞控制，无法解决和避免。
+（详见5.50 TCP，UDP应用场景，即要求速度，又要求可靠性怎么办）
+
+## 3.0 编程题三道(两个小时，只写了两道)
+
+## 3.0.1 链表中环的入口节点(总是有测试用例过不了)
+- [链表中环节点的入口](https://www.nowcoder.com/practice/253d2c59ec3e4bc68da16833f79a38e4?tpId=13&tqId=11208&tPage=1&rp=1&ru=/ta/coding-interviews&qru=/ta/coding-interviews/question-ranking)
+
+```c++
+/*
+struct ListNode {
+    int val;
+    struct ListNode *next;
+    ListNode(int x) :
+        val(x), next(NULL) {
+    }
+};
+*/
+/*
+使用快慢指针查看是否存在重合节点
+然后再找到
+*/
+class Solution {
+public:
+    ListNode* EntryNodeOfLoop(ListNode* pHead)
+    {
+        //注意这里进行检查
+        if(!pHead||!pHead->next) return nullptr;
+        ListNode *slow=pHead;
+        ListNode *fast=pHead;
+        while(fast&&fast->next){
+            fast=fast->next->next;
+            slow=slow->next;
+            if(slow==fast){
+                break;
+            }
+        }
+        if(slow!=fast){
+            return nullptr;
+        }
+        slow=pHead;
+        while(slow&&fast){
+            if(slow==fast){
+                break;
+            }
+            slow=slow->next;
+            fast=fast->next;
+        }
+        return slow;
+    }
+};
+```
+
+## 3.0.2 surrounded-regions
+- ![surrounded-regions](https://www.nowcoder.com/practice/c159db5028034aa595043a1a220a62dd?tpId=46&tqId=29050&tPage=1&rp=1&ru=/ta/leetcode&qru=/ta/leetcode/question-ranking)
+
+```c++
+/*
+主要思路：从边界开始对边界的所有值进行BFS
+将BFS到的节点都转变为M;
+然后将非M的O全部设置为X;
+将M设置为O;
+*/
+
+class Solution {
+public:
+    void solve(vector<vector<char>> &board) {
+        if(board.empty()) return ;
+        for(int i=0;i<board.size();++i){
+            if(board[i][0]=='O'){
+                BFS(board,i,0);
+            }
+        }
+        for(int i=0;i<board[0].size();++i){
+            if(board[0][i]=='O'){
+                BFS(board,0,i);
+            }
+        }
+        if(board.size()>1){
+            int len=board.size()-1;
+            for(int i=0;i<board[0].size();++i){
+                if(board[len][i]=='O'){
+                    BFS(board,len,i);
+                }
+            }
+        }
+        
+        if(board[0].size()>1){
+            int len=board[0].size()-1;
+            for(int i=0;i<board.size();++i){
+                if(board[i][len]=='O'){
+                    BFS(board,i,len);
+                }
+            }
+        }
+        
+        for(int i=0;i<board.size();++i){
+            for(int j=0;j<board[0].size();++j){
+                if(board[i][j]=='O'){
+                    board[i][j]='X';
+                }
+            }
+        }
+        for(int i=0;i<board.size();++i){
+            for(int j=0;j<board[0].size();++j){
+                if(board[i][j]=='M'){
+                    board[i][j]='O';
+                }
+            }
+        }
+        
+    };
+    int dxdy[4][2]={
+        {-1,0},
+        {0,-1},
+        {1,0},
+        {0,1}
+    };
+    void BFS(vector<vector<char>> &board,int x,int y){
+        if(x<0||x>=board.size()||y<0||y>=board[0].size()){
+            return ;
+        }
+        if(board[x][y]!='O') return ;
+        board[x][y]='M';
+        for(int i=0;i<4;++i){
+            int dx=dxdy[i][0];
+            int dy=dxdy[i][1];
+            BFS(board,x+dx,y+dy);
+        }
+    }
+};
+```
+
+## 3.0.3 派对的最大快乐值
+- [派对的最大快乐值](https://www.nowcoder.com/practice/a5f542742fe24181b28f7d5b82e2e49a?tpId=101&&tqId=33255&rp=1&ru=/activity/oj&qru=/ta/programmer-code-interview-guide/question-ranking)
+
+```c++
+/*
+主要思路：使用深度遍历；对每个节点
+存储其child 子集和对应的happy值
+并进行DFS更新
+分为当前去还是不去，去则将查找找孙节点的所有去的子集并添加
+不去，则直接计算所有子节点的子集
+比较去和不去的最大值
+
+*/
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+struct Node{
+    int happy_val=0;
+    int max_happy=0;
+    vector<int> childs;
+    friend ostream& operator << (ostream &os,const Node & no){
+        os<<"happy:"<<no.happy_val<<"max_happy "<<no.max_happy<<"\t";
+         os<<"childs: ";
+        for(int i=0;i<no.childs.size();++i){
+            cout<<"child  "<<"i: "<<no.childs.at(i)<<" ";
+        }
+        os<<endl;
+        return os;
+    }
+};
+//深度遍历返回其最大值
+int DFS(vector<Node>& tree,int index)
+{
+    if(index>=tree.size()||index<=0) return 0;
+    auto& temp_node=tree.at(index);
+    //页节点直接返回当前值
+    if(temp_node.childs.empty()){
+        return temp_node.happy_val;
+    }
+    if(temp_node.max_happy!=0){
+        return temp_node.max_happy;
+    }
+    int sum1=0,sum2=temp_node.happy_val;
+    //使用当前节点
+    for(int i=0;i<temp_node.childs.size();++i){
+        //不使用当前节点
+        sum1+=DFS(tree,temp_node.childs.at(i));
+        //使用当前节点；计算孙节点
+        int child_node=temp_node.childs.at(i);
+        for(int j=0;j<tree.at(child_node).childs.size();++j){
+            sum2+=DFS(tree,tree.at(child_node).childs.at(j));
+        }
+    }
+    temp_node.max_happy=max(sum1,sum2);
+    return temp_node.max_happy;
+}
+int main(int argc ,char* argv[]){
+    
+    int n=0;
+    int root=1;
+    cin>>n>>root;
+    vector<Node> tree(n+1);
+    int i=0;
+    while(i<n)
+    {
+        cin>>tree.at(i+1).happy_val;
+        ++i;
+    }
+    i=0;
+    while(i<n){
+        int parent=0,son=0;
+        cin>>parent>>son;
+        tree.at(parent).childs.emplace_back(son);
+        ++i;
+    }
+    
+    cout<<DFS(tree,root)<<endl;
+    return 0;
+    
+}
+```
