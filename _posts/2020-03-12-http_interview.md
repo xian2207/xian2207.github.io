@@ -268,10 +268,27 @@ SOAP Web服务只使用响应代码200("OK")和500("Internal Server Error")。�
 
 
 
-## 9. HTTP1.1版本新特性
-- a. **默认持久连接节省通信量**，只要客户端服务端任意一端没有明确提出断开TCP连接，就一直保持连接，可以发送多次HTTP请求
-- b. **管线化，客户端可以同时发出多个HTTP请求，而不用一个个等待响应**
-- c. **断点续传**:实际上就是利用HTTP消息头使用分块传输编码，将实体主体分块传输。
+## 9. HTTP1.1/2.0版本新特性
+
+- [HTTP1.1和HTTP2.0新特性](https://blog.csdn.net/ran_Max/article/details/105279644)
+- [HTTP1.0、HTTP1.1 和 HTTP2.0 的区别](https://www.cnblogs.com/heluan/p/8620312.html)
+- [HTTP1.0 HTTP1.1 HTTP2.0 主要特性对比](https://segmentfault.com/a/1190000013028798)
+- HTTP1.1 新特性：
+  - 1. **缓存处理**：在HTTP1.0中主要使用header里的If-Modified-Since,Expires来做为缓存判断的标准，HTTP1.1则引入了更多的缓存控制策略例如Entity tag，If-Unmodified-Since, If-Match, If-None-Match等更多可供选择的缓存头来控制缓存策略。
+    2. **带宽优化及网络连接的使用--断点续传**：TTP1.0中，存在一些浪费带宽的现象，例如客户端只是需要某个对象的一部分，而服务器却将整个对象送过来了，并且不支持断点续传功能，HTTP1.1则在请求头引入了range头域，它允许只请求资源的某个部分，即返回码是206（Partial Content），这样就方便了开发者自由的选择以便于充分利用带宽和连接。
+    3. **错误通知的管理**，在HTTP1.1中新增了24个错误状态响应码，如409（Conflict）表示请求的资源与资源的当前状态发生冲突；410（Gone）表示服务器上的某个资源被永久性的删除。
+    4. **Host头处理**，在HTTP1.0中认为每台服务器都绑定一个唯一的IP地址，因此，请求消息中的URL并没有传递主机名（hostname）。但随着虚拟主机技术的发展，在一台物理服务器上可以存在多个虚拟主机（Multi-homed Web Servers），并且它们共享一个IP地址。HTTP1.1的请求消息和响应消息都应支持Host头域，且请求消息中如果没有Host头域会报告一个错误（400 Bad Request）。
+    5. **长连接**，HTTP 1.1支持长连接（PersistentConnection）和请求的流水线（Pipelining）处理，在一个TCP连接上可以传送多个HTTP请求和响应，减少了建立和关闭连接的消耗和延迟，在HTTP1.1中默认开启Connection： keep-alive，一定程度上弥补了HTTP1.0每次请求都要创建连接的缺点。
+    6. **管线化，客户端可以同时发出多个HTTP请求，而不用一个个等待响应（有问题）**
+
+- HTTP2.0:
+  - ![](https://img-blog.csdnimg.cn/20200402215131738.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3Jhbl9NYXg=,size_16,color_FFFFFF,t_70)
+  - 1. **二进制分帧**：`HTTP2.0`通过在应用层和传输层之间增加一个二进制分帧层，突破了`HTTP1.1`的性能限制、改进传输性能。http2.0将传输的消息分割未更小的帧，并采用二进制的编码。其中首部信息被封装到Headers帧，而我们的request body封装到data帧。
+    2. **压缩头部**：http2.0在客户端和服务器共同维护一个**头部表head list**，由客户端和服务端一起维护。对于相同没用变化的头部，不再传输，每次只将有变化的头部封装到headers frame中。新增和修改的头部会被追加到头部表中。`HTTP2.0`使用`encoder`来减少需要传输的`header`大小
+    3. **多路复用**：http2.0将消息分解为独立帧，交错发送，然后在另外一端重新组装，这样一个连接上就可以存在多个请求和响应。
+    4. **服务器推送**：指的是服务器还没有收到请求，就将要用到的资源推送给浏览器。这样的话，只需要一轮http通信，浏览器就可以得到所需要的全部资源。
+
+
 
 ## 10. HTTP优化方案
 

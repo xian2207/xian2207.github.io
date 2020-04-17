@@ -334,7 +334,7 @@ Pattern.matches(CHECKSQL,targerStr);
 
 //等等
 ```
- 
+
 
 3. 字符串过滤
 
@@ -373,7 +373,7 @@ public static boolean sql_inj(String str)
 
 4. jsp中调用该函数检查是否包函非法字符防止SQL从URL注入;sql_inj.java代码：
 
- 
+
 ```java
 package sql_inj;
 
@@ -421,7 +421,7 @@ return false;
 
 }
 
- ```
+```
 
 5. JSP页面判断代码：
 使用javascript在客户端进行不安全字符屏蔽
@@ -946,7 +946,7 @@ int main(int argc, char* argv[])
  
 	delete[] array;
 	system("pause");
- 
+
 	return 0;
 }
  
