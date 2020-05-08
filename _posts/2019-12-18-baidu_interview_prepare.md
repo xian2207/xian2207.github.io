@@ -18,7 +18,7 @@ tags:
 ## 1.1 说一下static关键字的作用
 
 1. 全局静态变量
-	- 在全局变量前加上关键字static，全局变量就定义成一个全局静态变量.
+	- 在全局变量前加上关键字static，全局变量就定义成一个全局静态变量
 	- 内存中的位置：静态存储区，在整个程序运行期间一直存在。
 	- 初始化：未经初始化的全局静态变量会被自动初始化为0（对于自动对象,如果没有显示初始化,会调用零参数构造函数,如不存在则编译失败);
 	- 作用域：**全局静态变量在声明他的文件之外是不可见的，准确地说是从定义之处开始，到文件结尾。**
@@ -810,7 +810,7 @@ STL中支持，自定义allocator分配器，并且允许重载new关键字。�
 
 
 
-## 1.14 C++的大小端和判断方法
+## 1.41 C++的大小端和判断方法
 
 - 大端模式，是指数据的高字节保存在内存的低地址中，而数据的低字节保存在内存的高地址中，这样的存储模式有点儿类似于把数据当作字符串顺序处理：地址由小向大增加，而数据从高位往低位放；这和我们的阅读习惯一致。
 
@@ -1851,18 +1851,44 @@ Reactor模式采用同步IO，而Proactor采用异步IO，事先写入处理方�
 
 linux下有哪些信号?
 - 参考: [SIGINT、SIGQUIT、 SIGTERM、SIGSTOP区别](https://blog.csdn.net/pmt123456/article/details/53544295)
-- 常见信号
+- [Linux下常用的信号有哪些](https://www.cnblogs.com/doitjust/p/12622376.html);
+- [linux 信号量之SIGNAL 0(转)](https://www.cnblogs.com/hoys/archive/2012/09/28/2707202.html)
+- 常见信号:可以使用`kill -l` 查看存在的信号。
+- 注意：编号为1 ~ 31的信号为传统UNIX支持的信号，是不可靠信号(非实时的)，编号为32 ~ 63的信号是后来扩充的，称做可靠信号(实时信号)。**不可靠信号和可靠信号的区别在于前者不支持排队，可能会造成信号丢失，而后者不会**。
 
-| 信号英文名 | 信号数字表述 | 信号中文说明                      |
-| ---------- | ------------ | --------------------------------- |
+| 信号英文名 |编号| 信号中文说明|
+|:---:|:---:|:---------------------------------|
+| Cancel	|	0 |确认进程是否存在|
 | SIGHUP     | 1            | 挂断控制终端或进程;该信号让进程立即关闭，然后重新读取配置文件后关闭。 |
 | SIGINT  (ctrl-c) | 2            | 终止进程                          |
-| SIGQUIT    | 3            | 终止进程并阐述dump文件            |
-| SIGKILL    | 9            | 强制终止进;本信号不能被阻塞、处理和忽略 |
-| SIGTERM    | 16           | 终止进程;kill命令的默认信号。有时如果进程已经发生问题，这个信号是无法终止的，我们才会尝试SIGKILL信号，也就是信号9 |
-| SIGCHLD    | 18           | 子进程死，默认忽略该信号          |
-| SIGCONT    | 19           | 恢复进程执行，默认忽略该信号      |
-| SIGSTOP    | 20           | 停止进程的执行；该进程还未结束, 只是暂停执行. 本信号不能被阻塞, 处理或忽略 |
+| SIGQUIT    | 3            | 与`SIGINT`相似，终止进程并阐述dump文件            |
+| SIGILL | 4 |执行了非法指令. 通常是因为可执行文件本身出现错误, 或者试图执行数据段. 堆栈溢出时也有可能产生这个信号。|
+|SIGTRAP|5|由断点指令或其它trap指令产生. 由debugger使用。|
+|SIGABRT|6|调用abort函数生成的信号。|
+|SIGBUS|7|非法地址, 包括内存地址对齐(alignment)出错。比如访问一个四个字长的整数, 但其地址不是4的倍数。它与SIGSEGV的区别在于后者是由于对合法存储地址的非法访问触发的(如访问不属于自己存储空间或只读存储空间)。|
+|SIGFPE|8|在发生致命的算术运算错误时发出. 不仅包括浮点运算错误, 还包括溢出及除数为0等其它所有的算术的错误。|
+| SIGKILL    | 9 | 强制终止进;本信号不能被阻塞、处理和忽略 |
+|SIGUSR1/SIGUSR2|10/12|用户保留信号|
+|SIGPIPE|13| 管道破裂，通常在进程间通信产生 |
+|SIGALERM|14|时钟定时信号，计算的是实际的时间或者时钟时间，alarm函数使用该信号|
+|SIGTERM|15|终止进程;kill命令的默认信号。有时如果进程已经发生问题，这个信号是无法终止的，我们才会尝试SIGKILL信号，也就是信号9|
+|SIGSTKFLT|16||
+| SIGCHLD | 17 | 子进程结束时，父进程会收到或者信号，用于处理僵尸进程；默认忽略该信号|
+| SIGCONT | 18 | 恢复进程执行，默认忽略该信号      |
+| SIGSTOP | 19 | 停止进程的执行；该进程还未结束, 只是暂停执行. 本信号不能被阻塞, 处理或忽略 |
+|SIGTSTP|20|停止进程的运行, 但该信号可以被处理和忽略. 用户键入SUSP字符时(通常是Ctrl-Z)发出这个信号|
+|SIGTTIN|21|当后台作业要从用户终端读数据时, 该作业中的所有进程会收到SIGTTIN信号. 缺省时这些进程会停止执行|
+|SIGTTOU|22|类似于SIGTTIN, 但在写终端(或修改终端模式)时收到|
+|SIGURG|23|有”紧急”数据或out-of-band数据到达socket时产生.|
+|SIGXCPU|24|超过CPU时间资源限制. 这个限制可以由getrlimit/setrlimit来读取/改变|
+|SIGXFSZ|25|当进程企图扩大文件以至于超过文件大小资源限制。|
+|SIGVTALRM|26|虚拟时钟信号. 类似于SIGALRM, 但是计算的是该进程占用的CPU时间.|
+|SIGPROF|27|类似于SIGALRM/SIGVTALRM, 但包括该进程用的CPU时间以及系统调用的时间.|
+|SIGWINCH|28|窗口大小改变时发出.|
+|SIGIO|29|文件描述符准备就绪, 可以开始进行输入/输出操作|
+|SIGPWR|30|Power failure|
+|SIGSYS|31|非法的系统调用。|
+
 - 信号的来源
     - 非法内存
     - 硬件故障
@@ -3563,4 +3589,44 @@ RPC协议假定某些传输协议的存在，如TCP或UDP，为通信程序之�
 ```
 
 ## 7.11 归并排序
+
+```c++
+/*
+归并排序，并查找逆序对数
+*/
+
+long long InversePairsCore(vector<int> &data,vector<int> &copy,int start,int end)
+    {
+       if(start==end)
+          {
+            copy[start]=data[start];
+            return 0;
+          }
+       int length=(end-start)/2;
+       long long left=InversePairsCore(copy,data,start,start+length);
+       long long right=InversePairsCore(copy,data,start+length+1,end); 
+        
+       int i=start+length;
+       int j=end;
+       int indexcopy=end;
+       long long count=0;
+       while(i>=start&&j>=start+length+1)
+          {
+             if(data[i]>data[j])
+                {
+                  copy[indexcopy--]=data[i--];
+                  count=count+j-start-length;          //count=count+j-(start+length+1)+1;
+                }
+             else
+                {
+                  copy[indexcopy--]=data[j--];
+                }          
+          }
+       for(;i>=start;i--)
+           copy[indexcopy--]=data[i];
+       for(;j>=start+length+1;j--)
+           copy[indexcopy--]=data[j];       
+       return left+right+count;
+    }
+```
 
