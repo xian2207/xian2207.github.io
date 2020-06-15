@@ -2,7 +2,7 @@
 layout:     post
 title:      实验室服务器使用说明
 subtitle:   实验室服务器使用说明
-date:       22020-04-21
+date:       2020-04-21
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
 catalog: true

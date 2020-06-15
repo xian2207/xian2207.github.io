@@ -1,4 +1,3 @@
-﻿ 
 ---
 layout:     post
 title:      java简单学习笔记(一)
