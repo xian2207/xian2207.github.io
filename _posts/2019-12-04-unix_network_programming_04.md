@@ -1065,13 +1065,13 @@ TCP的connect总会阻塞进程一个RTT时间。
 
 标准输入到输出
 
-![标准输入到输出](../img/2019-12-06-10-47-20.png)
+![标准输入到输出](https://wangpengcheng.github.io/img/2019-12-06-10-47-20.png)
 
 toiptr和tooptr中间的是缓冲区域。移动来，进行动态变化。
 
 接收到标准输入
 
-![接收到标准输入](../img/2019-12-06-15-11-00.png)
+![接收到标准输入](https://wangpengcheng.github.io/img/2019-12-06-15-11-00.png)
 
 下面是一个str_cli缓冲区阅读函数：
 
@@ -1187,7 +1187,7 @@ void str_cli(FILE *fp,int sockfd)
 ```
 非阻塞流程如下：
 
-![非阻塞式I/O例子的时间线](../img/2019-12-06-15-52-58.png)
+![非阻塞式I/O例子的时间线](https://wangpengcheng.github.io/img/2019-12-06-15-52-58.png)
 
 还有简单版本的使用子进程进行处理：
 
@@ -1215,7 +1215,7 @@ void str_cli(FILE* fp,int sockfd)
     return;
 }
 ```
-![](../img/2019-12-06-15-59-32.png)
+![](https://wangpengcheng.github.io/img/2019-12-06-15-59-32.png)
 
 ### 16.3 非阻塞connect
 
