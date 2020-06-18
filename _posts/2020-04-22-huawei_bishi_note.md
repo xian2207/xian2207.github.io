@@ -16,7 +16,7 @@ tags:
 
 # 1. 明日之星选举投票
 
-![](../img/huwei-2020-04-15-01.jpg)
+![华为笔试题1](https://wangpengcheng.github.io/img/huwei-2020-04-15-01.jpg)
 
 ```c++
 /*
@@ -290,7 +290,7 @@ int main(){
 
 一个树到顶到叶子结点的距离，DFS，输入不知道说这个结点没有栈空间，不知道位置是有数字还是没有数字。最后70%难顶。
 
-![](../img/huwei-2020-04-15-03.jpg)
+![](https://wangpengcheng.github.io/img/huwei-2020-04-15-03.jpg)
 
 ```c++
 /**
