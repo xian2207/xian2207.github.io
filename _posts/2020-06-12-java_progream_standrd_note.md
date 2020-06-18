@@ -35,13 +35,13 @@ _参考链接:_
 4. 方法名、参数名、成员变量、局部变量统一使用驼峰式命名方法
 5. `static final`的常量命名全部大写，单词间用下划线隔开；力求语义表达完整清楚，不要嫌名字长；例如`MAX_COUNT`
 6. 抽象类名使用Abstract或者Base开头；异常类命名使用Exception 结尾；测试以Test结尾
-7. 数组中括号需要前置
+7. 数组中括号需要前置，`[]`与类型紧邻以定义类型。
 8. POJO类中布尔类型变量都不要加is前缀。否则设置set/get函数的时候容易引起冲突。
-9. 包名统一小写，自然语义之间使用`.`号进行隔开；类名统一首字母大写；可以使用复数形式
+9. 包名统一小写，自然语义之间使用`.`号进行隔开；类名统一首字母大写，可以使用复数形式；但是包名不能使用复数形式。
 10. 避免在子类父类的成员变量之间或者不同的代码块的局部变量之间采用相同的命名，使可读性降低。
 11. 在常量和变量的命名时，表示类型的名词放在词尾，以提升辨识度。
 12. 如果模块、接口、类、方法使用了设计模式，在命名时需要体现；例如`OrderFactory`
-13. 接口类中的方法和属性不要添加任何修饰符号。尽量不要在接口里面定义变量
+13. 接口类中的方法和属性不要添加任何修饰符号。尽量不要在接口里面定义变量；接口中定义的变量必定与类相关管，为`static final`,并且是整个应用的基础常量。这样是为了防止在接口的继承过程中产生的变量的更改和转变。
 14. 对于Service和DAO类，基于SOA的理念，暴露出来的服务一定是接口，内部的实现类使用Impl的后缀与接口区别
 15. 枚举类名带上Enum后缀，枚举成员名需要全大写单词间使用下划线隔开
 16. 各层命名约规
@@ -63,7 +63,7 @@ _参考链接:_
 2. **在long或者Long赋值时，数值后使用大写的L，不能是小写的l，小写容易跟数 字1混淆，造成误解。**
 3. 常量复用的层次结构:常量的复用层次有5层:
     - 跨应用共享常量:放置在二方库中，通常在constant目录下
-    - 应用内共享常量:放置在一方库中，通常时子模块中的constant目录下
+    - 应用内共享常量:放置在一方库中，通常是子模块中的constant目录下
     - 子工程内部共享常量：在当前子工程的constant目录下
     - 包内共享常量:在当前包下单独的constant目录下
     - 类共享常量:直接在类内部private static final 定义。
@@ -76,7 +76,7 @@ _参考链接:_
     2. 左大括号后换行。
     3. 右大括号前换行。  
     4. 右大括号后还有 else 等代码则不换行；表示终止的右大括号后必须换行。
-2. 左右括号和字符之间不出现空格。左大括号前需要空格；
+2. 左右括号和字符之间不出现空格。左大括号前需要空格；*******左括号左侧，右括号右侧****必须留一个空格。
 3. 任何二目、三目运算符的左右两边都需要添加一个空格。
 4. 强制使用4个空格缩进，禁止使用tab字符
 5. 强制注释的双斜线与注释内容之间有且仅有一个空格
@@ -89,7 +89,7 @@ _参考链接:_
     - 在括号前不要环行。
 9. 方法参数在定义和传入时，多个参数逗号后面必须加空格；例如：`method(args1, args2, args3)`
 10. IDE中的编码方式设置为UTF-8;IDE中的文件的换行符使用Unix格式("\n")
-11. 单个方法的总行数不超过80行；行数过多需要进行解耦
+11. 单个方法的总行数不超过80行；行数过多需要进行解耦。
 12. 不同逻辑、不同语义、不同业务的代码之间插入一个空行分隔开来以提升可读性。
 
 ### 1.4 OOP约规
@@ -103,24 +103,52 @@ _参考链接:_
     - 注意：这里的equals主要是两者的内容是否相等；而`==`更多的是比较两者的内存地址是否相同；Object类的equals方法只是简单的比较指针指向的内存地址是否相同。所以一般类的方法都会进行，地址判断和类型的双重判断进行比较。([Object 的 equals 方法容易抛出空指](https://blog.csdn.net/teavamc/article/details/90702512))
     - 应该使用"test".equals(object)而不是`object.equals("test")`。
 7. **强制**所有包装类型对象值之间的比较，全部使用equals方法比较；
-    - 对于Integer var=? 在-128~127范围内的赋值，会在IntegerCache.cache产生，会复用已有对象，这个区间内的Integer值可以直接使用==进行判断，但是这个区间之外的所有数据都会在堆上产生，并不会复用已有对象，**推荐使用equals方法进行判断**
-8. **强制**浮点数之间的等值判断，基本数据类型不能使用==进行判断，包装数据类型不能使用equals进行判断。浮点数需要使用"尾数+阶码"的编码方式，进行判断。例如`if(Math.abs(1.0f-0.9f)<(1e-6f))`
+    - 对于Integer var=? 在-128~127范围内的赋值，会在IntegerCache.cache产生，会复用已有对象，这个区间内的Integer值可以直接使用==进行判断，但是这个区间之外的所有数据都会在堆上产生，并不会复用已有对象。但是对于使用new关键字的主动内存创建和分配使用==时比较的是其内存地址，虽然指向的是同一块地址，但是还是会返回false, **推荐使用equals方法进行判断**
+8. **任何货币金额，均以最小货币单位且整型类型来进行存储**，比如人民币就是以分为最小单位。
+9. **强制**浮点数之间的等值判断，基本数据类型不能使用==进行判断，包装数据类型不能使用equals进行判断。浮点数需要使用"尾数+阶码"的编码方式，进行判断。例如`if(Math.abs(1.0f-0.9f)<(1e-6f))`
     - 或者使用BigDecimal来定义值，再进行浮点数的运算；例如:`BigDecimal a=new BigDecimal("1.0"),b= new BigDecimal("0.9"); if(a.equals(b))`
-9. **强制**定义数据对象DO类时，属性类型要与数据库字段类型相匹配。
-10. **强制**为了防止精度损失，禁止使用构造方法BigDecimal(double)方式将double值转化为BigDecimal对象。推荐使用转String的方式进行构造。或者直接使用`BigDecimal.valueOf()`方法
-11. 关于基本数据类型和包装类数据类型的使用标准如下:
+10. **强制**定义数据对象DO类时，属性类型要与数据库字段类型相匹配。匹配相关的数据表内容如下:
+    - [MyBatis与MySQL对应数据类型](https://blog.csdn.net/a515557595_xzb/article/details/81587510)
+    - [mybatis常用jdbcType数据类型以及对应的JavaType](https://www.cnblogs.com/yucongblog/p/7388648.html)
+
+a. 常用数据类型映射表: 
+
+|MySQL|JDBCType|JavaType|备注|
+|:---:|:---:|:---:|:---:|
+|`char`|`CHAR`|`String`|定长字符|
+|`varchar`|`VARCHAR`|`String`|变长字符串|
+|`tinyint`|`TINYINT`|`byte`|1字节|
+|`smallint`|`SMALLINT`|`short`|2字节|
+|`int`|`INTEGER`|`int`|4字节|
+|`float`|`FLOAT`|`float`|4字节|
+|`bigint`|`BIGINT`|`long`|8字节|
+|`double`|`DOUBLE`|`double`|8字节|
+|`bit`|`BOOLEAN`|`boolean`|布尔类型|
+
+b. 日期时间和大对象映射表:
+
+|MySQL|JDBCType|JavaType|备注|
+|:---:|:---:|:---:|:---:|
+|`date`|`Date`|`util.Date`,`sql.Date`|`YYYY-MM-DD`|
+|`time`|`TIME`|`util.Date`、`sql.Date`|`HH:MM:SS`|
+|`timestamp`|`TIMESTAMP`|`util.Date`、`sql.Date`|`YYYY-MM-DD HH:MM:SS`|
+|`text`|`VARCHAR`|`String`|文本类型【2^16-1字节】|
+|`longtext`|`LONGVARCHAR`|`String`|长文本类型【2^32-1字节】|
+
+11. **强制**为了防止精度损失，禁止使用构造方法BigDecimal(double)方式将double值转化为BigDecimal对象。推荐使用转String的方式进行构造。或者直接使用`BigDecimal.valueOf()`方法
+12. 关于基本数据类型和包装类数据类型的使用标准如下:
     1. **强制** 所有的POJO类属性必须使用包装数据类型
     2. **强制** RPC方法的返回值和参数必须使用包装数据类型
     3. 所有的局部数据变量都使用基本数据类型
     - 原因:POJO类属性没有初始值时提醒使用者，在使用是必须自己显式地进行赋值，任何NPE问题，或者入库检查，都由使用者来保证。
     - 例如:数据库的拆线呢结果可能式null,因为自动拆箱，用基本数据类型接收有[NPE空值异常](https://www.zhihu.com/question/55650388/answer/145790742)风险。
-12. **强制** 定义DO/DTO/VO等POJO类时，不要设定任何默认属性值。因为可能存在时间节点等问题的更新。导致值的差异化。
-13. **强制** 序列化类新增属性时，请不要修改serialVersionUID字段，避免反序列失败；如果完全不兼容升级，避免反序列化混乱，那么请修改serialVersionUID值([理解serialVersionUID是什么？有什么用？如何生成？](https://www.cnblogs.com/xuxinstyle/p/11394358.html);[Intellij IDEA怎么自动生成serialVersionUID](https://jingyan.baidu.com/article/f79b7cb3d19cc49144023ea6.html))。
-14. **强制** 构造方法中禁止加入任何业务逻辑，如果有初始化逻辑，请放在init方法中。
-15. 禁止在POJO类中，同时存在对应属性xxx的isXxx()和getXxx()方法。
-16. **强制** 禁止在POJO类中必须写toString方法。使用IDE工具中的source>generate toString时，如果继承了另外一个POJO类，注意在前面加一个super.toString();
-17. 使用索引访问用String 的split方法得到的数组时，需要做最后一个分割符后有无内容的检查，否则会有抛出`IndexOutOfBoundException`的风险。
-18. 类的多个构造方法，或者多个同名方法，这些方法应该按照顺序防止在一起；同时类内方法定义的顺序依次是:
+13. **强制** 定义DO/DTO/VO等POJO类时，不要设定任何默认属性值。因为可能存在时间节点等问题的更新。导致值的差异化。
+14. **强制** 序列化类新增属性时，请不要修改serialVersionUID字段，避免反序列失败；如果完全不兼容升级，避免反序列化混乱，那么请修改serialVersionUID值([理解serialVersionUID是什么？有什么用？如何生成？](https://www.cnblogs.com/xuxinstyle/p/11394358.html);[Intellij IDEA怎么自动生成serialVersionUID](https://jingyan.baidu.com/article/f79b7cb3d19cc49144023ea6.html))。
+15. **强制** 构造方法中禁止加入任何业务逻辑，如果有初始化逻辑，请放在init方法中。
+16. 禁止在POJO类中，同时存在对应属性xxx的isXxx()和getXxx()方法。
+17. **强制** 禁止在POJO类中必须写toString方法。使用IDE工具中的source>generate toString时，如果继承了另外一个POJO类，注意在前面加一个super.toString();
+18. 使用索引访问用String 的split方法得到的数组时，需要做最后一个分割符后有无内容的检查，否则会有抛出`IndexOutOfBoundException`的风险。
+19. 类的多个构造方法，或者多个同名方法，这些方法应该按照顺序防止在一起；同时类内方法定义的顺序依次是:
     - 公有方法或者保护方法
     - 私有方法
     - getter/setter方法。
@@ -140,13 +168,54 @@ _参考链接:_
     1. 只要覆写equals,就必须覆写hashCode;
     2. 因为Set存储的是不重复的对象，根据hashCode和equals进行判断，所以存储Set的对象必须覆写这两个方法。
     3. 如果自定义对象作为Map的键，那么必须覆写hashCode和equals
-2. 强制ArrayList的subList不能转换为ArrayList,**否则会抛出ClassCastException异常**；因为其返回的是ArrayList的内部类SubList,是ArrayList的一个视图，对于SubList子列表的所有操作最终会反映到原列表上。
-3. **使用Map的方法keySet()/values()/entrySet()**返回集合对象时，不可以对其进行添加元素操作，否则会抛出`UnsupportedOperationException`异常。
-4. **Collections**类返回的对象，如：`emptyList()/singletoList()`等都是`immutablelist`,不可对其进行添加或者删除元素的操作。空链表不支持修改等操作。
-5. 再subList场景中，因为其返回的是是父集合的一部分视图，因此原来集合的修改，均会使其发生变化。建议开辟一个新的集合去接收对象。
-6. **使用集合转数组的方法，必须使用集合的toArray(T[] array)，传入的是类型完全一致，长度为0的数组，这样避免内存的浪费和重新分配**
-7. **在使用Collection接口任何实现类的addAll()方法时，都要对输入的集合参数进行NPE判断**--在ArrayList.addAll方法的第一行代码即Object[] a = c.toArray();其中c为输入集合参数，如果为null，则直接抛出异常。
-8. 使用工具类Arrays.asList()把数组转换成集合时，不能使用其修改集合相关的方法，它的add/remove/clear方法会抛出UnsupportedOperationException异常。
+2. **判断所有集合内部的元素是否为空，使用isEmpty()方法，而不是size()==0的方式。**
+    - 说明：前者的时间复杂度为 O(1)，而且可读性更好。 
+    - 对于不同的类型推荐使用ConllectionUtil、MapUtil、String.util等进行判断。
+3. **在使用java.util.stream.Collectors类的 toMap()方法转为Map集合时，一定要使 用含有参数类型为BinaryOperator，参数名为mergeFunction 的方法，否则当出现相同key 值时会抛出IllegalStateException 异常。**
+    - 说明：参数mergeFunction 的作用是当出现 key重复时，自定义对 value 的处理策略。 
+    - 正例： 
+    ```java
+    List<Pair<String, Double>> pairArrayList = new ArrayList<>(3); 
+    pairArrayList.add(new Pair<>("version", 6.19)); 
+    pairArrayList.add(new Pair<>("version", 10.24)); 
+    pairArrayList.add(new Pair<>("version", 13.14)); 
+    Map<String, Double> map = pairArrayList.stream().collect( 
+            // 生成的map集合中只有一个键值对：{version=13.14},当存在重复的key,保留v2去除v1;
+            Collectors.toMap(Pair::getKey, Pair::getValue, (v1, v2) -> v2)
+        );
+    ```
+    - 反例:
+    ```java
+    String[] departments = new String[] {"iERP", "iERP", "EIBU"}; 
+    // 抛出IllegalStateException异常 
+    Map<Integer, String> map = Arrays.stream(departments)
+                                        .collect(Collectors.toMap(String::hashCode, str -> str)); 
+    ```
+    - 参考链接:[java8 快速实现List转map 、分组、过滤等操作](https://blog.csdn.net/lu930124/article/details/77595585);[关于Java Lambda表达式看这一篇就够了](https://objcoding.com/2019/03/04/lambda/)
+    - 注意:**Lambda表达式实际是生成了一个类的内部方法，再进行调用，因此Lambda方法中的this指针是类指针，而且类内的全局变量可以共同被访问。**
+4. **在使用java.util.stream.Collectors类的 toMap()方法转为Map集合时，一定要注 意当value为null时会抛NPE异常。**
+    - 说明：在java.util.HashMap 的merge 方法里会进行如下的判断： 
+    ```java
+        if (value == null || remappingFunction == null) throw new NullPointerException(); 
+    ```
+    - 反例:
+    ```java
+        List<Pair<String, Double>> pairArrayList = new ArrayList<>(2); 
+        pairArrayList.add(new Pair<>("version1", 4.22));
+        //注意这里的null值
+        pairArrayList.add(new Pair<>("version2", null)); 
+        Map<String, Double> map = pairArrayList.stream().collect( 
+            // 抛出NullPointerException异常
+             Collectors.toMap(Pair::getKey, Pair::getValue, (v1, v2) -> v2)); 
+    ```
+
+5. 强制ArrayList的subList不能转换为ArrayList,**否则会抛出ClassCastException异常**；因为其返回的是ArrayList的内部类SubList,是ArrayList的一个视图，对于SubList子列表的所有操作最终会反映到原列表上。
+6. **使用Map的方法keySet()/values()/entrySet()**返回集合对象时，不可以对其进行添加元素操作，否则会抛出`UnsupportedOperationException`异常。
+7. **Collections**类返回的对象，如：`emptyList()/singletoList()`等都是`immutablelist`,不可对其进行添加或者删除元素的操作。空链表不支持修改等操作。
+8. 再subList场景中，因为其返回的是是父集合的一部分视图，因此原来集合的修改，均会使其发生变化。建议开辟一个新的集合去接收对象。
+9. **使用集合转数组的方法，必须使用集合的toArray(T[] array)，传入的是类型完全一致，长度为0的数组，这样避免内存的浪费和重新分配**
+10. **在使用Collection接口任何实现类的addAll()方法时，都要对输入的集合参数进行NPE判断**--在ArrayList.addAll方法的第一行代码即Object[] a = c.toArray();其中c为输入集合参数，如果为null，则直接抛出异常。
+11. 使用工具类Arrays.asList()把数组转换成集合时，不能使用其修改集合相关的方法，它的add/remove/clear方法会抛出UnsupportedOperationException异常。
 说明：asList的返回对象是一个Arrays内部类，并没有实现集合的修改方法。Arrays.asList体现的是适配器模式，只是转换接口，后台的数据仍是数组。
   
     ```java
@@ -156,11 +225,11 @@ _参考链接:_
     - 第一种情况：list.add("yangguanbao");运行时异常。
     - 第二种情况：str[0]="gujin";那么list.get(0)也会随之修改。
 
-9. 泛型通配符<?extendsT>来接收返回的数据，此写法的泛型集合不能使用add方法，而<?superT>不能使用get方法，作为接口调用赋值时易出错。
+12. 泛型通配符<?extendsT>来接收返回的数据，此写法的泛型集合不能使用add方法，而<?superT>不能使用get方法，作为接口调用赋值时易出错。
     - 因为<?extendsT>主要存储类和其子类；你不能往Plate<? extends T>中插入任何类型的对象,因为你不能保证列表实际指向的类型是什么。只能保证读取的是T及其子类；并且初始化后不能再添加，因此不能使用add方法。而`<?super T>`刚好和其相反相当于C++中的虚基类，不过这里统一指示成为Object。
     - 存储多时使用<?superT>;访问多时使用<?extendsT>
     - [<? extends T> 及<? super T> 重温](https://www.cnblogs.com/zero2max/p/11398537.html)
-10. 在无泛型限制定义的集合赋值给泛型集合时，在使用元素集合时，需要进行instanceof判断，避免抛出`ClassCastException`异常
+13. 在无泛型限制定义的集合赋值给泛型集合时，在使用元素集合时，需要进行instanceof判断，避免抛出`ClassCastException`异常
 。不能直接进行赋值。
     ```java
     List<String> generics = null;
@@ -173,7 +242,7 @@ _参考链接:_
     String string = generics.get(0);
     ```
 
-11. **不要在 foreach 循环里进行元素的 remove/add 操作。remove 元素请使用Iterator方式，如果并发操作，需要对 Iterator 对象加锁。**
+14. **不要在 foreach 循环里进行元素的 remove/add 操作。remove 元素请使用Iterator方式，如果并发操作，需要对 Iterator 对象加锁。**
 
     ```java
     //正例
@@ -197,7 +266,7 @@ _参考链接:_
     // 主要还是和C++类似的迭代器失效的问题。
     ```
 
-12. **在 JDK7 版本及以上，Comparator 实现类要满足如下三个条件，不然 Arrays.sort，Collections.sort 会抛 IllegalArgumentException 异常。**
+15. **在 JDK7 版本及以上，Comparator 实现类要满足如下三个条件，不然 Arrays.sort，Collections.sort 会抛 IllegalArgumentException 异常。**
     -  x，y 的比较结果和 y，x 的比较结果相反。
     -  x>y，y>z，则 x>z。
     - x=y，则 x，z 比较结果和 y，z 比较结果相同。
@@ -210,12 +279,12 @@ _参考链接:_
         }
     };
     ```
-13. 集合泛型定义时，在JDK7及以上，使用diamond语法或全省略。
-14. 集合初始化时，指定集合初始值大小([java集合超详解](https://blog.csdn.net/feiyanaffection/article/details/81394745);[java集合框架（深入）](https://www.cnblogs.com/TestMa/p/10641367.html))。
-15. 使用entrySet遍历Map类集合KV，而不是keySet方式进行遍历。
+16. 集合泛型定义时，在JDK7及以上，使用diamond语法或全省略。
+17. 集合初始化时，指定集合初始值大小([java集合超详解](https://blog.csdn.net/feiyanaffection/article/details/81394745);[java集合框架（深入）](https://www.cnblogs.com/TestMa/p/10641367.html))。
+18. 使用entrySet遍历Map类集合KV，而不是keySet方式进行遍历。
     - keySet其实是遍历了2次，一次是转为Iterator对象，另一次是从hashMap中取出key所对应的value。而entrySet只是遍历了一次就把key和value都放到了entry中，效率更高。如果是JDK8，使用Map.foreach方法。正例：values()返回的是V值集合，是一个list集合对象；keySet()返回的是K值集合，是一个Set集合对象；entrySet()返回的是K-V值组合集合。
     - [java中Map遍历的四种方式](https://www.cnblogs.com/damoblog/p/9124937.html)
-16. 高度注意Map类集合K/V能不能存储null值的情况，如下表格:
+19. 高度注意Map类集合K/V能不能存储null值的情况，如下表格:
 
 |集合类|Key|Value|Super|说明|
 |:--|:---:|:---:|:---:|:---:|
@@ -224,9 +293,12 @@ _参考链接:_
 |`TreeMap`|不允许为null|允许为null|`AbstractMap`|线程不安全|
 |`HashMap`|许为null|允许为null|`AbstractMap`|线程不安全|
 
-17. 合理利用好集合的有序性(sort)和稳定性(order)，避免集合的无序性(unsort)和不稳定性(unorder)带来的负面影响。
+- 注意:`ConcurrentHashMap`的默认初始表大小是16。并且是线程安全的类。
+
+
+20. 合理利用好集合的有序性(sort)和稳定性(order)，避免集合的无序性(unsort)和不稳定性(unorder)带来的负面影响。
     - 说明：有序性是指遍历的结果是按某种比较规则依次排列的。稳定性指集合每次遍历的元素次序是一定的。如：ArrayList是order/unsort；HashMap是unorder/unsort；TreeSet是order/sort。
-18. 利用Set元素的唯一性，可以快速对一个集合进行去重操作，避免使用List的contains方法进行遍历、对比、去重操作。
+21. 利用Set元素的唯一性，可以快速对一个集合进行去重操作，避免使用List的contains方法进行遍历、对比、去重操作。
 
 ### 1.6 并发处理
 
@@ -267,8 +339,11 @@ _参考链接:_
     - [Java锁详解](https://blog.csdn.net/zcl_love_wx/article/details/93977947)
     - [java中的各种锁详细介绍](https://www.cnblogs.com/jyroy/p/11365935.html)
     - [Java高并发之无锁与Atomic源码分析](https://www.cnblogs.com/xdecode/p/9022525.html)
-8. 多多个资源、数据库表、对象同时加锁时，需要保持一致的加锁顺序，否则会造成死锁。
-9. 在使用阻塞等待获取锁的方式中，必须在 try 代码块之外，并且在加锁方法与 try 代码块之间没有任何可能抛出异常的方法调用，避免加锁成功后，在 finally 中无法解锁。 
+
+8. **对多个资源、数据库表、对象同时加锁时，需要保持一致的加锁顺序，否则会造成死锁。**
+    - 说明：线程一需要对表 A、B、C依次全部加锁后才可以进行更新操作，那么线程二的加锁顺序也必须是 A、 B、C，否则可能出现死锁。 
+
+9. **在使用阻塞等待获取锁的方式中，必须在 try 代码块之外，并且在加锁方法与 try 代码块之间没有任何可能抛出异常的方法调用，避免加锁成功后，在 finally 中无法解锁。** 
     - 说明一：如果在 lock 方法与 try 代码块之间的方法调用抛出异常，那么无法解锁，造成其它线程无法成功获取锁。 
     - 说明二：如果 lock 方法在 try 代码块之内，可能由于其它方法抛出异常，导致在 finally 代码块中，unlock 对未加锁的对象解锁，它会调用 AQS 的 tryRelease 方法（取决于具体实现类），抛出IllegalMonitorStateException 异常。
     - 说明三：在 Lock 对象的 lock 方法实现中可能抛出 unchecked 异常，产生的后果与说明二相同。 
@@ -282,6 +357,18 @@ _参考链接:_
         doOthers();
     } finally {
         lock.unlock();
+    }
+
+    // 反例:
+    Lock lock = new XxxLock(); 
+    try {     
+        // 如果此处抛出异常，则直接执行finally代码块     
+        doSomething();     
+        // 无论加锁是否成功，finally代码块都会执行     
+        lock.lock();     
+        doOthers(); 
+    } finally {     
+        lock.unlock(); 
     }
     ```
 10. **在使用尝试机制来获取锁的方式中，进入业务代码块之前，必须先判断当前线程是否持有锁。锁的释放规则与锁的阻塞等待方式相同。**
@@ -301,11 +388,14 @@ _参考链接:_
     ```
 11. **并发修改同一记录时，避免更新丢失，需要加锁。要么在应用层加锁，要么在缓存加锁，要么在数据库层使用乐观锁，使用 version 作为更新依据。**
     - 说明：如果每次访问冲突概率小于 20%，推荐使用乐观锁，否则使用悲观锁。乐观锁的重试次数不得小于3 次。
-12. **多线程并行处理定时任务时，Timer 运行多个 TimeTask 时，只要其中之一没有捕获抛出的异常，其它任务便会自动终止运行，如果在处理定时任务时使用**
-
+12. **多线程并行处理定时任务时，Timer 运行多个 TimeTask 时，只要其中之一没有捕获抛出的异常，其它任务便会自动终止运行(多线程异常会抛出错误)，如果在处理定时任务时使用`ScheduledExecutorService`则没有这个问题**
+    - 说明：乐观锁在获得锁的同时已经完成了更新操作，校验逻辑容易出现漏洞，另外，乐观锁对冲突的解决策 略有较复杂的要求，处理不当容易造成系统压力或数据异常，所以资金相关的金融敏感信息不建议使用乐观 锁更新。 
+    - 正例：悲观锁遵循一锁二判三更新四释放的原则
 13. 资金相关的金融敏感信息，使用悲观锁策略。
-14. 使用 CountDownLatch 进行异步转同步操作，每个线程退出前必须调用 countDown方法，线程执行代码注意 catch 异常，确保 countDown 方法被执行到，避免主线程无法执行至 await 方法，直到超时才返回结果。
+14. 使用 `CountDownLatch` 进行异步转同步操作，每个线程退出前必须调用 `countDown` 方法，线程执行代码注意 catch 异常，确保 `countDown` 方法被执行到，避免主线程无法执行至 `await` 方法，直到超时才返回结果。
     - 注意，子线程抛出异常堆栈，不能在主线程try-catch到。 
+    - [CountDownLatch详解](https://www.jianshu.com/p/128476015902)
+
 15. 避免 Random 实例被多线程使用，虽然共享该实例是线程安全的，但会因竞争同一seed  导致的性能下降。
     - Random 实例包括 java.util.Random  的实例或者  Math.random()的方式。 
     - 在 JDK7 之后，可以直接使用 API ThreadLocalRandom，而在  JDK7 之前，需要编码保证每个线程持有一个实例。 
