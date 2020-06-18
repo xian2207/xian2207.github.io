@@ -323,7 +323,24 @@ _参考链接:_
     - 注意 break 是退出 switch 语句块，而 return 是退出方法体。 
 2. **当 switch 括号内的变量类型为 String 并且此变量为外部参数时，必须先进行 null判断。**
     ```java
-        public  class  SwitchString  {      public  static  void  main(String[]  args)  {          method(null);      }       public  static  void  method(String  param)  {          switch  (param)  {              //  肯定不是进入这里              case  "sth":                  System.out.println("it's  sth");                  break;              //  也不是进入这里              case  "null":                  System.out.println("it's  null");                  break;              //  也不是进入这里              default:                  System.out.println("default");          }      } } 
+        public  class  SwitchString  {      
+            public  static  void  main(String[]  args){
+                method(null);
+            }       
+            public  static  void  method(String  param)  {
+                switch  (param)  {              
+                //  肯定不是进入这里              
+                case  "sth":                  
+                    System.out.println("it's  sth");
+                    break;              //  也不是进入这里
+                case  "null":
+                    System.out.println("it's  null");
+                    break;              //  也不是进入这里
+                default:
+                    System.out.println("default");
+                    }
+            }
+        } 
     ```
 3. **在 if/else/for/while/do 语句中必须使用大括号。即使只有一行if**
 4. **在高并发场景中，避免使用”等于”判断作为中断或退出的条件。** 
