@@ -86,6 +86,7 @@ _参考链接：_
         - `-D<propertyName>=value`:相当于CMake中的-D变量设置，不过可以使用System.getProperty(“propertyName”)获取其对应的值。
 
 - javac: 编译的Java程序，生成.class文件。
+
 ```bash
 用法: javac <options> <source files>
 其中, 可能的选项包括:
@@ -123,6 +124,7 @@ _参考链接：_
 ```
 - javaw: 跟java命令相对的，可以运行.class文件,主要用来执行图形界面的java程序运行java命令时，会出现并保持一个console窗口,程 序中的信息可以通过System.out在console内输出，而运行javaw，开始时会出现console，当主程序调用之后，console就会 消失； javaw 大多用来运行GUI程序
 - javah: C 头文件和 Stub 文件生成器。javah 从 Java 类生成 C 头文件和 C 源文件。这些文件提供了连接胶合，使 Java 和 C 代码可进行交互。
+
 ```bash
 用法:
   javah [options] <classes>
@@ -141,6 +143,7 @@ _参考链接：_
 (例如, java.lang.Object)。
 ```
 - javap: 命令用于解析类文件。其输出取决于所用的选项。若没有使用选项，javap 将输出传递给它的类的 public 域及方法。javap 将其输出到标准输出设备上。
+
 ```sh
 用法: javap <options> <classes>
 其中, 可能的选项包括:
@@ -162,6 +165,7 @@ _参考链接：_
   -cp <path>               指定查找用户类文件的位置
   -bootclasspath <path>    覆盖引导类文件的位置
 ```
+
 - jdb: Java的一个命令行调试环境，既可在本地，也可在与远程的解释器的一次对话中执行。
 - jconsole: J2SE监测和管理控制台---一个同JMX兼容的监测Java虚拟机的图形工具。其能够监视当地或者远程的Java虚拟机。
 - jps: java虚拟机进程状态工具---在目标系统上列出装备有HotSpot Java的虚拟机启动了 Java 进程时，请使用 jps 工具来通过键入 jps 标识其 JVM。它向您提供一个正在运行的 Java 进程的列表，这些进程以其 JVM 作为 ID。
@@ -226,6 +230,7 @@ Maven和CMake一样，存在基础的配置变量；常用参数如下：
 POM( Project Object Model，项目对象模型 ) 是 Maven 工程的基本工作单元，是一个XML文件，包含了项目的基本信息，用于描述项目如何构建，声明项目依赖，等等。
 
 下面是POM的标签大全解
+
 
 ```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -897,3 +902,5 @@ POM( Project Object Model，项目对象模型 ) 是 Maven 工程的基本工作
     <properties />
 </project>
 ```
+
+
