@@ -148,12 +148,13 @@ _参考链接:_
 7. **在使用Collection接口任何实现类的addAll()方法时，都要对输入的集合参数进行NPE判断**--在ArrayList.addAll方法的第一行代码即Object[] a = c.toArray();其中c为输入集合参数，如果为null，则直接抛出异常。
 8. 使用工具类Arrays.asList()把数组转换成集合时，不能使用其修改集合相关的方法，它的add/remove/clear方法会抛出UnsupportedOperationException异常。
 说明：asList的返回对象是一个Arrays内部类，并没有实现集合的修改方法。Arrays.asList体现的是适配器模式，只是转换接口，后台的数据仍是数组。
+  
     ```java
     String[] str = new String[] { "you", "wu" };
     Listlist = Arrays.asList(str);
     ```
-    第一种情况：list.add("yangguanbao");运行时异常。
-    第二种情况：str[0]="gujin";那么list.get(0)也会随之修改。
+    - 第一种情况：list.add("yangguanbao");运行时异常。
+    - 第二种情况：str[0]="gujin";那么list.get(0)也会随之修改。
 
 9. 泛型通配符<?extendsT>来接收返回的数据，此写法的泛型集合不能使用add方法，而<?superT>不能使用get方法，作为接口调用赋值时易出错。
     - 因为<?extendsT>主要存储类和其子类；你不能往Plate<? extends T>中插入任何类型的对象,因为你不能保证列表实际指向的类型是什么。只能保证读取的是T及其子类；并且初始化后不能再添加，因此不能使用add方法。而`<?super T>`刚好和其相反相当于C++中的虚基类，不过这里统一指示成为Object。
@@ -161,38 +162,40 @@ _参考链接:_
     - [<? extends T> 及<? super T> 重温](https://www.cnblogs.com/zero2max/p/11398537.html)
 10. 在无泛型限制定义的集合赋值给泛型集合时，在使用元素集合时，需要进行instanceof判断，避免抛出`ClassCastException`异常
 。不能直接进行赋值。
-```java
-List<String> generics = null;
-List notGenerics = new ArrayList(10);
-notGenerics.add(new Object());
-notGenerics.add(new Integer(1));
-generics = notGenerics;
-// 此处抛出 ClassCastException 异常
+    ```java
+    List<String> generics = null;
+    List notGenerics = new ArrayList(10);
+    notGenerics.add(new Object());
+    notGenerics.add(new Integer(1));
+    generics = notGenerics;
+    // 此处抛出 ClassCastException 异常
 
-String string = generics.get(0);
-```
+    String string = generics.get(0);
+    ```
+
 11. **不要在 foreach 循环里进行元素的 remove/add 操作。remove 元素请使用Iterator方式，如果并发操作，需要对 Iterator 对象加锁。**
-```java
-//正例
 
-List<String> list= new ArrayList<>();list.add("1");
-list.add("2");
-Iterator<String> iterator = list.iterator();
-while(iterator.hasNext()){
-    Stringitem=iterator.next();
-    if(删除元素的条件){
-        iterator.remove();
-    }
-}
-//反例
+    ```java
+    //正例
 
-for (String item : list) {
-    if ("1".equals(item)) {
-        list.remove(item);
+    List<String> list= new ArrayList<>();list.add("1");
+    list.add("2");
+    Iterator<String> iterator = list.iterator();
+    while(iterator.hasNext()){
+        Stringitem=iterator.next();
+        if(删除元素的条件){
+            iterator.remove();
+        }
     }
-}
-// 主要还是和C++类似的迭代器失效的问题。
-```
+    //反例
+
+    for (String item : list) {
+        if ("1".equals(item)) {
+            list.remove(item);
+        }
+    }
+    // 主要还是和C++类似的迭代器失效的问题。
+    ```
 
 12. **在 JDK7 版本及以上，Comparator 实现类要满足如下三个条件，不然 Arrays.sort，Collections.sort 会抛 IllegalArgumentException 异常。**
     -  x，y 的比较结果和 y，x 的比较结果相反。
@@ -376,6 +379,7 @@ for (String item : list) {
     - 不要在方法体内定义：Pattern pattern = Pattern.compile(“规则”); 
 2. **velocity 调用 POJO 类的属性时，直接使用属性名取值即可，模板引擎会自动按规范调用 POJO 的 getXxx()，如果是 boolean 基本数据类型变量（boolean 命名不需要加 is 前缀），会自动调用 is Xxx()方法。**
     - 注意如果是 Boolean 包装类对象，优先调用 getXxx()的方法。 
+    - [Velocity教程](https://www.jianshu.com/p/5913903324ff)
 3. **后台输送给页面的变量必须加$!{var}——中间的感叹号。**
     - 如果 var 等于 null 或者不存在，那么${var}会直接显示在页面上。 
 4. **注意  Math.random()  这个方法返回是 double 类型，注意取值的范围  0≤x<1（能够取到零值，注意除零异常），如果想获取整数类型的随机数，不要将 x 放大 10 的若干倍然后取整，直接使用 Random 对象的 nextInt 或者 nextLong 方法。**
