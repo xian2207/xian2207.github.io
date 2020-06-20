@@ -999,3 +999,11 @@ ENTERPRISE_INTELLIGENCE _ UNIT_ TEST_的前缀来标识单元测试相关代码�
     - 所有可交互的控件元素必须能被tab键聚焦，并且焦点顺序需符合自然操作逻辑。
     - 用于登陆校验和请求拦截的验证码均需提供图形验证以外的其它方式。
     - 自定义的控件类型需明确交互方式。
+
+
+## 最终考试成绩证书
+
+![阿里云证书](https://xuecdn2.aliyunedu.net/img_46cab1096fcfb608538073c50cfa69d1.jpg)
+
+
+![本地证书](https://wangpengcheng.github.io/img/2020-06-21-01-29-alicodestanrd.jpg)
