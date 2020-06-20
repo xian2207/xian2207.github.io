@@ -162,6 +162,41 @@ b. 日期时间和大对象映射表:
     - 注意protect、public、private的成员变量修饰的方法类。
     - static成员变量，一般都考虑是否为final
 
+### 1.5 日期时间
+
+1. **日期格式化时，传入pattern 中表示年份统一使用小写的y。**
+    - 说明: 日期格式化时，yyyy表示当天所在的年，而大写的YYYY表示当天所在周属于的年份，，一周从周日开始，周六结束，只要本周跨年，返回的 YYYY 就是下一年。 
+    - 正例:`new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss")`
+2. **在日期格式中分清楚M/m、H/h**
+    - 说明:日期格式中的这两对字母表意如下:
+        1. 表示月份是大写的M;
+        2. 表示分钟的是小写的m;
+        3. 24小时制写的是大写的H;
+        4. 12小时制的是小写的h;
+3. **获取当前的毫秒数要使用`System.currentTimeMills()`;而不是`new Data().getTIme()`**
+    - 说明：如果想获取更加精确的纳秒级时间值，使用 System.nanoTime 的方式。在 JDK8 中，针对统计时间 等场景，推荐使用 Instant([Java8 Instant 时间戳](https://blog.csdn.net/chunzhilianxue/article/details/80974202);[Java8中的LocalDateTime、Instant、DateTimeFormatter](https://www.jianshu.com/p/9828d79a2528)) 类。 
+4. **不允许在程序任何地方中使用：1）java.sql.Date 2）java.sql.Time 3） java.sql.Timestamp。**
+    - 说明：第1 个不记录时间，getHours()抛出异常；第2个不记录日期，getYear()抛出异常；第3 个在构造 方法 super((time/1000)*1000)，fastTime 和nanos分开存储秒和纳秒信息。
+    - 反例： java.util.Date.after(Date)进行时间比较时，当入参是 java.sql.Timestamp 时，会触发 JDK BUG(JDK9 已修复)，可能导致比较时的意外结果。
+5. **不要在程序中写死一年为365天，避免在公历闰年时出现日期转换错误或程序逻辑 错误。**
+    ```java
+    //正例
+    // 获取今年的天数 
+    int daysOfThisYear = LocalDate.now().lengthOfYear();
+    //获取指定某天的天数
+    LocalDate.of(2011, 1, 1).lengthOfYear();
+
+    //反例
+    
+    // 第二种情况：一年有效期的会员制，今年1月26日注册，硬编码365返回的却是1月25日 
+    Calendar calendar = Calendar.getInstance(); calendar.set(2020, 1, 26);
+    calendar.add(Calendar.DATE, 365);
+    ```
+6. 避免公历闰年2月问题。闰年的2月份有29天，一年后的那一天不可能是2月29 日。
+7. 使用枚举值来指代月份。如果使用数字，注意Date，Calendar等日期相关类的月份 month 取值在0-11之间。
+    - 说明：参考JDK 原生注释，Month value is 0-based. e.g., 0 for January.
+    - 正例： Calendar.JANUARY，Calendar.FEBRUARY，Calendar.MARCH 等来指代相应月份来进行传参或 比较。
+
 ### 1.5 集合处理
 
 1. **强制**关于hashCode和equal的处理，遵循如下规则:
@@ -170,7 +205,7 @@ b. 日期时间和大对象映射表:
     3. 如果自定义对象作为Map的键，那么必须覆写hashCode和equals
 2. **判断所有集合内部的元素是否为空，使用isEmpty()方法，而不是size()==0的方式。**
     - 说明：前者的时间复杂度为 O(1)，而且可读性更好。 
-    - 对于不同的类型推荐使用ConllectionUtil、MapUtil、String.util等进行判断。
+    - 对于不同的类型推荐使用ConllectionUtil、MapUtil、String.util等进行判断；一般是先判断是否为空指针，然后才是判断是否为空。
 3. **在使用java.util.stream.Collectors类的 toMap()方法转为Map集合时，一定要使 用含有参数类型为BinaryOperator，参数名为mergeFunction 的方法，否则当出现相同key 值时会抛出IllegalStateException 异常。**
     - 说明：参数mergeFunction 的作用是当出现 key重复时，自定义对 value 的处理策略。 
     - 正例： 
@@ -215,7 +250,7 @@ b. 日期时间和大对象映射表:
 8. 再subList场景中，因为其返回的是是父集合的一部分视图，因此原来集合的修改，均会使其发生变化。建议开辟一个新的集合去接收对象。
 9. **使用集合转数组的方法，必须使用集合的toArray(T[] array)，传入的是类型完全一致，长度为0的数组，这样避免内存的浪费和重新分配**
 10. **在使用Collection接口任何实现类的addAll()方法时，都要对输入的集合参数进行NPE判断**--在ArrayList.addAll方法的第一行代码即Object[] a = c.toArray();其中c为输入集合参数，如果为null，则直接抛出异常。
-11. 使用工具类Arrays.asList()把数组转换成集合时，不能使用其修改集合相关的方法，它的add/remove/clear方法会抛出UnsupportedOperationException异常。
+11. **使用工具类Arrays.asList()把数组转换成集合时，不能使用其修改集合相关的方法，它的add/remove/clear方法会抛出UnsupportedOperationException异常。**
 说明：asList的返回对象是一个Arrays内部类，并没有实现集合的修改方法。Arrays.asList体现的是适配器模式，只是转换接口，后台的数据仍是数组。
   
     ```java
@@ -225,7 +260,7 @@ b. 日期时间和大对象映射表:
     - 第一种情况：list.add("yangguanbao");运行时异常。
     - 第二种情况：str[0]="gujin";那么list.get(0)也会随之修改。
 
-12. 泛型通配符<?extendsT>来接收返回的数据，此写法的泛型集合不能使用add方法，而<?superT>不能使用get方法，作为接口调用赋值时易出错。
+12. 泛型通配符`<? extends T>`来接收返回的数据，此写法的泛型集合不能使用add方法，而<? super T>不能使用get方法，作为接口调用赋值时易出错。
     - 因为<?extendsT>主要存储类和其子类；你不能往Plate<? extends T>中插入任何类型的对象,因为你不能保证列表实际指向的类型是什么。只能保证读取的是T及其子类；并且初始化后不能再添加，因此不能使用add方法。而`<?super T>`刚好和其相反相当于C++中的虚基类，不过这里统一指示成为Object。
     - 存储多时使用<?superT>;访问多时使用<?extendsT>
     - [<? extends T> 及<? super T> 重温](https://www.cnblogs.com/zero2max/p/11398537.html)
@@ -280,6 +315,14 @@ b. 日期时间和大对象映射表:
     };
     ```
 16. 集合泛型定义时，在JDK7及以上，使用diamond语法或全省略。
+    - 说明：菱形泛型，即 diamond，直接使用<>来指代前边已经指定的类型。 
+    ```java
+    //正例:
+    // diamond方式，即<> 
+    HashMap<String, String> userCache = new HashMap<>(16); 
+    // 全省略方式 
+    ArrayList<User> users = new ArrayList(10); 
+    ```
 17. 集合初始化时，指定集合初始值大小([java集合超详解](https://blog.csdn.net/feiyanaffection/article/details/81394745);[java集合框架（深入）](https://www.cnblogs.com/TestMa/p/10641367.html))。
 18. 使用entrySet遍历Map类集合KV，而不是keySet方式进行遍历。
     - keySet其实是遍历了2次，一次是转为Iterator对象，另一次是从hashMap中取出key所对应的value。而entrySet只是遍历了一次就把key和value都放到了entry中，效率更高。如果是JDK8，使用Map.foreach方法。正例：values()返回的是V值集合，是一个list集合对象；keySet()返回的是K值集合，是一个Set集合对象；entrySet()返回的是K-V值组合集合。
@@ -344,7 +387,7 @@ b. 日期时间和大对象映射表:
     - 说明：线程一需要对表 A、B、C依次全部加锁后才可以进行更新操作，那么线程二的加锁顺序也必须是 A、 B、C，否则可能出现死锁。 
 
 9. **在使用阻塞等待获取锁的方式中，必须在 try 代码块之外，并且在加锁方法与 try 代码块之间没有任何可能抛出异常的方法调用，避免加锁成功后，在 finally 中无法解锁。** 
-    - 说明一：如果在 lock 方法与 try 代码块之间的方法调用抛出异常，那么无法解锁，造成其它线程无法成功获取锁。 
+    - 说明一：如果在 lock 方法与 try **代码块之间的方法调用抛出异常**，那么**无法解锁**，造成其它线程无法成功获取锁。 
     - 说明二：如果 lock 方法在 try 代码块之内，可能由于其它方法抛出异常，导致在 finally 代码块中，unlock 对未加锁的对象解锁，它会调用 AQS 的 tryRelease 方法（取决于具体实现类），抛出IllegalMonitorStateException 异常。
     - 说明三：在 Lock 对象的 lock 方法实现中可能抛出 unchecked 异常，产生的后果与说明二相同。 
     ```java
@@ -390,7 +433,8 @@ b. 日期时间和大对象映射表:
     - 说明：如果每次访问冲突概率小于 20%，推荐使用乐观锁，否则使用悲观锁。乐观锁的重试次数不得小于3 次。
 12. **多线程并行处理定时任务时，Timer 运行多个 TimeTask 时，只要其中之一没有捕获抛出的异常，其它任务便会自动终止运行(多线程异常会抛出错误)，如果在处理定时任务时使用`ScheduledExecutorService`则没有这个问题**
     - 说明：乐观锁在获得锁的同时已经完成了更新操作，校验逻辑容易出现漏洞，另外，乐观锁对冲突的解决策 略有较复杂的要求，处理不当容易造成系统压力或数据异常，所以资金相关的金融敏感信息不建议使用乐观 锁更新。 
-    - 正例：悲观锁遵循一锁二判三更新四释放的原则
+    - 正例：悲观锁遵循一锁二判三更新四释放的原则。
+    - 参考链接: [java定时器之Timer使用与原理分析](https://blog.csdn.net/fuyuwei2015/article/details/83825851)
 13. 资金相关的金融敏感信息，使用悲观锁策略。
 14. 使用 `CountDownLatch` 进行异步转同步操作，每个线程退出前必须调用 `countDown` 方法，线程执行代码注意 catch 异常，确保 `countDown` 方法被执行到，避免主线程无法执行至 `await` 方法，直到超时才返回结果。
     - 注意，子线程抛出异常堆栈，不能在主线程try-catch到。 
