@@ -348,13 +348,24 @@ b. 日期时间和大对象映射表:
 1. **获取单例对象需要保障线程安全，其中的方法也要保证线程安全**。
     - [Java-单例设计模式（懒汉与饿汉）](https://www.cnblogs.com/llstudy/p/9345686.html)
 2. **创建线程或线程池时请指定有意义的线程名称，方便出错时回溯**
+    - 正例：自定义线程工厂，并且根据外部特征进行分组，比如，来自同一机房的调用，把机房编号赋值给`whatFeaturOfGroup`
     ```java
-        public class TimerTaskThread extends Thread {
-            public TimerTaskThread(){
-                super.setName("Timer TaskThread");
-                ...
+        public class UserThreadFactory implements ThreadFactory {     
+            private final String namePrefix;     
+            private final AtomicInteger nextId = new AtomicInteger(1); 
+            // 定义线程组名称，在jstack 问题排查时，非常有帮助     
+            UserThreadFactory(String whatFeaturOfGroup) {         
+                namePrefix = "From UserThreadFactory's " + whatFeaturOfGroup + "-Worker-";     
             }
-        }
+ 
+            @Override     
+            public Thread newThread(Runnable task) {        
+                    String name = namePrefix + nextId.getAndIncrement();
+                    Thread thread = new Thread(null, task, name, 0, false);
+                    System.out.println(thread.getName());
+                    return thread;
+                } 
+        } 
     ```
 3. 线程资源必须通过线程池提供，不允许在应用中自行显式创建线程。避免创建线程的不必要开销。
     - [Java基础篇-线程与线程池](https://zhuanlan.zhihu.com/p/106803927?utm_source=wechat_session)
@@ -376,7 +387,9 @@ b. 日期时间和大对象映射表:
     };
     ```
     - 说明：如果是JDK8的应用，可以使用Instant代替Date，LocalDateTime代替Calendar，DateTimeFormatter代替SimpleDateFormat，官方给出的解释：simplebeautifulstrongimmutablethread-safe。
+
 6. 必须回收自定义的ThreadLocal变量。尤其是在线程池场景下，线程经常会被复用，如果不清理自定义的ThreadLocal变量，可能会影响后续业务逻辑和造成内存泄漏等问题；尽量在代理中使用`try-finally`快进行回收。
+
 7. **高并发时，同步调用应该去考量锁的性能损耗。能用无锁数据结构，就不要用锁；能锁区块，就不要锁整个方法体；能用对象锁，就不要用类锁。**
     - 可能使加锁的代码块工作量尽可能的小，避免在锁代码块中调用RPC方法。
     - [Java锁详解](https://blog.csdn.net/zcl_love_wx/article/details/93977947)
