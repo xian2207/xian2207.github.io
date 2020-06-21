@@ -646,6 +646,7 @@ b. 日期时间和大对象映射表:
     - 级联调用 obj.getA().getB().getC()；一连串调用，易产生 NPE。 
         - 正例：使用 JDK8 的 Optional 类来防止 NPE 问题。
 12. 定义时区分 unchecked / checked  异常，避免直接抛出 new RuntimeException()，更不允许抛出 Exception 或者 Throwable，应使用有业务含义的自定义异常。推荐业界已定义过的自定义异常，如：DAOException / ServiceException 等。 
+    - [Java异常：选择Checked Exception还是Unchecked Exception?](https://blog.csdn.net/kingzone_2008/article/details/8535287)
 13. 对于公司外的 http/api 开放接口必须使用“错误码”；而应用内部推荐异常抛出；跨应用间 RPC 调用优先考虑使用 Result 方式，封装 isSuccess()方法、“错误码”、“错误简短信息”。 
     - 使用抛异常返回方式，调用方如果没有捕获到就会产生运行时错误。
     - 如果不加栈信息，只是 new 自定义异常，加入自己的理解的 error message，对于调用端解决问题的帮助不会太多。如果加了栈信息，在频繁调用出错的情况下，数据序列化和传输的性能损耗也是问题。 
@@ -674,6 +675,7 @@ b. 日期时间和大对象映射表:
     - 因为 String 字符串的拼接会使用 StringBuilder 的 append()方式，有一定的性能损耗。使用占位符仅是替换动作，可以有效提升性能。
     - 例: `logger.debug("Processing trade with id: {} and symbol: {}", id, symbol);`
     - [String+，StringBuilder，String.format运行效率比较](https://blog.csdn.net/imi00/article/details/80951856)
+    - [Java魔法堂：String.format详解](https://www.cnblogs.com/fsjohnhuang/p/4094777.html)
 5. **对于 trace/debug/info 级别的日志输出，必须进行日志级别的开关判断。**
     - 虽然在 debug(参数)的方法体内第一行代码 isDisabled(Level.DEBUG_INT)为真时（Slf4j 的常见实现 Log4j 和 Logback），就直接 return，但是参数可能会进行字符串拼接运算。此外，如果debug(getName())这种参数内有 getName()方法调用，无谓浪费方法调用的开销。
     ```java
@@ -827,6 +829,7 @@ ENTERPRISE_INTELLIGENCE _ UNIT_ TEST_的前缀来标识单元测试相关代码�
     - 反例：explain表的结果，type=index，索引物理文件全扫描，速度非常慢，这个index级别比较range还低，与全表扫描是小巫见大巫。
     - 访问类型, 显示查询使用了何种类型, 从最好到最差依次是 :`system>const>eq_ref>ref>range>index>ALL`
     - [MySQL自带查询优化器(MySQL Query Optimizer)](https://zhuanlan.zhihu.com/p/56529089)
+    - [MySql范围查找时，索引不生效问题原因](https://blog.csdn.net/qq_25188255/article/details/81316498)
 9. 因为最左匹配原则；建组合索引的时候，区分度最高的在最左边。
     - 正例：如果where a=? and b=?，a列的几乎接近于唯一值，那么只需要单建 idx_a索引即可。
     - 说明：存在非等号和等号混合判断条件时，在建索引时，请把等号条件的列前置。如：where c>? and d=? 那么即使 c的区分度更高，也必须把d 放在索引的最前列，即建立组合索引idx_d_c。 
