@@ -229,6 +229,18 @@ Maven和CMake一样，存在基础的配置变量；常用参数如下：
 
 POM( Project Object Model，项目对象模型 ) 是 Maven 工程的基本工作单元，是一个XML文件，包含了项目的基本信息，用于描述项目如何构建，声明项目依赖，等等。
 
+所有 POM 文件都需要 project 元素和三个必需字段：groupId，artifactId，version。
+
+|节点|描述|
+|:---:|:---|
+|`project`|工程的根标签。|
+|`modelVersion`|模型版本需要设置为 4.0。|
+|`groupId`|这是工程组的标识。它在一个组织或者项目中通常是唯一的。例如，一个银行组织 com.companyname.project-group 拥有所有的和银行相关的项目。|
+|`artifactId`|这是工程的标识。它通常是工程的名称。例如，消费者银行。groupId 和 artifactId 一起定义了 artifact 在仓库中的位置。
+|`version`|这是工程的版本号。在 artifact 的仓库中，它用来区分不同的版本。例如：`com.company.bank:consumer-banking:1.0`|
+
+
+
 下面是POM的标签大全解
 
 
@@ -843,6 +855,10 @@ POM( Project Object Model，项目对象模型 ) 是 Maven 工程的基本工作
     </reporting>
     <!-- 继承自该项目的所有子项目的默认依赖信息。这部分的依赖信息不会被立即解析,而是当子项目声明一个依赖（必须描述group ID和 artifact 
         ID信息），如果group ID和artifact ID以外的一些信息没有描述，则通过group ID和artifact ID 匹配到这里的依赖，并使用这里的依赖信息。 -->
+    <!--
+        这里是对所有子元素中的数据进行的管理；子项目中引用一个依赖而不显示版本号；就是使用这个dependencyManagement中的指定的版本号 这样可以进行统一的版本管理。
+        注意这里只实现声明而不是进行引入
+    -->
     <dependencyManagement>
         <dependencies>
             <!--参见dependencies/dependency元素 -->
@@ -902,5 +918,194 @@ POM( Project Object Model，项目对象模型 ) 是 Maven 工程的基本工作
     <properties />
 </project>
 ```
+## 4. Maven 构建生命周期
+一个典型的Maven 构建(build)声明周期是由一下几个阶段的序列组成的:
+
+![Maven主要声明周期构成](https://www.runoob.com/wp-content/uploads/2018/09/7642256-c967b2c1faeba9ce.png)
+
+解释如下:
+|阶段|处理|描述|
+|:---:|:---:|:---|
+|验证 validate|验证项目|验证项目是否正确且所有必须信息是可用的|
+|编译 compile|执行编译|源代码编译在此阶段完成|
+|测试 Test|测试|使用适当的单元测试框架（例如JUnit）运行测试。|
+|包装 package|打包|创建JAR/WAR包如在 pom.xml 中定义提及的包|
+|检查 verify|检查|对集成测试的结果进行检查，以保证质量达标|
+|安装 install|安装|安装打包的项目到本地仓库，以供其他项目使用|
+|部署 deploy|部署|拷贝最终的工程包到远程仓库中，以共享给其他开发人员和工程|
+
+为了完成 default 生命周期，这些阶段（包括其他未在上面罗列的生命周期阶段）将被按顺序地执行。Maven 有以下三个标准的生命周期：
+- clean：项目清理的处理;其声明周期如下
+  - pre-clean：执行一些需要在clean之前完成的工作
+  - clean：移除所有上一次构建生成的文件
+  - post-clean：执行一些需要在clean之后立刻完成的工作
+  - 注意：mvn clean 主要执行`pre-clean`和`clean`;`mvn post-clean`才执行三个生命周期。可以使用
+- default(或 build)：项目部署的处理主要生命周期如下:
+  - validate（校验）: 校验项目是否正确并且所有必要的信息可以完成项目的构建过程。
+  - initialize（初始化）: 初始化构建状态，比如设置属性值。
+  - generate-sources（生成源代码）: 生成包含在编译阶段中的任何源代码。
+  - process-sources（处理源代码）: 处理源代码，比如说，过滤任意值。
+  - generate-resources（生成资源文件）: 生成将会包含在项目包中的资源文件。
+  - process-resources （处理资源文件）: 复制和处理资源到目标目录，为打包阶段最好准备。
+  - compile（编译）: 编译项目的源代码。
+  - process-classes（处理类文件）: 处理编译生成的文件，比如说对Java class文件做字节码改善优化。
+  - generate-test-sources（生成测试源代码）:生成包含在编译阶段中的任何测试源代码。
+  - process-test-sources（处理测试源代码）:处理测试源代码，比如说，过滤任意值。
+  - generate-test-resources（生成测试资源文件）:为测试创建资源文件。
+  - process-test-resources（处理测试资源文件）:复制和处理测试资源到目标目录。
+  - test-compile（编译测试源码）:编译测试源代码到测试目标目录
+  - process-test-classes（处理测试类文件）:处理测试源码编译生成的文件。
+  - test（测试）:使用合适的单元测试框架运行测试（Juint是其中之一）。
+  - prepare-package（准备打包）:在实际打包之前，执行任何的必要的操作为打包做准备。
+  - package（打包）:将编译后的代码打包成可分发格式的文件，比如JAR、WAR或者EAR文件。
+  - pre-integration-test（集成测试前）:在执行集成测试前进行必要的动作。比如说，搭建需要的环境。
+  - integration-test（集成测试）:处理和部署项目到可以运行集成测试环境中。
+  - post-integration-test（集成测试后）:在执行集成测试完成后进行必要的动作。比如说，清理集成测试环境。
+  - verify （验证）:运行任意的检查来验证项目包有效且达到质量标准。
+  - install（安装）:安装项目包到本地仓库，这样项目包可以用作其他本地项目的依赖。
+  - deploy（部署）:将最终的项目包复制到远程仓库中与其他开发者和项目共享。
+- site：项目站点文档创建的处理;Maven Site 插件一般用来创建新的报告文档、部署站点等。
+  - pre-site：执行一些需要在生成站点文档之前完成的工作
+  - site：生成项目的站点文档
+  - post-site： 执行一些需要在生成站点文档之后完成的工作，并且为部署做准备
+  - site-deploy：将生成的站点文档部署到特定的服务器上
+
+## 5. Maven 构建配置文件
+_参考链接：_ [Maven 构建配置文件](https://www.runoob.com/maven/maven-build-profiles.html)
+
+构建配置文件是一系列的配置项的值，可以用来设置或者覆盖 Maven 构建默认值。其类型有如下三种:
+- 项目级（Per Project）: 定义在项目的POM文件pom.xml中
+- 用户级 （Per User）: 定义在Maven的设置xml文件中 (%USER_HOME%/.m2/settings.xml)
+- 全局（Global）: 定义在 Maven 全局的设置 xml 文件中 (%M2_HOME%/conf/settings.xml)
+
+配置文件可以通过如下方式进行激活：
+- 控制台命令: 在配置文件中使用`<profiles>`并使用`<id>`区分不同其执行的不同任务。通过`-P`参数来指定构建的`<id>`参数。
+- maven设置: 更改maven的`setting.xml`文件，添加`<activeProfiles>`属性设置执行的任务和参数。
+- 环境变量:`<id>` 为 test 的 `<profile>` 节点，加入 `<activation>` 节点;然后使用D传递环境变量
+- 操作系统设置:activation 元素包含下面的操作系统信息。当系统为 windows XP 时，test Profile 将会被触发。
+  ```xml
+  <profile>
+   <id>test</id>
+   <activation>
+      <os>
+         <name>Windows XP</name>
+         <family>Windows</family>
+         <arch>x86</arch>
+         <version>5.1.2600</version>
+      </os>
+   </activation>
+    </profile>
+  ```
+- 文件的存在或者缺失;现在使用 activation 元素包含下面的操作系统信息;当其文件缺失时将会被触发
+    ```xml
+    <profile>
+    <id>test</id>
+    <activation>
+        <file>
+            <missing>target/generated-sources/axistools/wsdl2java/
+            com/companyname/group</missing>
+        </file>
+    </activation>
+    </profile>
+    ```
+
+## 6. Maven 仓库
+在 Maven 的术语中，仓库是一个位置（place）。仓库的类型分为：本地仓库(local)、中央(central)、远程(remote)；maven依照这个顺序依次查找包；一般首先查找本地仓库，没有再从远程仓库下载至本地；再使用本地仓库
+1. 本地仓库:第一次加载的位置：可以再`<setting>`中通过`<localRepository>`标签进行修改
+2. 中央仓库:一般是由Maven社区提供的仓库，一般不需要配置
+3. 使用`repositories`标签和`repository`标签进行远程仓库的添加
+   ```xml
+    <repositories>
+      <repository>
+         <id>companyname.lib1</id>
+         <url>http://download.companyname.org/maven2/lib1</url>
+      </repository>
+      <repository>
+         <id>companyname.lib2</id>
+         <url>http://download.companyname.org/maven2/lib2</url>
+      </repository>
+   </repositories>
+   ```
+
+## 7. Maven插件
+_参考链接:_ [Maven 插件](https://www.runoob.com/maven/maven-plugins.html)
+
+Maven 有以下三个标准的生命周期：
+1. clean：项目清理的处理
+2. default(或 build)：项目部署的处理
+3. site：项目站点文档创建的处理
+我们在输入 mvn 命令的时候 比如 mvn clean，clean 对应的就是 Clean 生命周期中的 clean 阶段。但是 clean 的具体操作是由 maven-clean-plugin 来实现的。
+
+所以说 Maven 生命周期的每一个阶段的具体实现都是由 Maven 插件实现的。
+Maven 实际上是一个依赖插件执行的框架，每个任务实际上是由插件完成。
+
+每个生命周期中都包含着一系列的阶段(phase)。这些 phase 就相当于 Maven 提供的统一的接口，然后这些 phase 的实现由 Maven 的插件来完成。
+Maven提供的插件有两种:
+1. `Build plugins` : 在构建时执行，并在pom.xml的元素中配置
+2. `Reporting plugins`: 在网站生成过程中执行，并在 pom.xml 的 元素中配置。
+
+常用的插件列表如下:
+
+|插件|描述|
+|:---|:---|
+|`clean`|构建之后清理目标文件。删除目标目录。|
+|`compiler`|编译 Java 源文件。|
+|`surefile`|运行 JUnit 单元测试。创建测试报告。|
+|`jar`|从当前工程中构建 JAR 文件。|
+|`war`|从当前工程中构建 WAR 文件。|
+|`javadoc`|为工程生成 Javadoc。|
+|`antrun`|从构建过程的任意一个阶段中运行一个 `ant` 任务的集合。|
 
 
+## 8. Maven中的常用命令
+
+1. `mvn help:effective-pom`:来查看 Super POM 默认配置;
+2. `mvn archetype:generate`: Maven 使用原型 archetype 插件创建项目
+   1. `mvn archetype:generate "-DgroupId=com.companyname.bank" "-DartifactId=consumerBanking" "-DarchetypeArtifactId=maven-archetype-quickstart" "-DinteractiveMode=false"`
+3. `mvn site`: 生成项目文档
+4. `mvn clean package -U`:获取最新快照并打包。
+5. `mvn release:clean`:清理工作空间，保证最新的发布进程成功进行。
+6. `mvn release:rollback`:在上次发布过程不成功的情况下，回滚修改的工作空间代码和配置保证发布过程成功进行。
+7. `mvn release:prepare`: 执行多种操作：
+   1. 检查本地是否存在还未提交的修改
+   2. 确保没有快照的依赖
+   3. 改变应用程序的版本信息用以发布
+   4. 更新 POM 文件到 SVN
+   5. 运行测试用例
+   6. 提交修改后的 POM 文件
+   7. 为代码在 SVN 上做标记
+   8. 增加版本号和附加快照以备将来发布
+   9. 提交修改后的 POM 文件到 SVN
+8. `mvn release:perform`:将代码切换到之前做标记的地方，运行 Maven 部署目标来部署 WAR 文件或者构建相应的结构到仓库里。
+
+## 9. Spring Boot Maven Plugin
+_参考链接:_
+- [官方文档](https://links.jianshu.com/go?to=http%3A%2F%2Fdocs.spring.io%2Fspring-boot%2Fdocs%2F1.3.0.BUILD-SNAPSHOT%2Fmaven-plugin%2Findex.html)
+- [Spring Boot Maven Plugin](https://www.jianshu.com/p/d2964f32fe06)
+- [ Spring Boot Maven plugin详解](https://www.cnblogs.com/seasail/p/12179376.html)
+
+Spring Boot Maven plugin的5个Goals;如下:
+- `spring-boot:repackage`，默认goal。在mvn package之后，再次打包可执行的jar/war，同时保留mvn package生成的jar/war为.origin*
+- `spring-boot:run`，运行Spring Boot应用.
+- `spring-boot:start`，在mvn integration-test阶段，进行Spring Boot应用生命周期的管理
+- `spring-boot:stop`，在mvn integration-test阶段，进行Spring Boot应用生命周期的管理
+- `spring-boot:build-info`，生成Actuator使用的构建信息文件build-info.properties
+
+配置文件如下:
+```xml
+<build>
+	<plugins>
+		<plugin>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-maven-plugin</artifactId>
+            <version>1.5.4.RELEASE</version>
+		</plugin>
+	</plugins>
+</build>
+```
+基于上述配置，对一个生成Jar软件包的项目执行如下命令。
+
+mvn package spring-boot:repackage
+
+可以看到生成的两个jar文件，一个是*.jar，另一个是*.jar.original。
+在执行上述命令的过程中，Maven首先在package阶段打包生成*.jar文件；然后执行spring-boot:repackage重新打包。
