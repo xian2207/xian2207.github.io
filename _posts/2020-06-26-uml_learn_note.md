@@ -244,6 +244,33 @@ Alice -> Other : hello
 ```
 ## 1.2 用例图
 
+
+_参考链接:_
+- [详解 UML 用例图画法 & 用例说明方式](https://baijiahao.baidu.com/s?id=1661400666935924580&wfr=spider&for=pc)
+
+用例图主要是从用户的角度对，整个程序的结构和用例进行分析。主要是说明，参与者、用例以及参与者与用例之间的关系
+- 参与者: 代表系统外部与系统发生交互的人或事物；需要注意，人指的是参与者与系统发生交互时的角色，不代指具体的人。
+- 事务: 指的是某一个应用程序或者特殊进程；例如微信登录，通过跳转微信确认登录信息，微信对系统产生输入时，可以把微信作为参与者；而设定时间，强制退出账号时，时间这一特殊进程对系统产生输入，因此时间也可以作为参与者。
+- 用例:用例是系统外部可见的一个功能单元，是某一个参与者在系统中做某件事从开始到结束的一系列活动的集合，以及结束时应该返回的可观测、有意义的结果,其中还包含可能的各种分支情况；具体用例在用例属性中说明。
+  - 其特征如下:
+    - 用例都是动宾结构;例如：登录账号
+    - 用例都是相互独立的
+    - 用例由参与者启动
+    - 有可观测的执行结果
+  - 角色和用例之间的关系主要包括:
+    - 关联关系:表示参与者与用例之间的关系，带箭头的实线来描述。
+    - 归纳(泛化)关系:表示参与者可以执行的动作一个用例可以被列举为多个子用例，这就被成为用例泛化，这与类间的泛化关系类似。例如客户预定可以泛化为预定大巴/小车.
+    - ![](https://pics6.baidu.com/feed/9358d109b3de9c82d4db73b6e955de0c18d843a3.jpeg?token=3e0fe371798f45c06804d49223f474cf)
+    - 包含关系:指的是其中一个用例（称为基础用例）的行为包含了另一个用例（称为包含用例）。基础用例包含用例并依赖包含用例的执行结果。但是二者不能访问对方的属性。包含关系的图形为虚线箭头加`<<include>>`，箭头指向包含用例。例如汽车租赁中，预定、取车等动作都包含登录
+    - ![包含关系](http://image.woshipm.com/wp-files/2019/07/5qoSbaSdktjnugp1jSvX.png)
+    - 拓展关系:基础用例的增量扩展，它俩之间为扩展关系。使用虚线箭头，上面加`<<exclude>>`,箭头指向基础用例。往往表示特定情况的发生。
+    - 依赖关系:一个用例需要另外一个用例的实现。直接使用直线将两个用例相互连接
+  - 子系统：强调某部分用例的强关联性，使用子系统来概括，例如门户包括系统登录、首页信息展示等
+    - ![子系统使用示例](https://pics3.baidu.com/feed/6a63f6246b600c33e20913d994980f09d8f9a18e.jpeg?token=c212c53328630df909c3094dbf8759a9)
+
+
+
+
 ### 1.2.1 用例
 
 用例用圆括号括起来。 也可以用关键字 usecase 来定义用例。还可以用关键字 as 定义一个别名，这个别名可以在以后定义关 系的时候使用。
@@ -286,3 +313,122 @@ This allows large description."
 @enduml
 
 ```
+使用`-->`连接角色和用例`-`越多，箭头越长。可以通过在箭头定义后的后面加一个冒号以及文字的方式来添加标签。给箭头添加注释。
+
+### 1.2.5 继承
+使用`<|--`表示角色或者用例继承于另一个。
+
+可以用 note left of,note right of,note top of,note bottom of 等关键字给一个对象添加注释。 注释还可以通过 note 关键字来定义，然后用.. 连接其他对象。 
+使用示例如下:
+
+```plantuml
+@startuml
+:Main Admin: as Admin 
+(Use the application) as (Use)
+User -> (Start) 
+User --> (Use)
+Admin ---> (Use)
+note right of Admin : This is an example.
+
+note right of (Use) 
+    A note can also 
+    be on several lines
+end note
+
+note "This note is connected\nto several objects." as N2
+(Start) .. N2
+N2 .. (Use)
+
+User <|-- Admin
+
+@enduml
+```
+
+### 1.2.6 构造类型
+
+用`<<`和`>>`来定义角色或者用例的构造类型
+可以通过反转箭头改变方向
+还可以通过给箭头添加 left,right,up 或 down 等关键字来改变方向。 
+```plantuml
+@startuml
+'表示
+actor User <<Human>>
+:Main Database: as MySql <<Application>>
+(Start) << One Shot >> 
+(Use the application) as (Use) << Main >>
+User -> (Start) 
+User --> (Use)
+MySql --> (Use)
+'在这里更改默认的方向
+MySql -up-> (Start) 
+@enduml
+```
+
+### 1.2.10 更改构建方向
+
+可以通过`xxx to xxx direction`修饰来修改构图的方向。示例如下:
+
+```plantuml
+@startuml 
+' default 
+top to bottom direction 
+user1 --> (Usecase 1)
+user2 --> (Usecase 2)
+
+
+' left to right direction 
+' user3 --> (Usecase 3)
+' user4 --> (Usecase 4)
+
+@enduml
+```
+
+### 1.2.12 一个完整的例子
+
+```plantuml
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+actor customer 
+actor clerk
+rectangle checkout{
+    customer -- (checkout)
+    (checkout) .> (payment): include
+    (help) .> (checkout) : extends
+    (checkout) -- clerk
+}
+@enduml
+```
+
+## 1.3 类图
+_参考链接:_ 
+- [产品经理必学UML：类图](http://www.woshipm.com/pd/2593231.html)
+- [类和类之间的依赖、关联、聚合、组合关系](https://blog.csdn.net/weixin_38234890/article/details/80055362)
+- [认识 UML 类关系——依赖、关联、聚合、组合、泛化](https://blog.csdn.net/K346K346/article/details/59582926?utm_medium=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase)
+
+![UML中的静态/动态图](http://image.woshipm.com/wp-files/2019/07/iNU5tAcBujZysjToDXf0.png)
+
+类图（Class Diagrame）是描述类、接口、协作以及它们之间关系的图，用来显示系统中各个类的静态结构。
+
+类图包含7个元素：
+- 类:
+- 接口
+- 协作
+- 依赖关系:表示某一类元以某种形式依赖于其他类元，它表现了这样一种场景，如下图，对于一个元素（提供者）的某些更改会影响或提供消息给其他元素（客户），即客户以某种形式依赖于提供者。
+  - ![依赖关系](http://image.woshipm.com/wp-files/2019/07/O5gfNkokhAK6R7GIGdWK.png)
+- 泛化关系:表示一种存在于一般元素和特殊元素之间的分级关系，描述了“is a kind of”（是……的一种）的关系，如汽车是交通工具的一种。在类中一般元素称为超类或父类，特殊元素称为子类。
+  - ![泛化关系](http://image.woshipm.com/wp-files/2019/07/6RrXKEGxRwEfNQ5RYTPT.png)
+- 实现关系:
+  - 表示规格说明和其实现之间的关系，将一种模型元素和另一种模型元素连接起来，比如类和接口。 如打字员和键盘，键盘保证自己的部分行为可以实现打字员的行为。
+    - ![实现关系](http://image.woshipm.com/wp-files/2019/07/6epU1xZDQZeARPDC3erv.png)
+- 关联关系:表示一组具有共同结构特征、行为特征、关系和语义的链接，是一种结构关系，指明一个事物的对象与另一个事物的对象间的关系。如学生和大学的关系，学生在大学里学习，大学又包括了很多学生，所以可以在学生和大学之间建立关联关系。
+  - ![关联关系](http://image.woshipm.com/wp-files/2019/07/OBvVcd4sDdAY3L30juY1.png)
+- 聚合（Aggregation）关系:是一种特殊形式的关联关系。表示整体与部分关系的关联，简单来说，就是关联关系中的一组元素组成了一个更大、更复杂的单元。描述了“has  a”的关系。如大学和学院，大学是由很多个学院组成的，因此两者之间是聚合关系。
+  - ![聚合关系](http://image.woshipm.com/wp-files/2019/07/0VsPzJVUOocWJO7ezaIc.png)
+- 组合关系:组合也是关联关系的一种特例，它体现的是一种contains-a的关系，这种关系比聚合更强，也称为强聚合。它同样体现整体与部分间的关系，但此时整体与部分是不可分的，整体的生命周期结束也就意味着部分的生命周期结束，比如人和人的大脑。表现在代码层面，和关联关系是一致的，只能从语义级别来区分。在UML类图设计中，组合关系以实心菱形加实线箭头表示。
+- 相关小结:
+  - ![](http://image.woshipm.com/wp-files/2019/07/KarulUQZ0mvv9UP0yUll.png)
+- 小练习——简易听歌系统类图
+  - ![简易听歌系统](http://image.woshipm.com/wp-files/2019/07/mEMJrfB0hfLS1VPudkzs.png)
+
+
