@@ -431,4 +431,286 @@ _参考链接:_
 - 小练习——简易听歌系统类图
   - ![简易听歌系统](http://image.woshipm.com/wp-files/2019/07/mEMJrfB0hfLS1VPudkzs.png)
 
+### 1.3.1
 
+类图之间的关系通过如下的符号进行定义:
+
+![基本符号定义](../img/2020-06-27-10-42-58.png)
+
+注意类图中的虚线是使用`..`来代替--可以得到点线。这里和时序图是不一样的。
+
+关系上的标识符可以在每一边使用`""`来说明
+在标签的开始或者结束位置添加`<`或`>`以表明是哪个对象作用到哪个对象上。
+
+```plantuml
+@startuml
+Class01 "1" *-- "many" Class02 : contains >
+Class03 o-- Class04 : aggregation >
+Class05 --> "1" Class06
+@enduml
+```
+### 1.3.3 添加方法 
+
+为了声明字段(对象属性)或者方法，可以使用后接字段名或方法名。
+系统检查是否有括号来判断是方法还是字段
+
+```plantuml
+@startuml
+Object <|-- ArrayList
+Object : equals()
+ArrayList : Object[] elementData 
+ArrayList : size()
+
+@enduml
+```
+
+也可以使用 `{}` 把字段或者方法括起来 注意，这种语法对于类型/名字的顺序是非常灵活的。使用示例如下:
+
+```plantuml
+@startuml
+class Dummy{
+    String data
+    void methods()
+}
+class Flight {
+    flightNumber : Integer
+    dapartureTime : Date
+}
+Dummy <|- Flight
+@enduml
+```
+你可以（显式地）使用 `{field}` 和 `{method}` 修饰符来覆盖解析器的对于字段和方法的默认行为：
+```plantuml
+@startuml
+class Dummy{
+    {field} A field (despite parentheses)
+    {method} Some method
+}
+@enduml
+```
+### 1.3.4 定义方法的可访问性
+
+定义方法域的可访问性
+
+![方法的可访问性](../img/2020-06-27-11-20-58.png)
+
+也可以使用`skinparam classAttributeIconSize 0` 停用这些新特性
+
+```plantuml
+@startuml
+skinparam classAttributeIconSize 0 
+class Dummy {
+    -field1
+    #field2
+    ~method1()
+    +method2()
+}
+@enduml
+```
+
+### 1.3.5 抽象与静态
+
+通过修饰符`{static}`或者`{abstract}`,可以定义静态或者抽象的方法或者属性。
+这些修饰符可以写在行的开始或者结束。也可以使用 `{classifier}` 这个修饰符来代替 `{static}`。
+
+```plantuml
+@startuml
+class Dummy {
+    {static} String id
+    {abstract} void methods()
+}
+@enduml
+```
+### 1.3.6 高级类体 
+
+PlantUML 默认自动将方法和属性重新分组，你可以自己定义分隔符来重排方法和属性，下面的分隔符都 是可用的：`--.. ==__`。
+注意:分隔符后面不能有空格否则会失效
+
+```plantuml
+@startuml 
+class Foo1 { 
+    You can use
+    several lines
+    ..
+    as you want
+    and group 
+    ==
+    things together. 
+    __
+    You can have as many groups 
+    as you want 
+    --
+    End of class
+}
+class User { 
+    ..Simple Getter.. 
+    + getName()
+    + getAddress()
+    ..Some setter..
+    + setName()
+    -- private data --
+    int age
+    -- encrypted --
+    String password
+}
+@enduml
+
+```
+### 1.3.7 备注和模板
+
+模板通过类关键字 ("<<" 和">>") 来定义；你可以使用 note left of,note right of,note top of,note bottom of 这些关键字来添加备注。 你还可以在类的声明末尾使用 note left,note right,note top,note bottom 来添加备注。 此外，单独用 note 这个关键字也是可以的，使用 .. 符号可以作出一条连接它与其它对象的虚线。
+
+还可以使用note on link 给链接添加注释
+
+```plantuml
+@startuml 
+class Object << general >> 
+Object <|--- ArrayList
+note on link #red : this note is read
+note top of Object : In java, every class\nextends this one.
+note "This is a floating note" as N1 
+note "This note is connected\nto several objects." as N2 
+Object .. N2 
+N2 .. ArrayList
+class Foo 
+note left: On last defined class
+@enduml
+
+```
+### 1.3.10 抽象类和接口
+
+用关键字 `abstract` 或 `abstract class` 来定义抽象类。抽象类用斜体显示。也可以使用 interface, annotation 和 enum 关键字。
+
+```plantuml
+@startuml
+@startuml
+abstract class AbstractList
+abstract AbstractCollection
+interface List
+interface Collection
+List <|-- AbstractList
+Collection <|-- AbstractCollection
+Collection <|- List
+AbstractCollection <|- AbstractList
+AbstractList <|-- ArrayList
+class ArrayList { 
+    Object[] elementData
+    size()
+}
+enum TimeUnit { 
+    DAYS
+    HOURS
+    MINUTES
+}
+annotation SuppressWarnings
+@enduml
+```
+### 1.3.12 隐藏属性、函数等
+
+通过使用命令“hide/show”，你可以用参数表示类的显示方式。 基础命令是: hide empty members. 这个命令会隐藏空白的方法和属性。 除 empty members 外，你可以用: 
+- empty fields 或者 empty attributes 空属性
+- empty methods 空函数，
+- fields 或 attributes 隐藏字段或属性，即使是被定义了
+-  methods 隐藏方法，即使是被定义了 
+-  members 隐藏字段 和 方法，即使是被定义了 
+-  circle 类名前带圈的，
+-   stereotype 原型。
+
+同样可以使用 hide 或 show 关键词，对以下内容进行设置：
+- class 所有类， 
+- interface 所有接口， 
+- enum 所有枚举
+- <<foo1>> 实现 foo1 的类， 
+- 一个既定的类名。 
+
+```plantuml
+@startuml
+class Dummy1 {
+    +myMethods()
+}
+class Dummy2 {
+    +hiddenMethod()
+}
+class Dummy3 <<Serializable>> {
+    String name
+}
+hide members
+hide <<Serializable>> circle
+show Dummy1 methods
+show <<Serializable>> fields
+@enduml
+
+```
+
+### 1.3.16 包
+
+可以通过关键字`package`声明包，同时可选的来声明对应的背景颜色(通过html的色彩代码或者名称)。
+注意:包可以被定义为嵌套类
+
+也可以通过不同的代码来定义包的样式
+
+```plantuml
+@startuml
+package "Classic Collections" #DDDDDD {
+    Object <|-- ArrayList
+}
+package net.sourceforge.plantuml {
+    Object <|-- Demo1
+    Demo1 *- Demo2
+}
+
+
+package foo1 <<Node>> { 
+    class Class1 
+}
+package foo2 <<Rectangle>> { 
+    class Class2 
+}
+package foo3 <<Folder>> { 
+    class Class3 
+}
+package foo4 <<Frame>> { 
+    class Class4 
+}
+package foo5 <<Cloud>> { 
+    class Class5
+    }
+package foo6 <<Database>> { 
+    class Class6
+    }
+
+@enduml
+```
+
+可以使用头部和`--`或者`..`的方向，或者直接使用`left`等关键字来改变箭头的方向。
+
+```plantuml
+@startuml
+foo -left-> dummyLeft
+foo "1" --right-> "*" dummyRight
+foo -up-> dummyUp
+foo -down-> dummyDown
+
+@enduml
+```
+
+### 1.3.26 辅助布局
+
+你可以使用 together 关键词将某些类进行分组：布局引擎会尝试将它们捆绑在一起（如同在一个包 (package) 内) 你也可以使用建立 隐藏链接的方式来强制布局
+```plantuml
+@startuml
+
+class Bar1
+class Bar2
+together { 
+    class Together1
+    class Together2
+    class Together3
+}
+Together1 - Together2
+Together2 - Together3
+Together2 -[hidden]--> Bar1
+Bar1 -[hidden]> Bar2
+
+@enduml
+```
