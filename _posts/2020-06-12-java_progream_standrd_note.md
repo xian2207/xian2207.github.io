@@ -1017,19 +1017,3 @@ ENTERPRISE_INTELLIGENCE _ UNIT_ TEST_的前缀来标识单元测试相关代码�
 
 ![本地证书](https://wangpengcheng.github.io/img/2020-06-21-01-29-alicodestanrd.jpg)
 
-
-```flow
-sta=>start: 开始
-e=>end: 结束
-op=>operation: 操作（处理块）
-sub=>subroutine: 子程序
-cond=>condition: 是或者不是（条件判断）?
-cond2=>condition: 第二个判断（条件判断）?
-io=>inputoutput: 输出
-
-sta->op->cond
-cond(yes)->e
-cond(no)->cond2
-cond2(yes,right)->sub(left)-op
-cond2(no)->io(lef)->e
-```
