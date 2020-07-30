@@ -50,3 +50,16 @@ tags:
 |腾讯微保|[后台开发（Java/C++/Go）](https://wesure.zhiye.com/zpdetail/620365697)|[牛客](https://www.nowcoder.com/discuss/397530?type=post&order=time&pos=&page=3)|2020-04-03|||||[邮件已发送](https://zhaopin.ccc.cmbchina.com/applicant/index.html#/registrationSheet/record/0)；[状态查看](https://wesure.zhiye.com/Portal/Apply/Index)||
 |vivo2021实习生|[软件工程师（后端方向）-21届实习](https://hr.vivo.com/wt/vivo/web/templet1000/index/corpwebPosition1000vivo!getOnePosition?postIdEnc=2dba8eb5b275d33d&brandCode=1&recruitType=1&lanType=1&showComp=true)|[牛客](https://www.nowcoder.com/discuss/392083?type=post&order=time&pos=&page=4)|2020-04-05|||||[状态查看](https://hr.vivo.com/wt/vivo/web/templet1000/index/corpwebPosition1000vivo!getOnePosition?postIdEnc=2dba8eb5b275d33d&brandCode=1&recruitType=1&lanType=1&showComp=true)||
 |中国银行|[软件中心信息科技岗-软件中心（合肥）](http://chrcmp.chinahr.com/views/boc-spring2020/jobs1.html);[总行信科类实习生-总行部门](http://chrcmp.chinahr.com/views/boc-spring2020/jobs1.html);[管理机构信科类实习生-四川分行](http://chrcmp.chinahr.com/views/boc-spring2020/jobs1.html);[IT科技专项实习-中银保险有限公司](http://chrcmp.chinahr.com/views/boc-spring2020/jobs1.html)|[微信公众号](https://mp.weixin.qq.com/s/lvMx_VB7C4Ys8iyGsSP9vg)|2020-04-05|||||[状态查看](https://applyjob.chinahr.com/page/job/success?projectId=5e4f35cc5d11bf061249284a)||
+
+
+
+## 2020 秋招记录
+|公司名称|招聘岗位|来源|投递时间|状态查看|回复时间|1次面试|2次面试|3次面试|面经记录|结果|
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|网易雷火|[智能引擎后端开发工程师](https://campus.163.com/app/detail/index?projectId=27&id=756)|[牛客](https://www.nowcoder.com/discuss/462485?type=7&order=3&pos=33&page=1&source_id=discuss_center_7&channel=1011)|2020-07-30|[状态查看](https://campus.163.com/app/personal/apply)|||||||
+|招商银行提前批|[M-Geeker技术竞赛](https://campus.163.com/app/detail/index?projectId=27&id=756)|[牛客](https://www.nowcoder.com/discuss/462494?type=7&order=3&pos=29&page=1&channel=1011&source_id=discuss_center_7)|2020-07-30|[状态查看](https://zhaopin.ccc.cmbchina.com/applicant/index.html#/applicationHistory)|||||||
+|拼多多|[服务端研发工程师](https://careers.pinduoduo.com/campus/grad/detail?positionId=854ae554-68cb-4ca6-bc80-884ba1df9208)|[牛客](https://www.nowcoder.com/discuss/459716?type=7&order=0&pos=13&page=5&channel=1011&source_id=discuss_center_7)|2020-07-30|[状态查看](https://careers.pinduoduo.com/campus/personal-center)|||||||
+
+完美hash
+
+
