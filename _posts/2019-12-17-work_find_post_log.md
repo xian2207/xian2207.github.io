@@ -59,7 +59,6 @@ tags:
 |网易雷火|[智能引擎后端开发工程师](https://campus.163.com/app/detail/index?projectId=27&id=756)|[牛客](https://www.nowcoder.com/discuss/462485?type=7&order=3&pos=33&page=1&source_id=discuss_center_7&channel=1011)|2020-07-30|[状态查看](https://campus.163.com/app/personal/apply)|||||||
 |招商银行提前批|[M-Geeker技术竞赛](https://campus.163.com/app/detail/index?projectId=27&id=756)|[牛客](https://www.nowcoder.com/discuss/462494?type=7&order=3&pos=29&page=1&channel=1011&source_id=discuss_center_7)|2020-07-30|[状态查看](https://zhaopin.ccc.cmbchina.com/applicant/index.html#/applicationHistory)|||||||
 |拼多多|[服务端研发工程师](https://careers.pinduoduo.com/campus/grad/detail?positionId=854ae554-68cb-4ca6-bc80-884ba1df9208)|[牛客](https://www.nowcoder.com/discuss/459716?type=7&order=0&pos=13&page=5&channel=1011&source_id=discuss_center_7)|2020-07-30|[状态查看](https://careers.pinduoduo.com/campus/personal-center)|||||||
-
-完美hash
+|网易互联网|[C++开发工程师]https://campus.163.com/app/detail/index?id=785&projectId=28)|[牛客](https://www.nowcoder.com/discuss/447506?type=post&order=time&pos=&page=10&channel=666&source_id=search_post)|2020-07-30|[状态查看](https://campus.163.com/app/personal/apply)|||||||
 
 
