@@ -178,20 +178,9 @@ box "gaea-application" #LightGreen
 collections "SopMatchService" as SopMatchService
 collections "SopMatchManager" as SopMatchManager
 end box
-' 中间不知名调用链路
-' box "middle-link" #LightYellow
-' collections "middle link service " as MiddleService
-' end box
 
-
-' box "sop-engine" #LightRed
-' collections "sop-engine" as SopEngine
-' end box
 
 database "DataBase" as  DB
-' autonumber
-' User -> WebClient : 点击工单详情页面
-' activate WebClient
 
 
 ' 调用函数
@@ -330,70 +319,21 @@ end alt
 
 ```plantuml
 @startuml
-' 用户
-actor "user" as User
 ' 网页客户端
-boundary "WebClient" as Client
+collections "gaea-cdesk" as Client
 ' xsapce客户端
-collections "xsapce" as Xspace
+collections "gaea-application" as Xspace
 ' sopengine
-collections "SopEngine" as SopEngine
+collections "sop-engine" as SopEngine
 ' 数据库
-database "DataBase" as DB
+collections "data-mirror" as DB
 
 autonumber 
-== 请求SOP ==
-
-' 请求动作执行
-' User -> WebClient : 点击播放
-' activate WebClient
-' WebClient -> Xspace : caseId和UserInfo
-' activate Xspace
-' Xspace -> SopEngine : play
-' activate SopEngine 
-' SopEngine -> DB : caseId和sessionId
-' activate DB
-' return SOP信息
-' return SOP节点列表
-' return SOP渲染节点列表
-' return 播放显示
-
-note right Xspace
-请求SOP播放信息
-和SOP查询相同
-end note
 
 
-== 执行动作 ==
 
-loop 存在新的分支节点
-User -> Client : 点击动作按钮
-activate Client
-Client -> Xspace : 动作id
-activate Xspace 
-' 请求动作的详细信息 
-Xspace -> SopEngine : 动作id
-activate SopEngine 
-SopEngine -> DB : 动作id
-activate DB
-return 动作信息
-return 动作节点信息
-return 动作渲染信息
-return 动作详情页面
-User -> Client : 执行动作
-activate Client
-Client -> Xspace : 动作输入参数
-activate Xspace
-Xspace -> SopEngine : inputMap
-activate SopEngine
-SopEngine -> SopEngine : 动作执行和\nSOP引擎计算
-activate SopEngine #DarkSalmon
-deactivate SopEngine
-return outMap
-return 执行结果
-return 展示人工节点
 
-User -> Client : 人工节点信息
+[o-> Client : 人工节点上下文
 activate Client
 Client -> Xspace : 人工节点输入
 activate Xspace
@@ -405,7 +345,7 @@ deactivate
 SopEngine -> DB : 节点活动信息/任务状态信息
 activate DB
 return 更新结果
- 
+loop 存在新的分支节点
 SopEngine -> SopEngine : 计算匹配分支
 note right of SopEngine
 这里的分支匹配
@@ -460,4 +400,6 @@ return 执行结果
 
 **注意:人工因子是单选框，表单因子是多选**
 
-
+```platuml
+start
+```

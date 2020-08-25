@@ -2566,7 +2566,7 @@ http管线化需要客户端和服务器双方都能够支持，http1.1规定服
 服务端的read函数理解返回，且返回值为0。其原因是，客户端关掉进程后发送FIN到服务端，然后系统给read函数发信号，告知read函数无数据，于是read函数马上返回。随后服务端每次调用read函数时都会收到系统发的这个信号，所以立即返回0。
 
 ## 5.34 详细说一下TCP 协议，三次握手传输的内容？13 种状态
-![TCP-三次握手-四次挥手-13状态](./https://wangpengcheng.github.io/img/TCP-三次握手-四次挥手-13状态.jpg)
+![TCP-三次握手-四次挥手-13状态](https://wangpengcheng.github.io/img/TCP-三次握手-四次挥手-13状态.jpg)
 - 第一次握手：建立连接。客户端发送连接请求报文段，将SYN 位置为1，Sequence Number 为x；然后，客户端进入SYN_SEND 状态，等待服务器的确认；
 - 第二次握手：服务器收到SYN 报文段。服务器收到客户端的SYN 报文段，需要对这个SYN 报文段进行确认，设置Acknowledgment Number 为x+1(Sequence Number+1)；同时，自己自己还要发送SYN 请求信息，将SYN 位置为1，Sequence Number 为y；服务器端将上述所有信息放到一个报文段（即SYN+ACK 报文段）中，一并发送给客户端，此时服务器进入SYN_RECV 状态；
 - 第三次握手：客户端收到服务器的SYN+ACK 报文段。然后将Acknowledgment Number设置为y+1，向服务器发送ACK 报文段，这个报文段发送完毕以后，客户端和服务器端都进入ESTABLISHED 状态，完成TCP 三次握手。
