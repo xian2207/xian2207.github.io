@@ -19,4 +19,19 @@ tags:
 - [arthas](https://github.com/alibaba/arthas)
 - [diamond](https://github.com/takeseem/diamond)
 - [Sentinel](https://github.com/alibaba/Sentinel)
-- 
+
+
+@Test
+    public void testbreakpointStorePlay(){
+        SopStoreBreakpointRequest request = new SopStoreBreakpointRequest();
+        request.setSessionId("sid");
+        request.setResumeParamMaps(Maps.newHashMap());
+        Boolean res = Boolean.TRUE;
+        doReturn(res).when(sopEngineManager).breakpointStorePlay(anyObject());
+        Result<Void> result = sopRuntimeService.breakpointStorePlay(request,null);
+        Assert.assertTrue(result.getSuccess());
+        res = Boolean.FALSE;
+        Result<Void> failRes = sopRuntimeService.breakpointStorePlay(request,null);
+        Assert.assertFalse(failRes.getSuccess());
+
+    }
