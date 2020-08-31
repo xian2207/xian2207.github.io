@@ -12,12 +12,14 @@ tags:
     - 读书笔记
 ---
 
+
 # Java开发规范学习笔记
 
 _参考链接:_
 - [阿里云官网课程链接](https://edu.aliyun.com/course/417?spm=5176.10731460.0.0.280639f4xpKm4n)
 - [Git 官方手册](https://github.com/chjw8016/alibaba-java-style-guide)
 - [在线书籍下载地址](https://edu.aliyun.com/course/417/material/24016/download?spm=5176.10731542.0.0.4a8c52bb9jM9Ji)
+- [算法刷题笔记](https://labuladong.gitbook.io/algo/di-ling-zhang-bi-du-xi-lie)
 
 ## 1 编程规范
 
