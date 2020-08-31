@@ -1,4 +1,3 @@
-
 ---
 layout:     post
 title:      ali中间件学习笔记
@@ -12,6 +11,8 @@ tags:
     - 实习笔记
     - 中间件
 ---
+
+[算法刷题笔记](https://labuladong.gitbook.io/algo/di-ling-zhang-bi-du-xi-lie)
 
 # 阿里中间件学习笔记
 
