@@ -119,9 +119,9 @@ NALU结构单元的主体结构如下所示；一个原始的H.264 NALU单元常
 ##### RBSP
 NALU主体为RBSP；RBSP的主要结构如下：
 
-![RBSP主要结构单元](http://wangpengcheng.github.io/img/09.png)
+![RBSP主要结构单元](http://wangpengcheng.github.io/img/09.jpg)
 
-![RBSP结构说明](http://wangpengcheng.github.io/img/10.png)
+![RBSP结构说明](http://wangpengcheng.github.io/img/10.jpg)
 
 注意：SODB是RBSP的原始帧
 
