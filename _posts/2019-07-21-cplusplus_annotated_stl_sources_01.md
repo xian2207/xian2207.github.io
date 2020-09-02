@@ -421,13 +421,13 @@ union obj{
 
 ### 2.2.7 空间配置函数allocate()
 
-__default_alloc_template拥有配置器的标准接口函数allocate()。此函数首先判断区块大小，大于128bytes就调用第一级配置器，小鱼128bytes就检查对应的free list。如果有可用区块就直接拿来用，没有就将区块的大小上调至8倍数边界，然后调用`refill()`准备为`free list`重新填充空间。
+__default_alloc_template拥有配置器的标准接口函数allocate()。此函数首先判断区块大小，大于128bytes就调用第一级配置器，小于128bytes就检查对应的free list。如果有可用区块就直接拿来用，没有就将区块的大小上调至8倍数边界，然后调用`refill()`准备为`free list`重新填充空间。
 
 ![free list调度](https://wangpengcheng.github.io/img/2019-07-25-16-58-32.png)
 
 #### 2.2.8 空间释放函数 deallocate()
 
-对于deallocate()函数首先判断区块大小，大于128bytes就调用第一级配置器，小鱼128bytes就找出对应的free list，将区块回收。
+对于deallocate()函数首先判断区块大小，大于128bytes就调用第一级配置器，小于128bytes就找出对应的free list，将区块回收。
 
 ![区块回收](https://wangpengcheng.github.io/img/2019-07-25-16-58-32.png)
 
@@ -472,7 +472,7 @@ STL中定义有5个全局函数，作用于未初始化空间之上。分别是`
 
 ### 3.2 迭代器是一種 smart pointer
 
-迭代器是一種行爲類似指針的對象，指针中最常见也最重要的行为便是任荣提领(dereference)和成员访问(member access)，因此迭代器最重要的就是对operator*和operator->进行重载操作。c++STL中有一个auto_ptr（11中已经废弃），是用来包装一个原生指针(native pointer)的对象。可以解决各种内存漏洞。下面是auto_ptr的源码精要。
+迭代器是一種行爲類似指針的對象，指针中最常见也最重要的行为便是间接引用(dereference)和成员访问(member access)，因此迭代器最重要的就是对operator*和operator->进行重载操作。c++STL中有一个auto_ptr（11中已经废弃），是用来包装一个原生指针(native pointer)的对象。可以解决各种内存漏洞。下面是auto_ptr的源码精要。
 
 ```c++
 template<class T>

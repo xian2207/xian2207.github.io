@@ -16,7 +16,7 @@ tags:
 
 ## 第1章 开始
 ### std::cin 中的循环流使用
-_参考链接：_[while(cin >> num)循环输入问题](https://bbs.csdn.net/topics/390809866)[C++ cin输入流 详细用法](https://blog.csdn.net/imkelt/article/details/51925479);
+_参考链接：_[while(cin >> num)循环输入问题](https://bbs.csdn.net/topics/390809866)[C++ cin输入流 详细用法](https://blog.csdn.net/imkelt/article/details/51925479);[C++怎么解决输入两行数据的](https://www.nowcoder.com/discuss/35189);[C++从键盘读入数组并存储](https://www.cnblogs.com/zhuruibi/p/9458107.html)
 
 C++ 中可以使用`while(std::cin >> value){//Code }`的方式来进行循环数据的读入，直到没有输出为止；示例代码如下：
 ```c++
@@ -69,8 +69,8 @@ C++中定义了算术类型(arithmetic type)和空类型(void)在内的基础数
 
 注意：
 
-* 关于不同类型，字节内存分配的问题，不同的操作系统存在不同的内存分配策略；因此不一定按照上面的进行分配；详细内容参看参考链接。
-* 对于C++中的字节对齐内容需要重点考虑([C++ 字节对齐的总结(原因和作用)](https://blog.csdn.net/sweetfather/article/details/78487563);[C/C++ 字节对齐](https://blog.csdn.net/chengonghao/article/details/51674166));
+* 关于不同类型，字节内存分配的问题，不同的操作系统存在不同的内存分配策略；因此不一定按照上面的进行分配(倍数规则和整圆规则)；详细内容参看参考链接。
+* 对于C++中的字节对齐内容需要重点考虑([C++ 字节对齐的总结(原因和作用)](https://blog.csdn.net/sweetfather/article/details/78487563);[C/C++ 字节对齐](https://blog.csdn.net/chengonghao/article/details/51674166);[从硬件到语言，详解C++的内存对齐（memory alignment）](https://www.cnblogs.com/zhao-zongsheng/p/9099603.html));
 * c++中除去布尔类型和扩展的字符类型之外，其它类型可以划分为带符号的(signed)和无符号的(unsigned)两种；无符号仅能表示大于0的值。器字节内存分配也有所不同；（[C/C++ unsigned 详细探讨](https://blog.csdn.net/zhenlin123/article/details/81062635)）;
 
 ### C++中的声明和定义
@@ -310,7 +310,7 @@ void* 指针是C语言中的保留项目，它是一种特殊的指针类型；�
 ##### const * int 和int *const、const int * cosnt、const int &
 _参考链接：_[const int、const int *、int *cosnt、const int * const、const int &的区别](https://blog.csdn.net/itworld123/article/details/78967080);
 
-- `const int *`:该指针变量指向的是常量，即该指针变量的内容可以改变，但是该内容指向的内容不可改变！;即底层const(常量指针)；（其与`const int *`相同）；
+- `int const * `:该指针变量指向的是常量，即该指针变量的内容可以改变，但是该内容指向的内容不可改变！;即底层const(常量指针)；（其与`const int *`相同）；
 - `int *const`:声明该指针变量为常变量，即指针变量里面的内容不可改变，但是该内容指向的内容可以改变;即为常指针。
 - `const int * cosnt`:指向一个内容不可变的指针，且指向对象地址不能变；
 - `const int &`:在引用前面加上const，代表该引用为常引用，即被引用的对象不可改变。若是在形参中使用，则不可达到在函数里面修改变量值的目的。
@@ -321,6 +321,15 @@ _参考链接：_[const int、const int *、int *cosnt、const int * const、con
  1. `const`是变量的值无法改变（有待商榷）；`static`是指变量直接在堆上分配内存，内存不会销毁，但是值可以改变；
  2. 当某一个文件中的const变量希望它能够在其它文件之间共享的时候；即在一个问价中定义const，而在其它多个文件中使用它，需要在`const`关键字前添加`extern`关键字；
  
+> 我们始终记住若const限定符在`*`之前，则const限定的是`*ptr`而不限定ptr。也就是说，ptr可以改变其所指向的对象，但不能通过该指针修改其所指向对象的值。
+
+> 若const限定符在`*`之后，则const限定的是`ptr`而不限定`*ptr`。也就是说，ptr不可以改变其所指向的对象，但能通过该指针修改其所指向对象的值。
+
+> 若在*之前有const限定符且在*之后也有const限定符，则ptr与*ptr都被限定。也就是说，ptr既不可以改变其所指向的对象，也不能通过该指针修改其所指向对象的值。
+
+**只要在*之后有const 限定符，则该指针在声明时必须初始化。**
+
+
 ##### constexpr和常量表达式
 **常量表达式:（const expression）**是指不会改变并且在编译过程中就能得到计算结果的表达式；一个对象/表达式是不是常量表达式；由它的数据类型和初始值共同决定。例：
 ```c++

@@ -79,7 +79,7 @@ void alloc(int);  //可能抛出异常
 
 ##### 18.1.5 异常类层次
 
-![异常层次图](../img/error.png)
+![异常层次图](https://wangpengcheng.github.io/img/error.png)
 
 ### 18.2 命名空间
 

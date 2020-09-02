@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      cmake 学习笔记
-subtitle:   cmake 学习笔记 
+title:      cmake 学习笔记(一)
+subtitle:   cmake 学习笔记(一)
 date:       2019-08-13
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
@@ -16,7 +16,7 @@ tags:
 
 > 2019-08-13 12:58:56
 
-# cmake学习笔记
+# cmake学习笔记(一)
 
 _参考链接：_ [CMake文档](https://mubu.com/docbgFI4BMB6V);[CMake使用教程](https://blog.csdn.net/dabenxiong666/article/details/53998998);[Modern CMake](http://cliutils.gitlab.io/modern-cmake/)
 
@@ -130,7 +130,7 @@ option命令可以帮助我们设置一个自定义的宏，如下：
 - 使用：设置好之后我们在命令行去使用的时候，也可以去给他设定值：cmake -DMY-MESSAGE=on ../
 - 注意：使用的时候我们应该在值的前面加“D”
 - 这条命令可将MY-MESSAGE的值设置为on，通过这个值我们可以去触发相关的判断
-    
+  
 ## 4 CMake基础知识简介
 
 ### 4.1 最低版本
@@ -149,6 +149,8 @@ else()
     cmake_policy(VERSION 3.12)
 endif()
 ```
+
+现在可以使用`cmake_minimum_required(VERSION 2.8.3)`检查cmake的最小版本
 
 ### 4.2 设置项目名称
 
@@ -229,7 +231,7 @@ target_include_directories(
 命令1:  
 
 ```cmake
-arget_link_libraries(
+target_link_libraries(
     <target> 
     [item1 [item2 [...]]] 
     [[debug|optimized|general] <item>] 
@@ -410,7 +412,7 @@ ENDFOREACH(loop_var)
 - 例子：
 
 ```cmake
-​FOREACH(VAR RANGE 100)
+FOREACH(VAR RANGE 100)
     MESSAGE(${VAR})
 ENDFOREACH(VAR)​​
 ```
@@ -506,7 +508,7 @@ CMake里面可以定义自己的函数（function）和宏（macro）
 - 宏(macro)
 
 ```cmake
-​macro( [arg1 [arg2 [arg3 ...]]])     
+macro( [arg1 [arg2 [arg3 ...]]])     
     COMMAND1(ARGS ...)     
     COMMAND2(ARGS ...)     
     ...
@@ -616,7 +618,7 @@ configure_file(
 
     MAKE_DIRECTORY选项将会创建指定的目录，如果它们的父目录不存在时，同样也会创建。
 - file(RELATIVE_PATH variable directory file)
-     
+  
     RELATIVE_PATH选项会确定从direcroty参数到指定文件的相对路径，然后存到变量variable中。
 - file(TO_CMAKE_PATH path result)
 
@@ -654,7 +656,7 @@ configure_file(
 第一层CMakeLists.txt内容如下：
 
 ```cmake
-​#项目名称
+#项目名称
 project(main)
 #需要的cmake最低版本
 cmake_minium_required(VERSION 2.8)
@@ -663,11 +665,11 @@ aux_source_directories(. DIR_SRC)
 #添加include目录
 include_directories(include)
 #生成可执行文件
-add_executable(main ${DIR_SRC})​​​​​​​​​​​​​​
+add_executable(main ${DIR_SRC})
 #添加子目录
 add_subdirectories(lib)
 #将生成的文件与动态库相连
-target_link_libraries(main test)​​​​​​
+target_link_libraries(main test)
 #test是lib目录里面生成的​
 
 ```
@@ -677,8 +679,8 @@ lib目录下的CMakeLists
 ```cmake
 
 #将当前的源文件名字都添加到DIR_LIB变量下​
-​aux_source_director(. DIR_LIB)
-​​#生成库文件命名为
+aux_source_director(. DIR_LIB)
+#生成库文件命名为
 testadd_libraries(test ${DIR_LIB})​​
 
 ```

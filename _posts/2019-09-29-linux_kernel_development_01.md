@@ -136,7 +136,7 @@ make modules_install
   - 使用`asm volatile("rdtsc":"=a" (low),"=d" (high))`嵌入汇编代码
 - 内核编程时缺乏像用户空间那样的内存保护机制
   - 用户进程中进行非法内存访问，内核会发现错误并发送SIGSEGV信号，结束整个进程。内核自己访问非法内存往往会造成内核死去。
-  - 内核中的内存都不分页，没用掉一个字节，物理内存就减少一个字节
+  - 内核中的内存都不分页，每用掉一个字节，物理内存就减少一个字节
 - 内核编程时难以执行浮点运算
   - 用户空间中的浮点操作，内核会完成浮点数到整数的转换。因此内核并不能完美的支持浮点数操作，因为它本身不能陷入。
 - 内核给每个进程只有一个很小的定长堆栈
@@ -164,7 +164,7 @@ _参考链接：_ [Linux进程描述符task_struct结构体详解](https://blog.
 
 #### 3.2.1 分配进程描述符
 
-Linux 通过slab分配器分配task_struct结构。slab生成一个task_struct,只需要在栈底(向下增长的栈)或栈顶(向上增加的栈)创建一个新的结构struct_info(定义在<asm/thread_info.h>)中内容如下：
+Linux 通过slab分配器分配task_struct结构。slab生成一个task_struct,只需要在栈底(向下增长的栈)或栈顶(向上增加的栈)创建一个新的结构thread_info(定义在<asm/thread_info.h>)中内容如下：
 
 ```c
 struct thread_info{
@@ -326,7 +326,7 @@ struct task_struct *kthread_run(int(*threadfn)(void *data),void data,const char 
 5. 调用sem_exit()函数。取消正在等待的IPC信号队列
 6. 调用exit_files()和exit_fs()，分别递减文件描述符、文件系统数据的引用计数。计数为0释放资源
 7. 将存放在task_struct中的exit_code成员中的退出代码设置为exit()提供的退出代码。供父进程随时检索
-8. 调用exit_notify()向父进程发送信号，并给子进程重新虚招养父(线程组中的其它线程或者init进程)，把进程状态(task_struct结构中的exit_state)设置为EXIT_ZOMBIE。
+8. 调用exit_notify()向父进程发送信号，并给子进程重新寻找养父(线程组中的其它线程或者init进程)，把进程状态(task_struct结构中的exit_state)设置为EXIT_ZOMBIE。
 9. 调用schedule()切换到新的进程。处于EXIT_ZOMBIE状态的进程不会再被调度。
 
 上述操作之后，进程存在的唯一目的就是向它的父进程提供信息。父进程检索到信息之后(或通知内核子进程信息是无关信息后)。进程持有的剩余内存(task_struct)被释放。所有资源回归给系统。

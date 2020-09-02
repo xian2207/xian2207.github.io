@@ -613,9 +613,12 @@ decimal: 20 1024
 |`flush`| 刷新缓冲区  | cout << “str” << flush; 或 flush(cout);|
 |`endl`| 刷新缓冲区并插入一个换行符 |  cout << “str” << endl; 或 endl(cout);|
 
+
+
 **定义在iomanip中的操作符**
 
-|操作符|含义|
+| 操作符 | 含义 |
+|:------ |:----|
 |`setfill(ch)`|用`ch`填充空白|
 |`setprecision(n)`|将浮点精度设置为n|
 |`setw(w)`|读或写值的宽度为w个字符|
@@ -670,7 +673,8 @@ while((ch==cin.get())!=EOF){
 多字节操作要求我们自己分配管理用来保存和提取数据的字符组操作
 
 **多字节低层IO操作**
-
+|操作|解释|
+|:---:|:---|
 |`is.get(sink,size,delim)`|从`is`中读取最多`size`个字节，并保存在字符数组中，字符数组的其实地址由`sink`给出。读取过程直至遇到字符`delim`或读取了`size`个字节或遇到文件末尾时停止。如果遇到了`delim`,则将其留在输入流中，不读取出来存入`sink`|
 |`is.getline(sink,size,delim)`|与接受三个参数的get版本类似，但会读取并丢弃`delim`|
 |`is.read(sink,size)`|读取最多`size`个字节，存入字符数组`sink`中。返回`is`|

@@ -1315,7 +1315,9 @@ hashtable的原理和替换算法参考原王道数据结构不再过多叙述
 
 - hashtable 的迭代器没有后退操作，也没有所谓的反向迭代器。
 - hash tble 没有供应default constructor
+
 hash_table的关键数据结构
+
 ```c++
 node* new_node(const value_type& obj)
 {

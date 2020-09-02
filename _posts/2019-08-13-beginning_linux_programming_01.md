@@ -45,7 +45,7 @@ GNU项目软件：
 - GCC:GNU编译器集，包括GUN c
 - G++：c++编译器，是GCC的一部分。
 - GDB:源代码级别的调试器
-- GNU make:NUIX make李明亮的免费版本
+- GNU make:NUIX make 的免费版本
 - Bison:与UNIX yacc兼容的语法分析生成器。
 - bash:命令与解释器
 - GNU Emacs:文本编辑器计环境

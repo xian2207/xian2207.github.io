@@ -301,7 +301,7 @@ int fseek(FILE *stream,long int offset, int whence);
 
 int chown(const char *path,uid_t owner,git_t group);
 ```
-- unlink、link和symlink:管理文件链接数目，具体的卡伊参考第二章中内容。
+- unlink、link和symlink:管理文件链接数目，具体的可以参考第二章中内容。
 
 ```
 #include <unistd.h>
@@ -444,7 +444,7 @@ mmap创建一个指向一段内存区域的指针，该内存区域与可以通�
 #include <sys/mman.h>
 
 void *mmap(void *addr,size_t len,int prot,int flags,int fildes,off_t off);
-``` 
+```
 使用off参数来改变，经过共享内存段访问的文件中数据的起始偏移。打开的文件描述符有`fildes`参数给出。可以访问的数据量(内存段的成都)由len参数设置。
 使用addr来请求地址，如果取值为0，结果指针将会自动分配。
 prot参数用于设置内存段的访问权限，下面是其按位OR的结果
@@ -566,7 +566,6 @@ int main(int argc,char* argv[])
 int main(int argc, char *argv[])
 {
     int arg;
-
     for(arg = 0; arg < argc; arg++) {
         if(argv[arg][0] == '-')
             printf("option: %s\n", argv[arg]+1);
