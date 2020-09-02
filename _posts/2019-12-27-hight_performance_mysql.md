@@ -168,5 +168,5 @@ echo Exiting because $RUNFILE does not exist.
 
 # 第 4 章 Schema与数据类型优化
 
-
+良好的逻辑设计和物理设计是高性能的基石
 
