@@ -67,4 +67,6 @@ tags:
 |百度|[北京-C++/PHP研发工程师](https://talent.baidu.com/external/baidu/campus.html#/jobDetail/all/1/170104)|[牛客](https://www.nowcoder.com/discuss/475049?type=all&order=time&pos=&page=1&channel=1011&source_id=search_all)|2020-08-30|[状态查看](https://talent.baidu.com/external/baidu/campus.html#/individualCenter)|||||||
 |美团|[后端研发工程师(系统平台)](https://campus.meituan.com/jobs?interviewCity=52&jobId=2941&jobType=1&pageNo=2)|[牛客](https://www.nowcoder.com/discuss/491079?type=all&order=time&pos=&page=1&channel=1011&source_id=search_all)|2020-08-30|[状态查看](https://campus.meituan.com/apply-record)|||||||
 |携程|[云计算工程师（2021届应届生)](https://ctrip.zhiye.com/zpdetail/760035144)|[牛客]()|2020-08-30|[状态查看](https://ctrip.zhiye.com/Portal/Apply/Index)|||||||
+|bilibili|[后端开发工程师（基础技术部）【2021届】](https://app.mokahr.com/campus_apply/bilibili01/6205#/job/7962b0f3-67a6-4cca-a1a5-725d5ddb14a1)|[牛客]()|2020-08-30|[状态查看](https://app.mokahr.com/campus_apply/bilibili01/6205#/candidateHome/applications)|||||||
+
 
