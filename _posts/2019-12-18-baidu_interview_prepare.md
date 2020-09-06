@@ -2874,7 +2874,50 @@ RPC协议假定某些传输协议的存在，如TCP或UDP，为通信程序之�
 - 例题：假设客户端请求建立连接时序号100，服务器响应序号为200，建立连接后，客户端发一个100字节的报文段，再发一个200字节的报文段，第二个报文段的序号是多少？
   - 答：建立连接后，客户端发送的第一个报文段的序列号应该是100，响应序列号为200。第二个报文段是200,响应序列号是200。
 
-## 5.23 Epoll非阻塞IO需要注意什么？
+## 5.53 Epoll非阻塞IO需要注意什么？
+
+
+## 5.54 如何防止ARP欺骗：
+_参考链接:_ [网络攻防实战--ARP欺骗](https://blog.csdn.net/vaeloverforever/article/details/84504876);[ARP欺骗的实现与防御](https://blog.csdn.net/TENCENTSYS/article/details/100857121?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.channel_param&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-3.channel_param)
+
+ARP欺骗主要是主机欺骗和网关欺骗。
+
+
+
+ARP攻击就是通过伪造IP地址和MAC地址实现ARP欺骗，能够在网络中产生大量的ARP通信量使网络阻塞，攻击者只要持续不断的发出伪造的ARP响应包就能更改目标主机ARP缓存中的IP-MAC条目，造成网络中断或中间人攻击。
+
+常见的ARP欺骗手法：同时对局域网内的一台主机和网关进行ARP欺骗，更改这台主机和网关的ARP缓存表。如下图（PC2是攻击主机，PC1是被攻击主机）所示：
+
+![地址](https://img-blog.csdnimg.cn/20181126012733369.jpeg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3ZhZWxvdmVyZm9yZXZlcg==,size_16,color_FFFFFF,t_70)
+
+防御手段:
+1. 添加静态ARP映射，绑定IP和MAC地址
+2. 设置ARP高度缓存超时，缩短超时时间，避免ARP表的溢出。
+3. 静态ARP缓存表: 每台主机都有一个暂时寄存IP-MAC的对应表ARP攻击就经过更改这个缓存来到达诈骗的意图，运用静态的ARP来绑定正确的MAC是一个有用的办法，在命令行下运用arp -a能够检查当时的ARP缓存表。
+4. 自动查询： 在某个正常的时间，做一个IP和MAC对应的数据库，以后定时检查当时的IP和MAC对应联系是否正常，定时检查交流机的流量列表，检查丢包率。
+
+## 5.55 UDP协议包的最大长度
+UDP最大长度是65535(64K)
+
+## 5.56 什么时候半连接队列里的套接字放到全连接队列？什么时候从全连接队列取出来？
+_参考链接:_ [半连接队列与全连接队列](https://blog.csdn.net/promiss216/article/details/80888178)
+
+![链接队列图](https://imgconvert.csdnimg.cn/aHR0cHM6Ly91cGxvYWQtaW1hZ2VzLmppYW5zaHUuaW8vdXBsb2FkX2ltYWdlcy81OTMxMDI4LWYzZmMzYWQ1OTFhMjZmNDQucG5n?x-oss-process=image/format,png)
+
+## 5.57 IO多路复用LT模式下，有数据会一直提醒，那什么时候不会再提醒了？
+_参考链接：_ [LT触发模式和ET触发模式](https://blog.csdn.net/weixin_42904113/article/details/97640847)
+
+LT模式：当epoll_wait检测到描述符事件发生并将此事件通知应用程序，应用程序可以不立即处理该事件。下次调用epoll_wait时，会再次响应应用程序并通知此事件。
+
+使用此种模式，当数据可读的时候，epoll_wait（）将会一直返回就绪事件。如果你没有处理完全部数据，并且再次在该epoll实例上调用epoll_wait（）才监听描述符的时候，它将会再次返回就绪事件，因为有数据可读。
+
+ET模式：当epoll_wait检测到描述符事件发生并将此事件通知应用程序，应用程序必须立即处理该事件。如果不处理，下次调用epoll_wait时，不会再次响应应用程序并通知此事件。
+
+使用此种模式，只能获取一次就绪通知，如果没有处理完全部数据，并且再次调用epoll_wait()的时候，它将会阻塞，因为就绪事件已经释放出来了。
+
+ET是高速工作方式，只支持no_block socket,它效率要比LT更高
+
+在执行对应操作后并处理完成后，不会再提醒。
 
 # 6 数据库
 
