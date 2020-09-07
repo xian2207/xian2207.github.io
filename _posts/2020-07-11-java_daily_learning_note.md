@@ -33,4 +33,4 @@ tags:
      - [这么写参数校验(validator)就不会被劝退了](https://juejin.im/post/5d3fbeb46fb9a06b317b3c48)
      - [@RequestBody配合@Valid 校验入参参数](https://blog.csdn.net/lzhcoder/article/details/98870852)
 5. 使用`ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);`重载toString可以让所有子类都可以实现字符串化。避免每个类都实现toString方法。
-6. 
+
