@@ -12,6 +12,8 @@ tags:
     - 简历投递
 ---
 
+## 寒假实习投递
+
 |公司名称|招聘岗位|来源|投递时间|回复时间|1次面试时间|面试结果|2面时间|面试记录|结果|
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 |百度|C++研发实习生|[牛客](https://www.nowcoder.com/discuss/354663)|2019-12-17-18:12|无回复||||||
@@ -54,6 +56,7 @@ tags:
 
 
 ## 2020 秋招记录
+
 |公司名称|招聘岗位|来源|投递时间|状态查看|回复时间|1次面试|2次面试|3次面试|面经记录|结果|
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 |网易雷火|[智能引擎后端开发工程师](https://campus.163.com/app/detail/index?projectId=27&id=756)|[牛客](https://www.nowcoder.com/discuss/462485?type=7&order=3&pos=33&page=1&source_id=discuss_center_7&channel=1011)|2020-07-30|[状态查看](https://campus.163.com/app/personal/apply)|||||||
@@ -66,7 +69,18 @@ tags:
 |快手|[C++开发工程师](https://campus.kuaishou.cn/recruit/campus/e/#/campus/job-info/1111?internalPerson=0Jb1oPAJlUFgaIGb9v2fHw%3D%3D)|[牛客](https://www.nowcoder.com/discuss/475049?type=all&order=time&pos=&page=1&channel=1011&source_id=search_all)|2020-08-30|[状态查看](https://campus.kuaishou.cn/recruit/campus/e/#/campus/my-apply?internalPerson=0Jb1oPAJlUFgaIGb9v2fHw%3D%3D)|||||||
 |百度|[北京-C++/PHP研发工程师](https://talent.baidu.com/external/baidu/campus.html#/jobDetail/all/1/170104)|[牛客](https://www.nowcoder.com/discuss/475049?type=all&order=time&pos=&page=1&channel=1011&source_id=search_all)|2020-08-30|[状态查看](https://talent.baidu.com/external/baidu/campus.html#/individualCenter)|||||||
 |美团|[后端研发工程师(系统平台)](https://campus.meituan.com/jobs?interviewCity=52&jobId=2941&jobType=1&pageNo=2)|[牛客](https://www.nowcoder.com/discuss/491079?type=all&order=time&pos=&page=1&channel=1011&source_id=search_all)|2020-08-30|[状态查看](https://campus.meituan.com/apply-record)|||||||
-|携程|[云计算工程师（2021届应届生)](https://ctrip.zhiye.com/zpdetail/760035144)|[牛客]()|2020-08-30|[状态查看](https://ctrip.zhiye.com/Portal/Apply/Index)|||||||
-|bilibili|[后端开发工程师（基础技术部）【2021届】](https://app.mokahr.com/campus_apply/bilibili01/6205#/job/7962b0f3-67a6-4cca-a1a5-725d5ddb14a1)|[牛客]()|2020-08-30|[状态查看](https://app.mokahr.com/campus_apply/bilibili01/6205#/candidateHome/applications)|||||||
-
-
+|携程|[云计算工程师（2021届应届生)](https://ctrip.zhiye.com/zpdetail/760035144)|[牛客]()|2020-08-30|[状态查看](https://ctrip.zhiye.com/Portal/Apply/Index)||||||笔试AC2.5|
+|bilibili|[后端开发工程师（基础技术部）【2021届】](https://app.mokahr.com/campus_apply/bilibili01/6205#/job/7962b0f3-67a6-4cca-a1a5-725d5ddb14a1)|[牛客]()|2020-09-09|[状态查看](https://app.mokahr.com/campus_apply/bilibili01/6205#/candidateHome/applications)|||||||
+|小米|[软件开发工程师-C/C++方向](https://app.mokahr.com/recommendation-apply/xiaomi/3527?recommenderId=732318#/job/df9b7527-0458-4b1b-bdd5-025dad574ebc);[软件开发工程师(C/C++/Java)-互联互通方向](https://app.mokahr.com/campus_apply/xiaomi/24517#/job/109cb990-dd53-47b8-9846-90d3b2b1fcc1)|[牛客](https://www.nowcoder.com/discuss/471715?type=post&order=time&pos=&page=10&channel=1009&source_id=search_post)|2020-09-09|[状态查看](https://app.mokahr.com/campus_apply/xiaomi/24517#/candidateHome/applications)|||||||
+|招引网络|[软件开发工程师（成都）](https://cmbntjob.cmbchina.com/pages/recruit/position_detail.html?id=FC384AD666F946FFA69FA6B85BFEAB85)|[牛客](https://www.nowcoder.com/discuss/471715?type=post&order=time&pos=&page=10&channel=1009&source_id=search_post)|2020-09-09|[状态查看](https://cmbntjob.cmbchina.com/pages/mycenter/default.html)|||||||
+|招商银行|[软件开发工程师（成都）](http://career.cloud.cmbchina.com/index.html#jobDetail?id=01187694-b0ed-4555-bde3-1f8da72872b2&returnUrl=#jobList?id=96574F8D-C7ED-4772-AE7C-BAC896D190C1)|[牛客](https://www.nowcoder.com/discuss/471715?type=post&order=time&pos=&page=10&channel=1009&source_id=search_post)|2020-09-09|[状态查看](http://career.cloud.cmbchina.com/index.html#applyHistory)|||||||
+|vivo|[软件工程师（后端方向）-21届秋招](https://hr.vivo.com/wt/vivo/web/templet1000/index/corpwebPosition1000vivo!getOnePosition?postIdEnc=b00514ec001b4125&brandCode=1&recruitType=1&lanType=1&showComp=true)|[牛客](https://www.nowcoder.com/discuss/482845?type=post&order=time&pos=&page=3&channel=1009&source_id=search_post)|2020-09-09|[状态查看](https://hr.vivo.com/wt/vivo/web/templet1000/index/corpshowNewDeliveryRecordvivo!listApplyPosition?operational=e839380b7b75dd293210626b1152c27f07169062c171276d6b6606080788c00f972663e67047f976620be2dead13dd4f4d5401f2dbb04c4456b1bdff0e36ee6d78fb4e493390f468089effe9bc3d702b276835e62cee15f44c84ed998bbc3414e4fcad22c4614294)|||||||
+|搜狗|[校招-搜索广告-C++开发工程师](https://app.mokahr.com/campus_apply/sogou-inc01/104#/job/07e07163-f567-44b7-9757-8d73dd5daa90)|[牛客](https://www.nowcoder.com/recommend/campus)|2020-09-09|[状态查看](https://app.mokahr.com/campus_apply/sogou-inc01/104#/candidateHome/applications)|||||||
+|作业帮|[2021校招-DBA研发工程师](https://app.mokahr.com/campus_apply/zuoyebang/6347#/job/04674318-15ae-462d-baf9-9ec853cccbae)|[牛客](https://www.nowcoder.com/recommend/campus)|2020-09-09|[状态查看](http://job.zuoyebang.com/xiaoyuan.html#/candidateHome/applications)|||||||
+|昆仑万维|[C++开发工程师](https://www.nowcoder.com/careers/kunlun/19738?type=&ncsr=)|[牛客](https://www.nowcoder.com/careers/kunlun/19738?type=&ncsr=)|2020-09-09|[状态查看](https://www.nowcoder.com/profile/9853356/resume)|||||||
+|京东|[JAVA开发工程师](http://campus.jd.com/web/job/job_detail?jobId=43&planId=1)|[牛客](https://www.nowcoder.com/discuss/490719?type=all&order=time&pos=&page=5&channel=1009&source_id=search_all)|2020-09-09|[状态查看](http://campus.jd.com/web/apply/myjob)|||||||
+|深信服|[C/C++软件开发工程师（云计算、网络安全方向）](https://hr.sangfor.com/campucompon/Delivery/455)|[牛客](https://www.nowcoder.com/discuss/490719?type=all&order=time&pos=&page=5&channel=1009&source_id=search_all)|2020-09-09|[状态查看](https://hr.sangfor.com/campucompon/personalCenter)|||||||
+|oppo|[C/C++开发工程师](https://xiaoyuan.zhaopin.com/job/CC000347841J90000050000)|[牛客](https://www.nowcoder.com/discuss/502400?type=all&order=time&pos=&page=1&channel=1009&source_id=search_all)|2020-09-09|[状态查看](https://xiaoyuan.zhaopin.com/resume/delivery)|||||||
+|字节跳动|[后端研发](https://xiaoyuan.zhaopin.com/job/CC000347841J90000050000)|[牛客](https://www.nowcoder.com/discuss/501056?type=post&order=time&pos=&page=1&channel=1009&source_id=search_post)|2020-09-09|内推邮件已发送|||||||
+|中电10所|[应用软件开发工程师](http://ai-hr.cetc.com.cn/position/detail?channel=2&brand=20&id=1175)|[学校](https://www.nowcoder.com/discuss/501056?type=post&order=time&pos=&page=1&channel=1009&source_id=search_post)|2020-09-09|[状态查看](http://ai-hr.cetc.com.cn/campus_delivery/record)|||||||
+|新浪微博|[研发工程师_C++方向-北京](https://career.sina.com.cn/portal/campusposition/detail?id=1342)|[学校](https://www.nowcoder.com/discuss/501056?type=post&order=time&pos=&page=1&channel=1009&source_id=search_post)|2020-09-09|[状态查看](https://career.sina.com.cn/portal/myapply/?gql=glluemeuser%3D%257B%257Bglluemeuser.id%257D%257D%26record_type__ns%3DInternal%2520Transfer)|||||||
