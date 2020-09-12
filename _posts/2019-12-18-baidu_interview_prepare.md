@@ -3330,7 +3330,7 @@ ET是高速工作方式，只支持no_block socket,它效率要比LT更高
 
 ## 7.1 B树
 
-
+![](https://picb.zhimg.com/v2-0a901a5d595fa4dccaaff2f3e2500bf3_r.jpg)
 ## 7.2 B+树
 
 - 参考: [B+树总结](https://www.jianshu.com/p/71700a464e97)(一定要看)
