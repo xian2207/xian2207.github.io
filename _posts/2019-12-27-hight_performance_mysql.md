@@ -65,6 +65,7 @@ UPDATE
 - InnoDB为插入一行新记录，保存当前系统版本好作为行版本号，同时保存当前系统版本号到原来的行作为行删除标识
 
 ## 1.5 MySQL的存储引擎
+
 _参考链接:_ [mysql存储引擎](https://blog.csdn.net/yjclsx/article/details/81911027?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.edu_weight&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-4.edu_weight)
 
 文件系统中，MySQL将每个数据库保存为数据目录下的一个子目录。创建表时，会创建.frm保存表的定义和数据
