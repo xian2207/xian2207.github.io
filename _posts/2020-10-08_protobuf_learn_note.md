@@ -43,6 +43,7 @@ message SearchRequest {
 - repeated: 可重复值，相当于List
 基本数值类型的repeated的字段并没有被尽可能地高效编码。在新的代码中，用户应该使用特殊选项[packed=true]来保证更高效的编码。如：
 
+**注意:在proto3中没有这些选项**
 ```
 repeated int32 samples = 4 [packed=true];
 ```
