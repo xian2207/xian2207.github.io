@@ -81,6 +81,7 @@ enum EnumAllowingAlias {
   STARTED = 1;
   RUNNING = 1;
 }
+
 enum EnumNotAllowingAlias {
   UNKNOWN = 0;
   STARTED = 1;
