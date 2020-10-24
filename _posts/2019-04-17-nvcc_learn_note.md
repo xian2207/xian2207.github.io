@@ -52,6 +52,8 @@ GPU中的代是指NVIDIA GPU架构和计算能力的评价标准，如sm_30、sm
 除了sm_20，sm_30，sm_50，sm_60这些大的代号，还有sm_21, sm_35, sm_53 ,sm_61这些小代，这些小代不会做大的改变，会有一些小的调整，如调整寄存器和处理器集群的数量，这只影响执行性能，不会改变功能。程序更精确的对应GPU代号可能可以达到最佳性能。
 
 ### GPU中的应用程序兼容性
+_参考链接：_ [Matching CUDA arch and CUDA gencode for various NVIDIA architectures](https://arnon.dk/matching-sm-architectures-arch-and-gencode-for-various-nvidia-cards/)
+
 >  --两端式编译结构，真实GPU与虚拟GPU；
 
 - CUDA程序的编译必须经历两个过程，即虚拟框架和真实框架，虚拟框架决定了程序最小的可运行GPU框架，而真实框架决定了程序可运行的最小的实际GPU。 
@@ -84,6 +86,27 @@ NVIDIA GPU真实架构如下：
 |sm_60, sm_61, and sm_62|Pascal support|
 |sm_70|Volta support|
 |sm_75|Turing support|
+
+NVIDIA SM与compute对应的真实显卡
+
+|标志参数|对应架构|对应显卡型号系列|
+|:------:|:------:|:------:|
+|SM20 or SM_20, compute_30|Fermi cards (CUDA 3.2 until CUDA 8)|GeForce 400, 500, 600, GT-630|
+|SM_30, compute_30|Kepler cards (CUDA 5 until CUDA 10)|Kepler architecture (e.g. generic Kepler, GeForce 700, GT-730)|
+|SM35 or SM_35, compute_35|Kepler cards (CUDA 5 until CUDA 10)|Tesla K40|
+|SM37 or SM_37, compute_37|Kepler cards (CUDA 5 until CUDA 10)|Tesla K80|
+|SM_50, compute_50|Maxwell cards (CUDA 6 until CUDA 11)|Tesla/Quadro M series|
+|SM52 or SM_52,compute_52|Maxwell cards (CUDA 6 until CUDA 11)|Quadro M6000 , GeForce 900, GTX-970, GTX-980, GTX Titan X|
+|SM53 or SM_53, compute_53|Maxwell cards (CUDA 6 until CUDA 11)|Tegra (Jetson) TX1 / Tegra X1, Drive CX, Drive PX, Jetson Nano|
+|SM60 or SM_60, compute_60|Pascal (CUDA 8 and later)|Quadro GP100, Tesla P100, DGX-1 (Generic Pascal)|
+|SM61 or SM_61, compute_61|Pascal (CUDA 8 and later)|GTX 1080, GTX 1070, GTX 1060, GTX 1050, GTX 1030, Titan Xp, Tesla P40, Tesla P4, Discrete GPU on the NVIDIA Drive PX2|
+|SM62 or SM_62, compute_62|Pascal (CUDA 8 and later)|Integrated GPU on the NVIDIA Drive PX2, Tegra (Jetson) TX2|
+|SM70 or SM_70, compute_70|Volta (CUDA 9 and later)|DGX-1 with Volta, Tesla V100, GTX 1180 (GV104), Titan V, Quadro GV100|
+|SM72 or SM_72, compute_72|Volta (CUDA 9 and later)|Jetson AGX Xavier, Drive AGX Pegasus, Xavier NX|
+|SM75 or SM_75, compute_75|Turing (CUDA 10 and later)|GTX/RTX Turing – GTX 1660 Ti, RTX 2060, RTX 2070, RTX 2080, Titan RTX, Quadro RTX 4000, Quadro RTX 5000, Quadro RTX 6000, Quadro RTX 8000, Quadro T1000/T2000, Tesla T4|
+|SM80 or SM_80, compute_80|Ampere (CUDA 11 and later)|NVIDIA A100 (the name “Tesla” has been dropped – GA100), NVIDIA DGX-A100|
+|SM86 or SM_86, compute_86|Ampere (CUDA 11 and later)|Tesla GA10x cards, RTX Ampere – RTX 3080, GA102 – RTX 3090, RTX A6000, RTX A40|
+|SM90 or SM_90, compute_90|Hopper (CUDA 12 [planned] and later)|NVIDIA H100 (GH100)|
 
 
 NVCC在提高兼容性的处理方式上采用了两种机制：即时编译(JIT)和fatbinaries
