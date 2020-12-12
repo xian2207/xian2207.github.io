@@ -2,7 +2,7 @@
 layout:     post
 title:      protobuf学习笔记
 subtitle:   protobuf学习笔记
-date:       2020-08-25
+date:       2020-10-25
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
 catalog: true
@@ -27,7 +27,7 @@ tags:
 ## 1. 基础语法
 下面是一个简单的使用示例:
 
-```
+```c++
 message SearchRequest {
   required string query = 1;
   optional int32 page_number = 2;
@@ -44,7 +44,8 @@ message SearchRequest {
 基本数值类型的repeated的字段并没有被尽可能地高效编码。在新的代码中，用户应该使用特殊选项[packed=true]来保证更高效的编码。如：
 
 **注意:在proto3中没有这些选项**
-```
+
+```shell
 repeated int32 samples = 4 [packed=true];
 ```
 
@@ -74,7 +75,7 @@ proto中定义的基本数据类型会对应不同语言的基本数据类型如
 ### 1.3 枚举
 
 proto 中可以使用枚举类型作为关键的选择类；同时可以为枚举常量定义别名。需要设置allow_alias option 为 true, 否则 protocol编译器会产生错误信息。
-```json
+```shell
 enum EnumAllowingAlias {
   option allow_alias = true;
   UNKNOWN = 0;
@@ -93,7 +94,7 @@ enum EnumNotAllowingAlias {
 
 proto中允许使用扩展，通过定义相关的序列化字段，允许子类进行进一步的扩展；使用示例如下:
 
-```json
+```shell
 // 
 message Foo {
   // ...
@@ -111,7 +112,7 @@ extend Foo {
 ### 1.5 导入定义
 
 可以通过导入（importing）其他.proto文件中的定义来使用它们。要导入其他.proto文件的定义，你需要在你的文件中添加一个导入声明，如：
-```json
+```shell
 import "myproject/other_protos.proto";
 ```
 
@@ -120,7 +121,7 @@ import "myproject/other_protos.proto";
 如果你的消息中有很多可选字段， 并且同时至多一个字段会被设置， 你可以加强这个行为，使用oneof特性节省内存.
 
 Oneof字段就像可选字段， 除了它们会共享内存， 至多一个字段会被设置。 设置其中一个字段会清除其它oneof字段。 你可以使用case()或者WhichOneof() 方法检查哪个oneof字段被设置，使用示例如下:
-```json
+```shell
 message SampleMessage {
   oneof test_oneof {
      string name = 4;
@@ -139,7 +140,7 @@ Oneof 特性:
 - 反射API对oneof 字段有效.
 - 如果使用C++,需确保代码不会导致内存泄漏. 下面的代码会崩溃， 因为sub_message 已经通过set_name()删除了.
 
-```cpp
+```c++
 SampleMessage message;
 SubMessage* sub_message = message.mutable_sub_message();
 message.set_name(“name”);      // Will delete sub_message
@@ -150,7 +151,7 @@ sub_message.set_…
 
 当然可以为.proto文件新增一个可选的package声明符，用来防止不同的消息类型有命名冲突
 
-```json
+```shell
 package foo.bar;
 message Open { ... }
 ```
@@ -158,13 +159,13 @@ message Open { ... }
 ### 1.8 定义服务(Service)
 
 可以在.proto文件中定义一个RPC服务接口，protocol buffer编译器将会根据所选择的不同语言生成服务接口代码及存根。如，想要定义一个RPC服务并具有一个方法，该方法能够接收 SearchRequest并返回一个SearchResponse，此时可以在.proto文件中进行如下定义：
-```json
+```shell
 service SearchService {
   rpc Search (SearchRequest) returns (SearchResponse);
 }
 ```
 protocol编译器将产生一个抽象接口SearchService以及一个相应的存根实现。存根将所有的调用指向RpcChannel，它是一 个抽象接口，必须在RPC系统中对该接口进行实现。如，可以实现RpcChannel以完成序列化消息并通过HTTP方式来发送到一个服务器。换句话说， 产生的存根提供了一个类型安全的接口用来完成基于protocolbuffer的RPC调用，而不是将你限定在一个特定的RPC的实现中。C++中的代码 如下所示：
-```cpp
+```c++
 using google::protobuf;
 protobuf::RpcChannel* channel;
 protobuf::RpcController* controller;
@@ -192,7 +193,7 @@ void Done() {
 ```
 所有service类都必须实现Service接口，它提供了一种用来调用具体方法的方式，即在编译期不需要知道方法名及它的输入、输出类型。在服务器端，通过服务注册它可以被用来实现一个RPC Server。
 
-```cpp
+```c++
 using google::protobuf;
 class ExampleSearchService : public SearchService {
  public:
@@ -238,7 +239,7 @@ int main() {
 ### 1.10 自定义选项
 
 ProtocolBuffers允许自定义并使用选项。该功能应该属于一个高级特性，对于大部分人是用不到的。由于options是定在 google/protobuf/descriptor.proto中的，因此你可以在该文件中进行扩展，定义自己的选项。如：
-```json
+```shell
 import "google/protobuf/descriptor.proto";
 extend google.protobuf.MessageOptions {
   optional string my_option = 51234;
@@ -247,8 +248,10 @@ message MyMessage {
   option (my_option) = "Hello world!";
 }
 ```
-在上述代码中，通过对MessageOptions进行扩展定义了一个新的消息级别的选项。当使用该选项时，选项的名称需要使用（）包裹起来，以表明它是一个扩展。在C++代码中可以看出my_option是以如下方式被读取的。
-```cpp
-string value = MyMessage::descriptor()->options().GetExtension(my_option);
-```
 
+在上述代码中，通过对MessageOptions进行扩展定义了一个新的消息级别的选项。当使用该选项时，选项的名称需要使用（）包裹起来，以表明它是一个扩展。在C++代码中可以看出my_option是以如下方式被读取的。
+
+```c++
+string value = MyMessage::descriptor()->options().GetExtension(my_option);
+continue
+```

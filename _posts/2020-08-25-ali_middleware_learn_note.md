@@ -19,7 +19,7 @@ tags:
 - [diamond](https://github.com/takeseem/diamond)
 - [Sentinel](https://github.com/alibaba/Sentinel)
 
-
+```java
 @Test
     public void testbreakpointStorePlay(){
         SopStoreBreakpointRequest request = new SopStoreBreakpointRequest();
@@ -34,3 +34,5 @@ tags:
         Assert.assertFalse(failRes.getSuccess());
 
     }
+
+```
