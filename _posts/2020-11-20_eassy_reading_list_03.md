@@ -2,7 +2,7 @@
 layout:     post
 title:      GEN-SLAM: Generative Modeling for Monocular Simultaneous Localization and Mapping
 subtitle:   GEN-SLAM: 单目SLAM的通用解决方案
-date:       2019-07-06
+date:       2020-10-20
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
 catalog: true
@@ -17,7 +17,7 @@ tags:
 - 作者(authors):Punarjay Chakravarty
 - 文献引用(Published in): 
 - [文章链接](https://arxiv.org/abs/1902.02086)
-
+- 论文翻译:
 
 ## 写作目的(解决了什么问题)(What is the motivation for this work (both people problem and technical problem)?)
 
