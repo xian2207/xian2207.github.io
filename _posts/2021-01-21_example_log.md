@@ -2101,6 +2101,28 @@ Result = PASS
 使用相机位姿来进行深度估计，中间使用参数网络进行修正。
 深度网络的修正
 
+## 深度学习网络结构记录
+
+> 2021-1-31 20:23:58
+
+参考链接:
+- [网络中BN层的作用](https://zhuanlan.zhihu.com/p/75603087)
+- [Relu层作用](https://blog.csdn.net/siyue0211/article/details/81017728)
+- [slim.batch_norm](https://blog.csdn.net/luccao/article/details/82857412)
+- [tf.nn.relu](https://www.cnblogs.com/xh_chiang/p/9132524.html)
+- [卷积网络输出大小计算公式](https://blog.csdn.net/qq_29547673/article/details/90237295)--`out = (in - filter_size + 2*padding)/strides + 1`
+- [slim.arg_scope](https://blog.csdn.net/weixin_35653315/article/details/78160886)
+- [tf.contrib.slim.arg_scope](https://blog.csdn.net/weixin_40027284/article/details/85710737?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control)
+- [slim.conv2d函数的变量解释和padding方式中same与vaild的差别](https://blog.csdn.net/weixin_43958728/article/details/104998134)
+
+# 发现改进点
+- 
+- conv2d中使用的是3*3的卷积大小，因为输入大概是5*640*480*3 的多维数据，完全可以将其更改为两个小的卷积核，或者多个小的一维卷积
 
 
-
+明日计划:准备数据集
+- 下载tum的所有数据集，
+- 淘宝找人下载谷歌网盘里面的数据集合
+- 制作个人数据集:20000张
+  - 场景: 实验室、会议室、走廊、门口、连续多段数据
+- 实现迁移学习参数
