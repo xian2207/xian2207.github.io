@@ -2021,6 +2021,7 @@ _TFProfRoot (--/46.23m params)
 对应的nvidia jetson 算力如下:
 
 ![算力表](https://pics5.baidu.com/feed/f636afc379310a555619aba4fab2cbae8326109b.jpeg?token=f1b5a967f7a80b08688e33bb7c8062d1)
+![新算力表](https://img-blog.csdnimg.cn/20210220121531264.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3UwMTM2NzM0NzY=,size_16,color_FFFFFF,t_70#pic_center)
 
 **nano core数量 128-core NVIDIA Maxwell™ GPU**
 
