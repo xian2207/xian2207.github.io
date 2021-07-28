@@ -1012,8 +1012,6 @@ ENTERPRISE_INTELLIGENCE _ UNIT_ TEST_的前缀来标识单元测试相关代码�
 
 ## 最终考试成绩证书
 
-![阿里云证书](https://xuecdn2.aliyunedu.net/img_46cab1096fcfb608538073c50cfa69d1.jpg)
-
 
 ![本地证书](https://wangpengcheng.github.io/img/2020-06-21-01-29-alicodestanrd.jpg)
 
