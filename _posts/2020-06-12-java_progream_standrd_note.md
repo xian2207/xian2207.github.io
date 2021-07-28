@@ -407,6 +407,8 @@ b. 日期时间和大对象映射表:
     - 说明一：如果在 lock 方法与 try**代码块之间的方法调用抛出异常**，那么**无法解锁**，造成其它线程无法成功获取锁。 
     - 说明二：如果 lock 方法在 try 代码块之内，可能由于其它方法抛出异常，导致在 finally 代码块中，unlock 对未加锁的对象解锁，它会调用 AQS 的 tryRelease 方法（取决于具体实现类），抛出IllegalMonitorStateException 异常。
     - 说明三：在 Lock 对象的 lock 方法实现中可能抛出 unchecked 异常，产生的后果与说明二相同。 
+
+
     ```java
     //正例： 
     Lock  lock  =  new  Xxx Lock(); 
@@ -431,6 +433,7 @@ b. 日期时间和大对象映射表:
         lock.unlock(); 
     }
     ```
+
 10. **在使用尝试机制来获取锁的方式中，进入业务代码块之前，必须先判断当前线程是否持有锁。锁的释放规则与锁的阻塞等待方式相同。**
     - 说明：Lock 对象的 unlock 方法在执行时，它会调用 AQS 的 tryRelease 方法（取决于具体实现类），如果当前线程不持有锁，则抛出 IllegalMonitorStateException 异常。
     ```java
