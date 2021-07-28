@@ -891,9 +891,6 @@ ENTERPRISE_INTELLIGENCE _ UNIT_ TEST_的前缀来标识单元测试相关代码�
 ### 6.1 应用分层
 
 1. 图中默认上层依赖于下层，箭头关系表示可直接依赖，如：开放接口层可以依赖于Web层，也可以直接依赖于Service层，依此类推：
-
-![数据层级](https://wangpengcheng.github.io/img/2020-06-16-21-11-58.JPG)
-
     - 开放接口层：可直接封装Service方法暴露成RPC接口；通过Web封装成http接口；进行网关安全控制、流量控制等。
     - 终端显示层：各个端的模板渲染并执行显示的层。当前主要是velocity渲染，JS渲染，JSP渲染，移动端展示等。
     - Web层：主要是对访问控制进行转发，各类基本参数校验，或者不复用的业务简单处理等。
@@ -904,6 +901,8 @@ ENTERPRISE_INTELLIGENCE _ UNIT_ TEST_的前缀来标识单元测试相关代码�
         - 与DAO层交互，对多个DAO的组合复用。
     - DAO层：数据访问层，与底层MySQL、Oracle、Hbase等进行数据交互。
     - 外部接口或第三方平台：包括其它部门RPC开放接口，基础平台，其它公司的HTTP接口。
+![数据层级](https://wangpengcheng.github.io/img/2020-06-16-21-11-58.jpg)
+
 2. 关于异常和日志:
     - DAO层异常较多，无法用细粒度的异常进行catch，使用catch(Exception e)方式，并throw new DAOException(e)，不需要打印日志
     - 在Manager/Service 层使用日志，并捕获DAO层的错误并记录；避免性能浪费
