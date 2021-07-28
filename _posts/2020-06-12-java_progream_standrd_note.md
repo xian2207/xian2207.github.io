@@ -410,7 +410,6 @@ b. 日期时间和大对象映射表:
 
 
     ```java
-    //正例： 
     Lock  lock  =  new  Xxx Lock(); 
     //  ...
     lock.lock();
