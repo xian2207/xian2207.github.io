@@ -255,7 +255,6 @@ b. 日期时间和大对象映射表:
 10. **在使用Collection接口任何实现类的addAll()方法时，都要对输入的集合参数进行NPE判断**--在ArrayList.addAll方法的第一行代码即Object[] a = c.toArray();其中c为输入集合参数，如果为null，则直接抛出异常。
 11. **使用工具类Arrays.asList()把数组转换成集合时，不能使用其修改集合相关的方法，它的add/remove/clear方法会抛出UnsupportedOperationException异常。**
 说明：asList的返回对象是一个Arrays内部类，并没有实现集合的修改方法。Arrays.asList体现的是适配器模式，只是转换接口，后台的数据仍是数组。
-  
     ```java
     String[] str = new String[] { "you", "wu" };
     Listlist = Arrays.asList(str);
@@ -281,7 +280,6 @@ b. 日期时间和大对象映射表:
     ```
 
 14. **不要在 foreach 循环里进行元素的 remove/add 操作。remove 元素请使用Iterator方式，如果并发操作，需要对 Iterator 对象加锁。**
-
     ```java
     //正例
 
@@ -407,7 +405,6 @@ b. 日期时间和大对象映射表:
     - 说明一：如果在 lock 方法与 try**代码块之间的方法调用抛出异常**，那么**无法解锁**，造成其它线程无法成功获取锁。 
     - 说明二：如果 lock 方法在 try 代码块之内，可能由于其它方法抛出异常，导致在 finally 代码块中，unlock 对未加锁的对象解锁，它会调用 AQS 的 tryRelease 方法（取决于具体实现类），抛出IllegalMonitorStateException 异常。
     - 说明三：在 Lock 对象的 lock 方法实现中可能抛出 unchecked 异常，产生的后果与说明二相同。
-
     ```java
     Lock  lock  =  new  Xxx Lock(); 
     //  ...
