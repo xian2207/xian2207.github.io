@@ -406,7 +406,6 @@ b. 日期时间和大对象映射表:
     - 说明二：如果 lock 方法在 try 代码块之内，可能由于其它方法抛出异常，导致在 finally 代码块中，unlock 对未加锁的对象解锁，它会调用 AQS 的 tryRelease 方法（取决于具体实现类），抛出IllegalMonitorStateException 异常。
     - 说明三：在 Lock 对象的 lock 方法实现中可能抛出 unchecked 异常，产生的后果与说明二相同。
 ```java
-    // 锁
     Lock  lock  =  new  Xxx Lock(); 
     //  ...
     lock.lock();
