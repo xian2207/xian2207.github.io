@@ -206,7 +206,7 @@ b. 日期时间和大对象映射表:
     2. 因为Set存储的是不重复的对象，根据hashCode和equals进行判断，所以存储Set的对象必须覆写这两个方法。
     3. 如果自定义对象作为Map的键，那么必须覆写hashCode和equals
 2. **判断所有集合内部的元素是否为空，使用isEmpty()方法，而不是size()==0的方式。**
-    - 说明：前者的时间复杂度为 O(1)，而且可读性更好。 
+    - 说明：前者的时间复杂度为 O(1)，而且可读性更好。
     - 对于不同的类型推荐使用ConllectionUtil、MapUtil、String.util等进行判断；一般是先判断是否为空指针，然后才是判断是否为空。
 3. **在使用java.util.stream.Collectors类的 toMap()方法转为Map集合时，一定要使 用含有参数类型为BinaryOperator，参数名为mergeFunction 的方法，否则当出现相同key 值时会抛出IllegalStateException 异常。**
     - 说明：参数mergeFunction 的作用是当出现 key重复时，自定义对 value 的处理策略。 

@@ -30,7 +30,7 @@
     <link rel="stylesheet" href="{{ "/css/hux-blog.min.css" | prepend: site.baseurl }}">
 
     <!-- Pygments Github CSS -->
-    <link rel="stylesheet" href="{{ "/css/syntax.css" | prepend: site.baseurl }}">
+    <link rel="stylesheet" href="{{ site.url }}/stylesheets/syntax_monokai.css" rel='stylesheet' type='text/css'>
 
     <!-- Custom Fonts -->
     <!-- <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
@@ -54,37 +54,4 @@
 
     <!-- ga & ba script hoook -->
     <script></script>
-    <!-- <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
- 
-	<script type="text/x-mathjax-config">
-	MathJax.Hub.Config({
-	  tex2jax: {
-	    inlineMath: [['$','$'], ['\\(','\\)']],  //行中的公式
-        displayMath: [['$$','$$'], ["\\[","\\]"]],  //段落中的公式
-	    processEscapes: true
-	  }
-	});
-	</script> -->
-	 
-	<script type="text/x-mathjax-config">
-	    MathJax.Hub.Config({
-	      tex2jax: {
-	        skipTags:['script', 'noscript', 'style', 'textarea', 'pre'], //避开特殊标签
-            processHtmlClass:'language-math',
-	      }
-	    });
-	</script>
-    <style type="text/css">
-        code.has-jax{
-            font: inherit;
-            font-size: 100%;
-            background: inherit;
-            border: inherit;
-        }
-    </style>
-    <!--flowchart.js-->
-    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/raphael/2.2.0/raphael-min.js"></script>
-    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-    
-    <script src="{{ "/js/flowchart-latest.js " | prepend: site.baseurl }}"></script>
 </head>

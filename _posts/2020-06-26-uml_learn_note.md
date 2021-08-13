@@ -22,7 +22,7 @@ _参考链接:_
 - [PlantUML官网](https://plantuml.com/zh/)
 - [用户指南](https://plantuml.com/zh/guide)
 
-PlantUML一般都是直接使用`@startuml`和`@enduml`作为开始和结束的标志。
+
 
 ## 1.1 时序图
 _参考链接:_ 
@@ -35,12 +35,11 @@ _参考链接:_
 - `control`: 控制类;控制对象的抽象，主要用来体现应用程序的执行逻辑，将其抽象出来，可以使变化不影响用户界面和数据库中的表。
 - `entity`: 实体类;实体对象的抽象，通常来自域模型（现实世界），用来描述具体的实体，通常映射到数据库表格与文件中。比如对象成员域的状态值，枚举类等。相当于是DO
 - `database`: 数据库
-- 
+
+
 使用示例如下:
 
 ```plantuml
-@startuml
-
 ' 在这里设置颜色
 actor Foo1  #red
 boundary Foo2
@@ -53,7 +52,6 @@ Foo1 -> Foo3 : To control
 Foo1 -> Foo4 : To entity
 Foo1 -> Foo5 : To database
 Foo1 -> Foo6 : To collections
-@enduml
 ```
 
 可以使用as结合字符串设置各个对象实体的别名。这样可以很容易更改它的名称。里面的字符串可以使用`\n`进行换行。也支持HTML的语法格式。
@@ -61,8 +59,6 @@ Foo1 -> Foo6 : To collections
 箭头的样式代码示例如下;也可以使用`-[#color]x`进行颜色的更改
 
 ```plantuml
-@startuml
-
 header Page Header
 footer Page %page% of %lastpage%
 '这里也可以使用 creole 修改标题
@@ -86,9 +82,11 @@ Bob <->o Alice
 '添加分页符
 newpage
 
-@enduml
+
 ```
+
 可以在设置编号时，格式是由 Java 的 DecimalFormat 类实现的；可以根据它的规则来更改格式。例如:
+
 ```
 autonumber "<b>[000]"
 autonumber 15 "<b>(<u>##</u>)"
@@ -114,7 +112,7 @@ autonumber 40 10 "<font color=red><b>Message 0 "
 - `note over `在节点的相对位置添加注释
 
 ```plantuml
-@startuml
+
 participant Alice
 participant Bob
 note left of Alice #aqua 
@@ -129,14 +127,14 @@ This is yet another
 example of
 a long note.
 end note 
-@enduml
+
 ```
 
 ### 1.1.13 改变备注框的形状
 你可以使用 hnote 和 rnote 这两个关键字来修改备注框的形状。 使用示例如下:
 
 ```plantuml
-@startuml
+
 caller -> server : conReq
 hnote over caller : idle
 caller <- server : conConf
@@ -144,19 +142,19 @@ rnote over server
     "r" as rectangle
     "h" as hexagon
 endrnote
-@enduml
+
 ```
 ### 1.1.15 分隔符
 
 ```plantuml
-@startuml
+
 == Initialization ==
 Alice -> Bob: Authentication Request 
 Bob --> Alice: Authentication Response
 == Repetition ==
 Alice -> Bob: Another authentication Request
  Alice <-- Bob: another authentication Response
-@enduml
+
 
 ```
 ### 1.1.16 引用和延迟
@@ -166,7 +164,7 @@ Alice -> Bob: Another authentication Request
 使用示例如下:
 
 ```plantuml
-@startuml
+
 Alice -> Bob: Authentication Request 
 activate Bob
 ... 
@@ -181,7 +179,7 @@ ref over Bob
     this is a bob ref
 end ref
 
-@enduml
+
 ```
 ### 1.1.21 创建参与者
 
@@ -189,7 +187,7 @@ end ref
 也可以使用`return`快速返回
 
 ```plantuml
-@startuml
+
 Bob -> Alice : hello
 create Other 
 Alice -> Other : new
@@ -197,12 +195,12 @@ create control String
 Alice -> String 
 note right : You can also put notes!
 Alice --> Bob : ok
-@enduml
+
 ```
 ### 1.1.22 进入和发出消息
 如果只想关注部分图示，你可以使用进入和发出箭头。 使用方括号 [和] 表示图示的左、右两侧。 
 ```plantuml
-@startuml
+
 [-> A: DoWork
 activate A
 A -> A: Internal call 
@@ -210,9 +208,7 @@ activate A
 A ->] : << createRequest >>
 A<--] : RequestCreated 
 deactivate A 
-[<- A: Done deactivate A @enduml
-
-@enduml
+[<- A: Done deactivate A 
 ```
 
 ### 1.1.23 构造类型和圈点
@@ -220,11 +216,11 @@ deactivate A
 可以使用 `<<` 和 `>>` 给参与者添加构造类型。 在构造类型中，你可以使用 (X,color) 格式的语法添加一个圆圈圈起来的字符。
 
 ```plantuml
-@startuml
+
 participant "Famous Bob" as Bob << Generated >> 
 participant Alice << (C,#ADD1B2) Testable >>
 Bob->Alice: First message
-@enduml
+
 
 ```
 
@@ -232,7 +228,7 @@ Bob->Alice: First message
 可以使用 box 和 end box 画一个盒子将参与者包裹起来。 还可以在 box 关键字之后添加标题或者背景颜色。
 
 ```plantuml
-@startuml
+
 box "Internal Service" #LightBlue 
 participant Bob 
 participant Alice 
@@ -240,7 +236,7 @@ end box
 participant Other
 Bob -> Alice : hello 
 Alice -> Other : hello
-@enduml
+
 ```
 
 ## 1.2 用例图
@@ -277,24 +273,24 @@ _参考链接:_
 用例用圆括号括起来。 也可以用关键字 usecase 来定义用例。还可以用关键字 as 定义一个别名，这个别名可以在以后定义关 系的时候使用。
 
 ```plantuml
-@startuml
+
 (First usecase)
 (Another usecase) as (UC2)
 usecase UC3
 usecase (Last \n usecase) as UC4
-@enduml
+
 ```
 ### 1.2.2 角色
 
 角色用两个冒号包裹起来；也可以用 actor 关键字来定义角色。还可以用关键字 as 来定义一个别名，这个别名可以在以后定义关 系的时候使用。 后面我们会看到角色的定义是可选的。 
 
 ```plantuml
-@startuml
+
 :First Actor:
 :Another\nactor: as Men2
 actor Men3
 actor :Last actor: as Men4
-@enduml
+
 
 ```
 ### 1.2.3 用例描述
@@ -302,7 +298,7 @@ actor :Last actor: as Men4
 如果想定义跨越多行的用例描述，可以用双引号将其裹起来。还可以使用这些分隔符：`--.. ==__`。并且还可以在分隔符中间放置标题。
 
 ```plantuml
-@startuml
+
 usecase UC1 as "You can use 
 several lines to define your usecase.
 You can also use separators. 
@@ -311,7 +307,7 @@ Several separators are possible.
 == And you can add titles: 
 ..Conclusion.. 
 This allows large description."
-@enduml
+
 
 ```
 使用`-->`连接角色和用例`-`越多，箭头越长。可以通过在箭头定义后的后面加一个冒号以及文字的方式来添加标签。给箭头添加注释。
@@ -323,7 +319,7 @@ This allows large description."
 使用示例如下:
 
 ```plantuml
-@startuml
+
 :Main Admin: as Admin 
 (Use the application) as (Use)
 User -> (Start) 
@@ -342,7 +338,7 @@ N2 .. (Use)
 
 User <|-- Admin
 
-@enduml
+
 ```
 
 ### 1.2.6 构造类型
@@ -351,7 +347,7 @@ User <|-- Admin
 可以通过反转箭头改变方向
 还可以通过给箭头添加 left,right,up 或 down 等关键字来改变方向。 
 ```plantuml
-@startuml
+
 '表示
 actor User <<Human>>
 :Main Database: as MySql <<Application>>
@@ -362,7 +358,7 @@ User --> (Use)
 MySql --> (Use)
 '在这里更改默认的方向
 MySql -up-> (Start) 
-@enduml
+
 ```
 
 ### 1.2.10 更改构建方向
@@ -370,7 +366,7 @@ MySql -up-> (Start)
 可以通过`xxx to xxx direction`修饰来修改构图的方向。示例如下:
 
 ```plantuml
-@startuml 
+ 
 ' default 
 top to bottom direction 
 user1 --> (Usecase 1)
@@ -381,13 +377,13 @@ user2 --> (Usecase 2)
 ' user3 --> (Usecase 3)
 ' user4 --> (Usecase 4)
 
-@enduml
+
 ```
 
 ### 1.2.12 一个完整的例子
 
 ```plantuml
-@startuml
+
 left to right direction
 skinparam packageStyle rectangle
 actor customer 
@@ -398,7 +394,7 @@ rectangle checkout{
     (help) .> (checkout) : extends
     (checkout) -- clerk
 }
-@enduml
+
 ```
 
 ## 1.3 类图
@@ -444,11 +440,11 @@ _参考链接:_
 在标签的开始或者结束位置添加`<`或`>`以表明是哪个对象作用到哪个对象上。
 
 ```plantuml
-@startuml
+
 Class01 "1" *-- "many" Class02 : contains >
 Class03 o-- Class04 : aggregation >
 Class05 --> "1" Class06
-@enduml
+
 ```
 ### 1.3.3 添加方法 
 
@@ -456,19 +452,19 @@ Class05 --> "1" Class06
 系统检查是否有括号来判断是方法还是字段
 
 ```plantuml
-@startuml
+
 Object <|-- ArrayList
 Object : equals()
 ArrayList : Object[] elementData 
 ArrayList : size()
 
-@enduml
+
 ```
 
 也可以使用 `{}` 把字段或者方法括起来 注意，这种语法对于类型/名字的顺序是非常灵活的。使用示例如下:
 
 ```plantuml
-@startuml
+
 class Dummy{
     String data
     void methods()
@@ -478,16 +474,16 @@ class Flight {
     dapartureTime : Date
 }
 Dummy <|- Flight
-@enduml
+
 ```
 你可以（显式地）使用 `{field}` 和 `{method}` 修饰符来覆盖解析器的对于字段和方法的默认行为：
 ```plantuml
-@startuml
+
 class Dummy{
     {field} A field (despite parentheses)
     {method} Some method
 }
-@enduml
+
 ```
 ### 1.3.4 定义方法的可访问性
 
@@ -498,7 +494,7 @@ class Dummy{
 也可以使用`skinparam classAttributeIconSize 0` 停用这些新特性
 
 ```plantuml
-@startuml
+
 skinparam classAttributeIconSize 0 
 class Dummy {
     -field1
@@ -506,7 +502,7 @@ class Dummy {
     ~method1()
     +method2()
 }
-@enduml
+
 ```
 
 ### 1.3.5 抽象与静态
@@ -515,12 +511,12 @@ class Dummy {
 这些修饰符可以写在行的开始或者结束。也可以使用 `{classifier}` 这个修饰符来代替 `{static}`。
 
 ```plantuml
-@startuml
+
 class Dummy {
     {static} String id
     {abstract} void methods()
 }
-@enduml
+
 ```
 ### 1.3.6 高级类体 
 
@@ -528,7 +524,7 @@ PlantUML 默认自动将方法和属性重新分组，你可以自己定义分�
 注意:分隔符后面不能有空格否则会失效
 
 ```plantuml
-@startuml 
+ 
 class Foo1 { 
     You can use
     several lines
@@ -554,7 +550,7 @@ class User {
     -- encrypted --
     String password
 }
-@enduml
+
 
 ```
 ### 1.3.7 备注和模板
@@ -564,7 +560,7 @@ class User {
 还可以使用note on link 给链接添加注释
 
 ```plantuml
-@startuml 
+ 
 class Object << general >> 
 Object <|--- ArrayList
 note on link #red : this note is read
@@ -575,7 +571,7 @@ Object .. N2
 N2 .. ArrayList
 class Foo 
 note left: On last defined class
-@enduml
+
 
 ```
 ### 1.3.10 抽象类和接口
@@ -583,8 +579,8 @@ note left: On last defined class
 用关键字 `abstract` 或 `abstract class` 来定义抽象类。抽象类用斜体显示。也可以使用 interface, annotation 和 enum 关键字。
 
 ```plantuml
-@startuml
-@startuml
+
+
 abstract class AbstractList
 abstract AbstractCollection
 interface List
@@ -604,7 +600,7 @@ enum TimeUnit {
     MINUTES
 }
 annotation SuppressWarnings
-@enduml
+
 ```
 ### 1.3.12 隐藏属性、函数等
 
@@ -625,7 +621,7 @@ annotation SuppressWarnings
 - 一个既定的类名。 
 
 ```plantuml
-@startuml
+
 class Dummy1 {
     +myMethods()
 }
@@ -639,7 +635,7 @@ hide members
 hide <<Serializable>> circle
 show Dummy1 methods
 show <<Serializable>> fields
-@enduml
+
 
 ```
 
@@ -651,7 +647,7 @@ show <<Serializable>> fields
 也可以通过不同的代码来定义包的样式
 
 ```plantuml
-@startuml
+
 package "Classic Collections" #DDDDDD {
     Object <|-- ArrayList
 }
@@ -680,26 +676,26 @@ package foo6 <<Database>> {
     class Class6
     }
 
-@enduml
+
 ```
 
 可以使用头部和`--`或者`..`的方向，或者直接使用`left`等关键字来改变箭头的方向。
 
 ```plantuml
-@startuml
+
 foo -left-> dummyLeft
 foo "1" --right-> "*" dummyRight
 foo -up-> dummyUp
 foo -down-> dummyDown
 
-@enduml
+
 ```
 
 ### 1.3.26 辅助布局
 
 你可以使用 together 关键词将某些类进行分组：布局引擎会尝试将它们捆绑在一起（如同在一个包 (package) 内) 你也可以使用建立 隐藏链接的方式来强制布局
 ```plantuml
-@startuml
+
 
 class Bar1
 class Bar2
@@ -713,5 +709,5 @@ Together2 - Together3
 Together2 -[hidden]--> Bar1
 Bar1 -[hidden]> Bar2
 
-@enduml
+
 ```
