@@ -2,7 +2,7 @@
 layout:     post
 title:      jekyll-spcaeship相关功能测试
 subtitle:   测试说明
-date:       2019-07-06
+date:       2021-08-14
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
 catalog: true
@@ -166,94 +166,6 @@ pie title Pets adopted by volunteers
 ![](https://www.dailymotion.com/video/x7tfyq3?width=100%&height=400&autoplay=1)
 
 
-### Hybrid HTML with Markdown
-
-<script type="text/markdown">
-# Hybrid HTML with Markdown is a not bad choice ^\_^
-
-## Table Usage
-
-| :        Fruits \|\| Food       : |||
-| :--------- | :-------- | :--------  |
-| Apple      | : Apple : | Apple      \
-| Banana     |   Banana  | Banana     \
-| Orange     |   Orange  | Orange     |
-| :   Rowspan is 4    : || How's it?  |
-|^^    A. Peach         ||   1. Fine :|
-|^^    B. Orange        ||^^ 2. Bad   |
-|^^    C. Banana        ||  It's OK!  |
-
-## PlantUML Usage
-
-@startuml
-Bob -> Alice : hello
-@enduml
-
-## Video Usage
-
-![](https://www.youtube.com/watch?v=Ptk_1Dc2iPY)
-</script>
-
-
-### 7. Markdown Polyfill
-
-Normal:
-
-1. List item Apple.
-3. List item Banana.
-10. List item Cafe.
-
-Escaped:
-
-\1. List item Apple.
-\3. List item Banana.
-\10. List item Cafe.
-
-
 ### 8. Emoji Usage
 
 I give this plugin two :+1:!
-
-
-jekyll-spaceship:
-  emoji-processor:
-    src: "/assets/images/emoji"
-
-
-### Modifying Element Usage
-
-# Here is a comprehensive example
-
-jekyll-spaceship:
-  element-processor:
-    css:
-      - a: '<h1>Test</h1>'                     # Replace all `a` tags (String Style)
-      - ['a.link1', 'a.link2']:                # Replace all `a.link1`, `a.link2` tags (Hash Style)
-          name: img                            # Replace element tag name
-          props:                               # Replace element properties
-            title: Good image                  # Add a title attribute
-            src: ['(^.*$)', '\0?a=123']        # Add query string to src attribute by regex pattern
-            style:                             # Add style attribute (Hash Style)
-              color: red
-              font-size: '1.2em'
-          children:                            # Add children to the element
-            -                                  # First empty for adding after the last child node
-            - "<span>Google</span>"            # First child node (String Style)
-            -                                  # Middle empty for wrapping the children nodes
-            - name: span                       # Second child node (Hash Style)
-              props:
-                prop1: "1"                     # Custom property1
-                prop2: "2"                     # Custom property2
-                prop3: "3"                     # Custom property3
-              children:                        # Add nested chidren nodes
-                - "<span>Jekyll</span>"        # First child node (String Style)
-                - name: span                   # Second child node (Hash Style)
-                  props:                       # Add attributes to child node (Hash Style)
-                    prop1: "a"
-                    prop2: "b"
-                    prop3: "c"
-                  children: "<b>Yap!</b>"      # Add children nodes (String Style)
-            -                                  # Last empty for adding before the first child node
-      - a.link: '<a href="//t.com">Link</a>'   # Replace all `a.link` tags (String Style)
-      - 'h1#title':                            # Replace `h1#title` tags (Hash Style)
-          children: I'm a title!               # Replace inner html to new text
