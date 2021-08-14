@@ -170,7 +170,7 @@ jekyll-spaceship:
       custom: ['@startmermaid', '@endmermaid']
     config:
       theme: default
-    src: https://mermaid.ink/svg/
+    src: https://mermaid.ink/img/
   media-processor:
     default:
       id: 'media-{id}'
