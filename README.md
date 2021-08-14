@@ -276,8 +276,13 @@ ga_domain: huangxuan.me			# 默认的是 auto, 这里我是自定义了的域名
 1. 这个模板是从这里 [Hux](https://github.com/Huxpro/huxpro.github.io) fork 的, 感谢这个作者。 
 2. 感谢 Jekyll、Github Pages 和 Bootstrap!
 
+## 其它支持
+- [jekyll-spaceship](https://github.com/jeffreytse/jekyll-spaceship)多格式支持
+- [自定义构建流程](https://github.com/jeffreytse/jekyll-deploy-action)支持扩展
+
+
 ## License
 
 遵循eredecw MIT 许可证。有关详细,请参阅 [LICENSE](https://github.com/qiubaiying/qiubaiying.github.io/blob/master/LICENSE)。
 
-测试
+
