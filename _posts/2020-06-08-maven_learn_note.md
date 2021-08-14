@@ -213,13 +213,34 @@ Maven和CMake一样，存在基础的配置变量；常用参数如下：
 
 同时Maven为了更好的约束文件结构；它的常用项目文件结构如下：
 ```bash
-
+${basedir}
+        |-- pom.xml
+        |-- src
+            | |-- main
+                | | -- java
+                        || com.xxx.xxx 项目源码
+                | | `-- resources
+                        || 项目配置文件 .xml等
+               | | `-- filters
+           | | `-- test
+                | | `-- java
+                | | `-- resources
+               | | `-- filters
 ```
 
 注意：Maven的Snapshot和Release
 1. SNAPSHOT 版本代表不稳定、尚处于开发中的版本。
     - 常用于被依赖并且经常更新的版本声明。
 2. Release 版本则代表稳定的版本。
+
+在使用maven来创建的项目，默认会自动创建src/main/等级别的结构。其中各个目录所存放的内容如下：
+
+- src/main/java 项目的源代码所在的目录
+- src/main/resources 项目的资源文件所在的目录
+- src/main/filters 项目的资源过滤文件所在的目录
+- src/main/webapp 如果是web项目，则该目录是web应用源代码所在的目录，比如html文件和web.xml等都在该目录下。
+- src/test/java 测试代码所在的目录
+- src/test/resources 测试相关的资源文件所在的目录
 
 ## 2. Maven的环境配置
 
