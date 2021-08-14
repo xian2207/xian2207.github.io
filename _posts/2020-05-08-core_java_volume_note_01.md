@@ -186,22 +186,22 @@ java中的注释有三种`//`,`/**/`和`/** */` ；最后一种是文档注释�
 
 |标签|描述|示例|
 |:---|:---|:---|
-|@author|标识一个类的作者|@author description|
-|@deprecated|指名一个过期的类或成员|@deprecated description|
-|{@docRoot}|指明当前文档根目录的路径|Directory Path|
-|@exception|标志一个类抛出的异常|@exception exception-name explanation|
-|{@inheritDoc}|从直接父类继承的注释|Inherits a comment from the immediate surperclass.|
-|{@link}|插入一个到另一个主题的链接|{@link name text}|
-|{@linkplain}|插入一个到另一个主题的链接，但是该链接显示纯文本字体|Inserts an in-line link to another topic.|
-|@param|说明一个方法的参数|@param parameter-name explanation|
-|@return|说明返回值类型|@return explanation|
-|@see|指定一个到另一个主题的链接|@see anchor|
-|@serial|说明一个序列化属性|@serial description|
-|@serialData|说明通过writeObject( ) 和 writeExternal( )方法写的数据|@serialData description|
-|@serialField|说明一个ObjectStreamField组件|@serialField name type description|
-|@since|标记当引入一个特定的变化时|@since release|
-|@throws|和 @exception标签一样.	|The @throws tag has the same meaning as the @exception tag.|
-|{@value}|显示常量的值，该常量必须是static属性。|Displays the value of a constant, which must be a static field.|
+|`@author`|标识一个类的作者|`@author description`|
+|`@deprecated`|指名一个过期的类或成员|@deprecated description|
+|`{@docRoot}`|指明当前文档根目录的路径|Directory Path|
+|`@exception`|标志一个类抛出的异常|@exception exception-name explanation|
+|`{@inheritDoc}`|从直接父类继承的注释|Inherits a comment from the immediate surperclass.|
+|`{@link}`|插入一个到另一个主题的链接|{@link name text}|
+|`{@linkplain}`|插入一个到另一个主题的链接，但是该链接显示纯文本字体|Inserts an in-line link to another topic.|
+|`@param`|说明一个方法的参数|@param parameter-name explanation|
+|`@return`|说明返回值类型|@return explanation|
+|`@see`|指定一个到另一个主题的链接|@see anchor|
+|`@serial`|说明一个序列化属性|@serial description|
+|`@serialData`|说明通过writeObject( ) 和 writeExternal( )方法写的数据|@serialData description|
+|`@serialField`|说明一个ObjectStreamField组件|@serialField name type description|
+|`@since`|标记当引入一个特定的变化时|@since release|
+|`@throws`|和 @exception标签一样.	|The @throws tag has the same meaning as the @exception tag.|
+|`{@value}`|显示常量的值，该常量必须是static属性。|Displays the value of a constant, which must be a static field.|
 |@version|指定类的版本|@version info|
 
 ## 3.3 数据类型
@@ -360,14 +360,14 @@ Scanner in=new Scanner(Path.get("myfile.txt"),"UTF-8");
 ## 3.10 数组
 
 Java中的数组实际上的内存分分配是在栈中(int[] 和new int[] 相同)。因此多维数组都是指针数组。每个元素都是指针，存放的是地址值。因此不必长度相同。但是数组除了已开始初始化外，之后只能借助第三方变量进行初始化。也可以使用new配合匿名数组进行初始化。也可以直接初始化
+
 ```java
 int[] smallPrimes=new int[]{17,19,23,29};
-
 //等同如下:
-
 int[] anonymous={17,19,23,29};
 smallPrimes=anonymous;
 ```
+
 使用`Arrays.copyOf()`和`Arrays.sort()`进行深拷贝和排序。
 注意Java中`[]`运算符被预定义为检查数组边界，没有指针预算。不能通过+1操纵得到数组的下一个元素。
 
