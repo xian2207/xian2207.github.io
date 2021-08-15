@@ -1,7 +1,7 @@
 ---
 layout:     post
-title:      JAVA UML 学习笔记
-subtitle:   JAVA UML 学习笔记
+title:      PlantUML学习笔记
+subtitle:   PlantUML学习笔记
 date:       2020-06-26
 author:     王鹏程
 header-img: img/post-bg-ios10.jpg
@@ -39,7 +39,7 @@ _参考链接:_
 
 使用示例如下:
 
-```plantuml
+```plantuml!
 ' 在这里设置颜色
 actor Foo1  #red
 boundary Foo2
@@ -58,7 +58,7 @@ Foo1 -> Foo6 : To collections
 
 箭头的样式代码示例如下;也可以使用`-[#color]x`进行颜色的更改
 
-```plantuml
+```plantuml!
 header Page Header
 footer Page %page% of %lastpage%
 '这里也可以使用 creole 修改标题
@@ -111,7 +111,7 @@ autonumber 40 10 "<font color=red><b>Message 0 "
 - `end note `来添加多行注释。
 - `note over `在节点的相对位置添加注释
 
-```plantuml
+```plantuml!
 
 participant Alice
 participant Bob
@@ -133,7 +133,7 @@ end note
 ### 1.1.13 改变备注框的形状
 你可以使用 hnote 和 rnote 这两个关键字来修改备注框的形状。 使用示例如下:
 
-```plantuml
+```plantuml!
 
 caller -> server : conReq
 hnote over caller : idle
@@ -146,7 +146,7 @@ endrnote
 ```
 ### 1.1.15 分隔符
 
-```plantuml
+```plantuml!
 
 == Initialization ==
 Alice -> Bob: Authentication Request 
@@ -163,7 +163,7 @@ Alice -> Bob: Another authentication Request
 `activate/deactivate`来表示激活/结束 
 使用示例如下:
 
-```plantuml
+```plantuml!
 
 Alice -> Bob: Authentication Request 
 activate Bob
@@ -186,7 +186,7 @@ end ref
 你可以把关键字 `create` 放在第一次接收到消息之前，以强调本次消息实际上是在创建新的对象。
 也可以使用`return`快速返回
 
-```plantuml
+```plantuml!
 
 Bob -> Alice : hello
 create Other 
@@ -199,7 +199,7 @@ Alice --> Bob : ok
 ```
 ### 1.1.22 进入和发出消息
 如果只想关注部分图示，你可以使用进入和发出箭头。 使用方括号 [和] 表示图示的左、右两侧。 
-```plantuml
+```plantuml!
 
 [-> A: DoWork
 activate A
@@ -215,7 +215,7 @@ deactivate A
 
 可以使用 `<<` 和 `>>` 给参与者添加构造类型。 在构造类型中，你可以使用 (X,color) 格式的语法添加一个圆圈圈起来的字符。
 
-```plantuml
+```plantuml!
 
 participant "Famous Bob" as Bob << Generated >> 
 participant Alice << (C,#ADD1B2) Testable >>
@@ -227,7 +227,7 @@ Bob->Alice: First message
 ### 1.1.25 包裹参与者
 可以使用 box 和 end box 画一个盒子将参与者包裹起来。 还可以在 box 关键字之后添加标题或者背景颜色。
 
-```plantuml
+```plantuml!
 
 box "Internal Service" #LightBlue 
 participant Bob 
@@ -272,7 +272,7 @@ _参考链接:_
 
 用例用圆括号括起来。 也可以用关键字 usecase 来定义用例。还可以用关键字 as 定义一个别名，这个别名可以在以后定义关 系的时候使用。
 
-```plantuml
+```plantuml!
 
 (First usecase)
 (Another usecase) as (UC2)
@@ -284,7 +284,7 @@ usecase (Last \n usecase) as UC4
 
 角色用两个冒号包裹起来；也可以用 actor 关键字来定义角色。还可以用关键字 as 来定义一个别名，这个别名可以在以后定义关 系的时候使用。 后面我们会看到角色的定义是可选的。 
 
-```plantuml
+```plantuml!
 
 :First Actor:
 :Another\nactor: as Men2
@@ -297,7 +297,7 @@ actor :Last actor: as Men4
 
 如果想定义跨越多行的用例描述，可以用双引号将其裹起来。还可以使用这些分隔符：`--.. ==__`。并且还可以在分隔符中间放置标题。
 
-```plantuml
+```plantuml!
 
 usecase UC1 as "You can use 
 several lines to define your usecase.
@@ -318,7 +318,7 @@ This allows large description."
 可以用 note left of,note right of,note top of,note bottom of 等关键字给一个对象添加注释。 注释还可以通过 note 关键字来定义，然后用.. 连接其他对象。 
 使用示例如下:
 
-```plantuml
+```plantuml!
 
 :Main Admin: as Admin 
 (Use the application) as (Use)
@@ -346,7 +346,7 @@ User <|-- Admin
 用`<<`和`>>`来定义角色或者用例的构造类型
 可以通过反转箭头改变方向
 还可以通过给箭头添加 left,right,up 或 down 等关键字来改变方向。 
-```plantuml
+```plantuml!
 
 '表示
 actor User <<Human>>
@@ -365,7 +365,7 @@ MySql -up-> (Start)
 
 可以通过`xxx to xxx direction`修饰来修改构图的方向。示例如下:
 
-```plantuml
+```plantuml!
  
 ' default 
 top to bottom direction 
@@ -382,7 +382,7 @@ user2 --> (Usecase 2)
 
 ### 1.2.12 一个完整的例子
 
-```plantuml
+```plantuml!
 
 left to right direction
 skinparam packageStyle rectangle
@@ -439,7 +439,7 @@ _参考链接:_
 关系上的标识符可以在每一边使用`""`来说明
 在标签的开始或者结束位置添加`<`或`>`以表明是哪个对象作用到哪个对象上。
 
-```plantuml
+```plantuml!
 
 Class01 "1" *-- "many" Class02 : contains >
 Class03 o-- Class04 : aggregation >
@@ -451,7 +451,7 @@ Class05 --> "1" Class06
 为了声明字段(对象属性)或者方法，可以使用后接字段名或方法名。
 系统检查是否有括号来判断是方法还是字段
 
-```plantuml
+```plantuml!
 
 Object <|-- ArrayList
 Object : equals()
@@ -463,7 +463,7 @@ ArrayList : size()
 
 也可以使用 `{}` 把字段或者方法括起来 注意，这种语法对于类型/名字的顺序是非常灵活的。使用示例如下:
 
-```plantuml
+```plantuml!
 
 class Dummy{
     String data
@@ -477,7 +477,7 @@ Dummy <|- Flight
 
 ```
 你可以（显式地）使用 `{field}` 和 `{method}` 修饰符来覆盖解析器的对于字段和方法的默认行为：
-```plantuml
+```plantuml!
 
 class Dummy{
     {field} A field (despite parentheses)
@@ -493,7 +493,7 @@ class Dummy{
 
 也可以使用`skinparam classAttributeIconSize 0` 停用这些新特性
 
-```plantuml
+```plantuml!
 
 skinparam classAttributeIconSize 0 
 class Dummy {
@@ -510,7 +510,7 @@ class Dummy {
 通过修饰符`{static}`或者`{abstract}`,可以定义静态或者抽象的方法或者属性。
 这些修饰符可以写在行的开始或者结束。也可以使用 `{classifier}` 这个修饰符来代替 `{static}`。
 
-```plantuml
+```plantuml!
 
 class Dummy {
     {static} String id
@@ -523,7 +523,7 @@ class Dummy {
 PlantUML 默认自动将方法和属性重新分组，你可以自己定义分隔符来重排方法和属性，下面的分隔符都 是可用的：`--.. ==__`。
 注意:分隔符后面不能有空格否则会失效
 
-```plantuml
+```plantuml!
  
 class Foo1 { 
     You can use
@@ -559,7 +559,7 @@ class User {
 
 还可以使用note on link 给链接添加注释
 
-```plantuml
+```plantuml!
  
 class Object << general >> 
 Object <|--- ArrayList
@@ -578,7 +578,7 @@ note left: On last defined class
 
 用关键字 `abstract` 或 `abstract class` 来定义抽象类。抽象类用斜体显示。也可以使用 interface, annotation 和 enum 关键字。
 
-```plantuml
+```plantuml!
 
 
 abstract class AbstractList
@@ -620,7 +620,7 @@ annotation SuppressWarnings
 - <<foo1>> 实现 foo1 的类， 
 - 一个既定的类名。 
 
-```plantuml
+```plantuml!
 
 class Dummy1 {
     +myMethods()
@@ -646,7 +646,7 @@ show <<Serializable>> fields
 
 也可以通过不同的代码来定义包的样式
 
-```plantuml
+```plantuml!
 
 package "Classic Collections" #DDDDDD {
     Object <|-- ArrayList
@@ -681,7 +681,7 @@ package foo6 <<Database>> {
 
 可以使用头部和`--`或者`..`的方向，或者直接使用`left`等关键字来改变箭头的方向。
 
-```plantuml
+```plantuml!
 
 foo -left-> dummyLeft
 foo "1" --right-> "*" dummyRight
@@ -694,7 +694,7 @@ foo -down-> dummyDown
 ### 1.3.26 辅助布局
 
 你可以使用 together 关键词将某些类进行分组：布局引擎会尝试将它们捆绑在一起（如同在一个包 (package) 内) 你也可以使用建立 隐藏链接的方式来强制布局
-```plantuml
+```plantuml!
 
 
 class Bar1
