@@ -27,6 +27,33 @@ __参考链接__:
 > 最新博客完成了升级，为了熟悉新对功能，进行新的语法知识的学习
 
 ## 1. MathJax语法
+- [MathJax Documentation](http://docs.mathjax.org/en/latest/)
+- [MathJax公式教程](https://blog.csdn.net/dabokele/article/details/79577072)
+- [LaTeX 公式篇](https://zhuanlan.zhihu.com/p/110756681)
+- [LATEX公式总结](https://www.jianshu.com/p/22117d964baf)
+
+尝试使用公式：
+$$\Gamma(z) = \int_0^\infty t^{z-1}e^{-t}dt\,$$
+
+
+$$
+\left \{ 
+\begin{array}{c}
+a_1x+b_1y+c_1z=d_1 \\ 
+a_2x+b_2y+c_2z=d_2 \\ 
+a_3x+b_3y+c_3z=d_3
+\end{array}
+\right
+\tag{1.1}
+.$$
+
+$$
+f(n)
+\begin{cases}
+\cfrac n2, &if\ n\ is\ even\\[5ex]
+3n + 1, &if\  n\ is\ odd
+\end{cases}
+$$
 
 ## 2. PlantUML语法
 
@@ -52,6 +79,3 @@ OR
 
 <iframe src="//player.bilibili.com/player.html?aid=462256092&bvid=BV1mL411E7Uk&cid=388230485&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" style="width: 100%;height:480px"> </iframe>
 
-新测试：
-
-<iframe src="//player.bilibili.com/player.html?aid=59317437&bvid=BV1Pt411G7qh&cid=103365806&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"> </iframe>
