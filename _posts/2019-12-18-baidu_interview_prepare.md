@@ -1,5 +1,5 @@
 ---
-查找/分配一个物理页layout:     post
+layout:     post
 title:      百度后台电话面准备
 subtitle:   2020寒假实习
 date:       2019-12-17
