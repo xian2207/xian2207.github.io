@@ -259,7 +259,7 @@ _参考链接:_
     - 归纳(泛化)关系:表示参与者可以执行的动作一个用例可以被列举为多个子用例，这就被成为用例泛化，这与类间的泛化关系类似。例如客户预定可以泛化为预定大巴/小车.
     - ![](https://pics6.baidu.com/feed/9358d109b3de9c82d4db73b6e955de0c18d843a3.jpeg?token=3e0fe371798f45c06804d49223f474cf)
     - 包含关系:指的是其中一个用例（称为基础用例）的行为包含了另一个用例（称为包含用例）。基础用例包含用例并依赖包含用例的执行结果。但是二者不能访问对方的属性。包含关系的图形为虚线箭头加`<<include>>`，箭头指向包含用例。例如汽车租赁中，预定、取车等动作都包含登录
-    - ![包含关系](http://image.woshipm.com/wp-files/2019/07/5qoSbaSdktjnugp1jSvX.png)
+    - ![包含关系](https://image.woshipm.com/wp-files/2019/07/5qoSbaSdktjnugp1jSvX.png)
     - 拓展关系:基础用例的增量扩展，它俩之间为扩展关系。使用虚线箭头，上面加`<<exclude>>`,箭头指向基础用例。往往表示特定情况的发生。
     - 依赖关系:一个用例需要另外一个用例的实现。直接使用直线将两个用例相互连接
   - 子系统：强调某部分用例的强关联性，使用子系统来概括，例如门户包括系统登录、首页信息展示等
@@ -403,7 +403,7 @@ _参考链接:_
 - [类和类之间的依赖、关联、聚合、组合关系](https://blog.csdn.net/weixin_38234890/article/details/80055362)
 - [认识 UML 类关系——依赖、关联、聚合、组合、泛化](https://blog.csdn.net/K346K346/article/details/59582926?utm_medium=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase&depth_1-utm_source=distribute.pc_relevant_t0.none-task-blog-BlogCommendFromMachineLearnPai2-1.nonecase)
 
-![UML中的静态/动态图](http://image.woshipm.com/wp-files/2019/07/iNU5tAcBujZysjToDXf0.png)
+![UML中的静态/动态图](https://image.woshipm.com/wp-files/2019/07/iNU5tAcBujZysjToDXf0.png)
 
 类图（Class Diagrame）是描述类、接口、协作以及它们之间关系的图，用来显示系统中各个类的静态结构。
 
@@ -608,10 +608,10 @@ annotation SuppressWarnings
 - empty fields 或者 empty attributes 空属性
 - empty methods 空函数，
 - fields 或 attributes 隐藏字段或属性，即使是被定义了
--  methods 隐藏方法，即使是被定义了 
+- methods 隐藏方法，即使是被定义了 
 -  members 隐藏字段 和 方法，即使是被定义了 
--  circle 类名前带圈的，
--   stereotype 原型。
+- circle 类名前带圈的，
+- stereotype 原型。
 
 同样可以使用 hide 或 show 关键词，对以下内容进行设置：
 - class 所有类， 
@@ -695,8 +695,6 @@ foo -down-> dummyDown
 
 你可以使用 together 关键词将某些类进行分组：布局引擎会尝试将它们捆绑在一起（如同在一个包 (package) 内) 你也可以使用建立 隐藏链接的方式来强制布局
 ```plantuml!
-
-
 class Bar1
 class Bar2
 together { 
@@ -708,6 +706,183 @@ Together1 - Together2
 Together2 - Together3
 Together2 -[hidden]--> Bar1
 Bar1 -[hidden]> Bar2
+```
 
+```plantuml!
+start
+:ClickServlet.handleRequest();
+:new page;
+if (Page.onSecurityCheck) then (true)
+  :Page.onInit();
+  if (isForward?) then (no)
+    :Process controls;
+    if (continue processing?) then (no)
+      stop
+    endif
+
+    if (isPost?) then (yes)
+      :Page.onPost();
+    else (no)
+      :Page.onGet();
+    endif
+    :Page.onRender();
+  endif
+else (false)
+endif
+
+if (do redirect?) then (yes)
+  :redirect process;
+else
+  if (do forward?) then (yes)
+    :Forward request;
+  else (no)
+    :Render page template;
+  endif
+endif
+
+stop
+```
+
+资源过滤器执行顺序
+
+```plantuml!
+skinparam dpi 150
+scale 13500 width
+scale 2200 height
+skinparam conditionStyle InsideDiamond
+start
+:等待过滤母机;
+:1.资源组标签过滤器;
+note right
+    保证相同资源组标签
+    才能进行分配
+    无标签只从无标签资源组中分配
+end note 
+:2.机型过滤;
+:3.内存过滤;
+:4.母机磁盘过滤;
+:5.ip过滤;
+if (存在指定安全组) then (yes)
+    :6.安全组过滤;
+else (no)
+endif
+
+if (独占盘数量>0) then (yes)
+    :7.独占盘过滤;
+else (no)
+endif
+:8.cpu过滤;
+:过滤后母机;
+stop
+```
+
+母机权重计算排序方法
+
+```plantuml!
+skinparam conditionStyle InsideDiamond
+start
+while (遍历候选母机)
+fork 
+    :统计母机剩余CPU最大值RemainCpuMax;
+    :统计母机剩余CPU最大值RemainCpuMin;
+fork again
+    :统计母机剩余memory最大值RemainMemoryMax;
+    :统计母机剩余memory最小值RemainMemoryMin;
+fork again
+    :统计母机剩余磁盘最大值RemainDiskMax;
+    :统计母机剩余磁盘最小值RemainDiskMin;
+fork again
+    :统计母机剩余IP数最大值RemainIPMax;
+    :统计母机剩余IP数最小值RemainIPMin;
+
+endfork
+endwhile
+
+while ( 遍历候选母鸡HOST )
+    while (遍历权重指标集合(CPU、Mmeory、Disk、IP))
+        :计算HOST[i]单项权重指标,如CPUWeigh;
+        note right
+            单项权重为均一映射至(0~1)的值
+        endnote
+    endwhile
+    -> 遍历结束;
+    :获取leo单项权重系数配置;
+    :计算HOST[i]总权重;
+    note right
+        HOST[i]总权重=SUM(单项权重系数*单项权重均一值)
+    endnote
+endwhile
+-> 遍历结束;
+:根据HOST[i]总权重进行排序(降序);
+:选出HOST[0]作为最终目标母机;
+end
+```
+
+技术方案主要逻辑
+```plantuml!
+!theme bluegray
+skinparam conditionStyle InsideDiamond
+|<size:24>gaia-net</size>|
+start
+:录入母机CPU拓扑结构;
+|#AntiqueWhite|<size:24>gaia-scheduler</size>|
+:...;
+partition 母机CPU过滤 {
+    if (母机剩余CPU>需要CPU) then (是)
+        if (**<color:red><size:14>查询母机机型CPU拓扑结构</size></color>**) then (成功)
+            :1.**查询母机剩余可用CPU逻辑核编号**;
+            :2.**生成CPU拓扑可用表**;
+            if (**可用物理核对应逻辑核总数 > 需要CPU**) then (是)
+                :母机CPU过滤成功;
+                :...;
+                detach
+            else (否)
+            endif
+        else (失败)
+        endif
+    else (否)
+    endif
+    :<color:red> <b>过滤失败;
+    
+}
+:...;
+partition 目标母机CPUSet生成 {
+    if (查询母机机型CPU拓扑结构) then (成功)
+        :1.**查询母机剩余可用CPU逻辑核编号**;
+        :2.**生成CPU拓扑可用表**;
+        :3.**取出前N/2个空闲物理核对应N个逻辑核编号**;
+    else (失败)
+        :1.可用CPU逻辑编号中取出前N个;
+        :...;
+    endif
+    :返回目标CPU逻辑编号列表;
+    :...;
+}
+end
+```
+
+流程图尝试
+```plantuml!
+@startuml 流程图
+digraph flowchart {
+    node[shape="box", style="rounded"]
+        Start[label="start2"]; End;
+    node[shape="box", style=""]
+        Step_A; Step_B; Step_C; Step_D; Step_E; Step_F;
+    node[shape="diamond", style=""]
+        Condition_1; Condition_2;
+    Start -> Step_A;
+    Step_A -> Condition_1;
+    Condition_1 -> Step_B[label="yes"];
+    Step_B -> Step_F;
+    Condition_1 -> Step_C[label="no"];
+    Step_C -> Condition_2;
+    Condition_2 -> Step_E[label="yes"]
+    Step_E -> Step_F;
+    Step_F -> End;
+    Condition_2 -> Step_D[label="no"];
+    Step_D -> Step_A;
+}
+@enduml
 
 ```

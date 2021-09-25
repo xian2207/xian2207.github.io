@@ -39,8 +39,8 @@ $$\Gamma(z) = \int_0^\infty t^{z-1}e^{-t}dt\,$$
 $$
 \left \{ 
 \begin{array}{c}
-a_1x+b_1y+c_1z=d_1 \\ 
-a_2x+b_2y+c_2z=d_2 \\ 
+a_1x+b_1y+c_1z=d_1 \\
+a_2x+b_2y+c_2z=d_2 \\
 a_3x+b_3y+c_3z=d_3
 \end{array}
 \right
