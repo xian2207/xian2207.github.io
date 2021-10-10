@@ -20,6 +20,7 @@ _参考链接：_
 - [书籍代码地址](https://github.com/draveness/go-internal)
 - [在线书籍地址](https://draveness.me/golang/)
 - [Go 语言原本](https://golang.design/under-the-hood/)
+- [深入解析go](https://tiancaiamao.gitbooks.io/go-internals/content/zh/01.1.html)
   
 ## 前言
 

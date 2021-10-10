@@ -882,7 +882,119 @@ digraph flowchart {
     Step_F -> End;
     Condition_2 -> Step_D[label="no"];
     Step_D -> Step_A;
+    subgraph "cluster_g1" {
+    label="g1"
+    bgcolor=cadetblue
+    "level1"->"level2"->"level3"->"level4"
+  }
+}
+
+@enduml
+```
+
+
+```plantuml!
+!theme bluegray
+skinparam conditionStyle InsideDiamond
+|<size:24>gaia</size>|
+start
+:录入母机CPU拓扑结构;
+|#AntiqueWhite|<size:24>gaia-scheduler</size>|
+:...;
+partition 母机CPU过滤 {
+    if (母机剩余CPU>需要CPU) then (是)
+        if (**<color:red><size:14>查询母机机型CPU拓扑结构</size></color>**) then (成功)
+            :1.**查询母机剩余可用CPU逻辑核编号**;
+            :2.**生成CPU拓扑可用表**;
+            if (**可用物理核对应逻辑核总数 > 需要CPU**) then (是)
+                :母机CPU过滤成功;
+                :...;
+                detach
+            else (否)
+            endif
+        else (失败)
+        endif
+    else (否)
+    endif
+    :<color:red> <b>过滤失败;
+    
+}
+:...;
+partition 目标母机CPUSet生成 {
+    if (查询母机机型CPU拓扑结构) then (成功)
+        :1.**查询母机剩余可用CPU逻辑核编号**;
+        :2.**生成CPU拓扑可用表**;
+        :3.**取出前N/2个空闲物理核对应N个逻辑核编号**;
+    else (失败)
+        :1.可用CPU逻辑编号中取出前N个;
+        :...;
+    endif
+    :返回目标CPU逻辑编号列表;
+    :...;
+}
+end
+```
+
+
+```plantuml!
+
+@startuml 流程图
+digraph flowchart {
+    # 自建
+    host_broken [label="发现母机故障(IDC)", shape="box",style="rounded"];
+    xcloud [label="消息事件转发(xcloud)",shape="box",style="rounded"];
+     
+    shouquwancheng [label="授权完成",shape="box",style="rounded"];
+    host_borken_proc[label="查询母机子机",shape="box",style="rounded"]
+        subgraph "cluster_request" {
+            label="分发授权请求(gaia)"
+            style=""
+            shape="ellipse"
+            pvm1;
+            pvm2[ label ="..."];
+            pvm3[label="pvmN"];
+        };
+    host_borken_proc->{ pvm1, pvm2, pvm3 }
+    subgraph "cluster_yewu" {
+        label="业务方"
+        yewu1[label="业务方1"]
+        yewu2[label="..."]
+        yewu3[label="业务方N"]
+    }
+   
+    shouquan[label="授权请求转发(事件中心)",shape="box",style="rounded"];
+    host_broken-> xcloud[label="母机故障消息"];
+    pvm1-> shouquan [label="请求授权"];
+    pvm2-> shouquan [label="请求授权"];
+    pvm3-> shouquan [label="请求授权"];
+    xcloud -> host_borken_proc [label="故障通知"];
+    shouquan -> { yewu1,yewu2,yewu3 } [label="请求授权"]
+    { yewu1,yewu2,yewu3 } -> shouquwancheng [label="授权"]
+     
+    start_repair [label="维修",shape="box",style="rounded"];
+    shouquwancheng -> start_repair [label="通知维修",shape="box",style="rounded"]
+    finish_repair[label="维修完成",shape="box",style="rounded"]
+    start_repair -> finish_repair [label="维修"]
+    inform_uers[label="通知业务方",shape="box",style="rounded"]
+    finish_repair-> inform_uers[label="维修完成"];
+    
 }
 @enduml
+```
+
+数据图表
+
+```mermaid!
+graph LR
+    IDC[自建IDC]
+    gaia[gaia/PVM]
+    yewu[业务方]
+    IDC-->| 0.PM故障 | gaia 
+    gaia--> | 1. 请求PVM维修授权 | yewu
+    yewu --> | 2. 授权维修PVM | gaia 
+    gaia --> | 3. 授权维修PM | IDC 
+    IDC --> | 4. PM维修 |IDC
+    IDC --> | 5. PM维修完成  | gaia 
+    gaia --> | 6. PVM维修完成 | yewu
 
 ```
