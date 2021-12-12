@@ -295,15 +295,18 @@ int fseek(FILE *stream,long int offset, int whence);
 ### 3.7 文件和目录的维护
 
 - chmod:改变文件或者目录的访问权限
-```
+
+```cpp
 #include <sys/types.h>
 #include <unistd.h>
 
 int chown(const char *path,uid_t owner,git_t group);
 ```
+
 - unlink、link和symlink:管理文件链接数目，具体的可以参考第二章中内容。
 
-```
+
+```cpp
 #include <unistd.h>
 
 int unlink(const char *path);
@@ -318,7 +321,7 @@ int symlink(cosnt char *path1,const char *path2);
 - telldir:返回目录流中当前的位置。
 - seekdir:设置目录流dirp的目录项指针。loc的值用来设置指针位置。
 
-```cpp
+```c
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -329,7 +332,7 @@ void seekdir(DIR *dirp,long int loc);
 
 一个目录扫描程序
 
-```c++
+```cpp
 #include <unistd.h>
 
 #include <stdio.h>
