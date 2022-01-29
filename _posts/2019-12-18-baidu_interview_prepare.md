@@ -2476,10 +2476,10 @@ ICMP（Internet Control Message Protocol）因特网控制报文协议。它是I
 ## 5.29 DNS(Domain Name System) 是干什么的？？
 DNS：域名系统（服务）协议
 
-1) 主机解析域名的顺序
+1. 主机解析域名的顺序
 找缓存、找本机的hosts 文件、找DNS 服务器
-2) DNS 协议运行在UDP 协议之上，使用端口号53
-3) 根服务器：ISP 的DNS 服务器还找不到的话，它就会向根服务器发出请求，进行递归查询（DNS 服务器先问根域名服务器.com 域名服务器的IP 地址，然后再问.com域名服务器，依次类推）
+2. DNS 协议运行在UDP 协议之上，使用端口号53
+3. 根服务器：ISP 的DNS 服务器还找不到的话，它就会向根服务器发出请求，进行递归查询（DNS 服务器先问根域名服务器.com 域名服务器的IP 地址，然后再问.com域名服务器，依次类推）
 
 ![DSN](https://wangpengcheng.github.io/img/DNS解析.jpg)
 
@@ -2495,16 +2495,16 @@ DNS：域名系统（服务）协议
 9. 本地域名服务器缓存这个结果；
 10. 本地域名服务器将该结果返回给用户；
 ## 5.30 get/post 区别
-1) 后退按钮或刷新，Get 无害，post 数据会被重新提交；
-2) Get 所使用的URL 可以被设置为书签，而post 不可以；
-3) Get 能够被缓存，而post 不可以；
-4) Get 参数保留在浏览器历史中，而post 参数不会保留在浏览器历史中；
-5) 当发生数据时，get 方法向URL 添加数据，URL 的数据长度是受限的，而post 没有数据长度限制；
-6) Get 只允许ASCII 编码，而post 没有限制；
-7) Get 安全性没有post 安全性好；
-8) Get 数据在URL 中对所有人是可见的，而在post 中数据不会显示在URL 中。
-9) Get 产生一个TCP 数据包，post 产生两个TCP 数据包；对于get 方式的请求，浏览器会把header 和data 一并发送出去；对于post，浏览器先发送header 再发送data；
-10) GET 和POST 本质上就是TCP 链接，并无差别。但是由于HTTP 的规定和浏览器/服务器的限制，导致他们在应用过程中体现出一些不同；
+1. 后退按钮或刷新，Get 无害，post 数据会被重新提交；
+2. Get 所使用的URL 可以被设置为书签，而post 不可以；
+3. Get 能够被缓存，而post 不可以；
+4. Get 参数保留在浏览器历史中，而post 参数不会保留在浏览器历史中；
+5. 当发生数据时，get 方法向URL 添加数据，URL 的数据长度是受限的，而post 没有数据长度限制；
+6. Get 只允许ASCII 编码，而post 没有限制；
+7. Get 安全性没有post 安全性好；
+8. Get 数据在URL 中对所有人是可见的，而在post 中数据不会显示在URL 中。
+9. Get 产生一个TCP 数据包，post 产生两个TCP 数据包；对于get 方式的请求，浏览器会把header 和data 一并发送出去；对于post，浏览器先发送header 再发送data；
+10. GET 和POST 本质上就是TCP 链接，并无差别。但是由于HTTP 的规定和浏览器/服务器的限制，导致他们在应用过程中体现出一些不同；
 
 ## 5.31 https中的pipline
 
