@@ -5,11 +5,11 @@ _作者：_
 ## 用法：
 输入训练好的模型;主要流程如下
 
-![flow](./img/TensorRT_workflow.png)
+![flow](../img/TensorRT_workflow.png)
 
 下面输入YOLOv3网络架构：
 
-![YOLOv3](./img/Yolov3.png)
+![YOLOv3](../img/Yolov3.png)
 
 注意进行视频流处理时，需要及时free内存；
 
@@ -297,4 +297,47 @@ graph LR
     IDC --> | 5. PM维修完成  | gaia 
     gaia --> | 6. PVM维修完成 | yewu
 
+```
+
+
+```plantuml
+@startuml
+digraph finite_state_machine {
+    rankdir = LR;
+    
+    node [shape=doublecircle style=filled]
+    RUNNING [label="已运行" color="#00ff00"] 
+    STOPPED [label="已关机" color="#eecc80"]
+    LAUNCH_FAILED [label="创建失败" color="#ff0000"]
+    SHUTDOWN [ label="待销毁" color="#33ff99" ]
+   
+    node [shape =circle style=filled color="#ffff99"]
+    PENDING [label="创建中"] 
+    STARTING [label="开机中" ]
+    STOPPING [label="关机中" ]
+    REBOOTING [label="重启中" ]
+    TERMINATING [label="销毁中" ]
+    TERMINATED [label="已销毁" color="#666666"]
+
+    //node [shape=Mdiamond style=dashed color="#ffcc33"]
+    //START_POINT [ label="start" ]
+    //END_POINT [ label="end" ]
+
+    //START_POINT -> PENDING [ label="创建实例" ];
+    PENDING -> RUNNING [ label="创建成功" ];
+    PENDING -> LAUNCH_FAILED [ label="创建失败"];
+    RUNNING -> STOPPING [label="关机"];
+    STOPPING -> STOPPED [label="已关机"];
+    STOPPED ->  STARTING [label="开机"];
+    STARTING -> RUNNING [label="开机成功"];
+    RUNNING -> REBOOTING [label = "重启"];
+    REBOOTING -> RUNNING [label = "重启成功"];
+    STOPPED -> SHUTDOWN [label = "销毁"];
+    SHUTDOWN -> STOPPED [label = "实例恢复"];
+    SHUTDOWN -> TERMINATING [label = "销毁"];
+    TERMINATING -> TERMINATED [label="销毁成功"];
+    //TERMINATED -> END_POINT [ label="清除实例"];
+    //LAUNCH_FAILED -> END_POINT [ label="清除创建失败实例"];
+}
+@enduml
 ```
