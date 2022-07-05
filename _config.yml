@@ -76,15 +76,15 @@ gitalk:
   distractionFreeMode: true #是否启用类似FB的阴影遮罩
 
 
-# 统计
+# 统计 | turn off if not yours
 
-# Analytics settings
-# Baidu Analytics
-ba_track_id: 4b4b33b70559d548603afcd03258bacb
+# # Analytics settings
+# # Baidu Analytics
+# ba_track_id: 4b4b33b70559d548603afcd03258bacb
 
-# Google Analytics
-# ga_track_id: 'UA-90855596-1'            # Format: UA-xxxxxx-xx
-# ga_domain: auto               # 默认的是 auto, 这里我是自定义了的域名，你如果没有自己的域名，需要改成auto
+# # Google Analytics
+# # ga_track_id: 'UA-90855596-1'            # Format: UA-xxxxxx-xx
+# # ga_domain: auto               # 默认的是 auto, 这里我是自定义了的域名，你如果没有自己的域名，需要改成auto
 
 
 
