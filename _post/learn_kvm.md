@@ -1,7 +1,7 @@
 ---
 layout:     post
 title:      学习KVM
-subtitle:   学习KVM笔记
+subtitle:   KVM笔记
 date:       2022-03-06
 author:     Xian2207
 header-img: img/post-bg-ios10.jpg
@@ -13,7 +13,7 @@ tags:
 ---
 
 # KVM学习阅读笔记
-> 2021-09-26 23:45:58
+> 2021-03-06 23:30:22
 
 _参考链接：_
 - [GitPage](https://yifengyou.github.io/learn-kvm/)
