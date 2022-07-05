@@ -1,3 +1,15 @@
+---
+layout:     post
+title:      CMakelists Tutorial
+subtitle:   release-debug-cpack
+date:       2020-05-09
+author:     Xian2207
+header-img: 
+catalog: 	 true
+tags:
+    - CMake
+    - CMakelists
+---
 # <center> CMake教程
 
 <center>by Xian2207，wszhangxian@126.com，2020年5月20日
